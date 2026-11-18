@@ -66,6 +66,9 @@ type Server struct {
 	fishEcologyMu          sync.RWMutex
 	fishEcologyCache       map[string]fishEcologyProfile
 	fishEcologyCacheLoaded bool
+	// 生态档案的水域覆盖：stat_loc -> fish_key -> 覆盖（nil 字段继承全局）。
+	// 与 fishEcologyCache 共用同一把锁，后台保存后由管理队列 reload_fish_ecology 失效。
+	fishEcologyLocCache map[string]map[string]fishEcologyLocOverride
 
 	// 海图鱼种集合：唯一海图（loc_alias 把 level_012_north_sea 解析到
 	// 「挪威海」）在 loc_fish 里的全部鱼种。启动时一次加载、之后只读；
@@ -85,6 +88,12 @@ type Server struct {
 	fishZoneMu    sync.RWMutex
 	fishZoneCache map[string][]store.FishZone
 	fishZoneAt    time.Time
+
+	// 钓法倾向矩阵缓存（后台可写，TTL 30 秒；键 "钓法族/水层档"）。
+	// 判鱼热路径每杆每候选都要查，必须缓存；后台保存后最多 30 秒生效。
+	rigAffMu    sync.RWMutex
+	rigAffCache map[string]float64
+	rigAffAt    time.Time
 
 	// 运行参数缓存
 	tunMu    sync.Mutex

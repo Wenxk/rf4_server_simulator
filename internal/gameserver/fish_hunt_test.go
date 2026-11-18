@@ -676,6 +676,11 @@ func TestFishHuntReadinessRequiresFishMouthMatch(t *testing.T) {
 	setWeatherTestTunable(t, s, "groundbait_enabled", "1")
 	setWeatherTestTunable(t, s, "fish_ecology_enabled", "1")
 	setWeatherTestTunable(t, s, "fish_weather_enabled", "1")
+	// 这条用例只验证「鱼口匹配不足时守住日常阶段」，与昼夜无关。昼夜权重开启时
+	// crucian 在该固定时刻可能落在非活跃时段，窝料门被乘 0.3 压到阈值边缘，
+	// 属于噪声；显式关掉昼夜，让判定只看本用例要验证的那条链。
+	// （窝料门已跟随该开关，关掉即完全中性——由 groundbait 侧保证。）
+	setWeatherTestTunable(t, s, "fish_diel_weight_enabled", "0")
 	const (
 		uid  = int64(1000003)
 		loc  = "hunt-stage-test"

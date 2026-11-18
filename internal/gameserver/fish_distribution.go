@@ -14,33 +14,23 @@ func fishArea(loc string, c fishRollContext) string {
 	return fmt.Sprintf("%s/%d", loc, c.spot)
 }
 
-// activityMultiplier 保留非活跃时段的少量杂口，未知鱼种使用中性昼夜权重。
-func activityMultiplier(species string, hour int64) float64 {
-	night := hour >= 19 || hour < 6
-	switch species {
-	case "ruffe", "ruffe_n", "eel", "burbot", "w_catfish", "w_catfish_a", "bullhead_syb", "ch_catfish", "fhcatfish":
-		if night {
-			return 1.8
-		}
-		return 0.35
-	case "n.pike", "perch", "c_bleak", "rudd", "barb_toni":
-		if night {
-			return 0.45
-		}
-		return 1.4
-	}
-	return 1
-}
-
+// distributionMultiplier 只回答一件事：这种鱼这一刻在不在这块水域。
+// 空间（40 世界单位一格）× 时间（每四个游戏小时重抽）的纯散布乘子，
+// 返回 0 表示这一格这段时辰根本没有这种鱼；命中时按 0.15~4.0 给权重。
+//
+// 昼夜习性不在这里。原先此处另挂了一张写死 9 种鱼的活性表（夜行 ×1.8、
+// 白天鱼 ×1.4），与生态档案的 diel_mask 是两套参数：既会互相抵消（分布的
+// 0~4 倍把昼夜那 1.67 倍淹掉），口径还互相打架——董氏须鳅（barb_toni）是
+// 底栖夜行鱼，掩码为纯夜，那张表却把它当白天鱼。2026-11-18 起删除该表，
+// 昼夜只由 fishDielWeight（生态档案 diel_mask × 活跃加成）一处决定。
 func distributionMultiplier(area, species string, now time.Time) float64 {
-	_, hour := worldDayAndHour(now.Unix())
 	// 每四个游戏小时重新分布；同区域同鱼种共享结果，不因玩家或换饵重抽。
 	period := (now.Unix() - worldDayEpochUnix) / (4 * realSecPerGameHour)
 	v := fishVariation(fmt.Sprintf("%s/%s/%d", area, species, period))
 	if v < 0.3 {
 		return 0
 	}
-	return (0.15 + 3.85*v*v) * activityMultiplier(species, hour)
+	return 0.15 + 3.85*v*v
 }
 
 func applyFishDistribution(loc string, keys []string, weights []float64, c fishRollContext) {

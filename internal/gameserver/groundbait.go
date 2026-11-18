@@ -653,7 +653,18 @@ func (s *Server) groundbaitGates(ctx context.Context, c fishRollContext, fishKey
 	water := fishWaterConditionsFor(p, c)
 	_, hour := worldDayAndHour(c.now.Unix())
 	layer := groundbaitClamp(s.fishLayerWeightProfile(p, c), 0.05, 1)
-	diel := groundbaitClamp(fishDielWeight(p, hour), 0.05, 1)
+	// 窝料门只关心"这鱼会不会被这锅料吸引"，所以加成面在这里被夹回 ≤1，
+	// 与判鱼权重用同一组昼夜倍率、不同口径：门不吃 >1 的提升。
+	//
+	// 必须跟着 fish_diel_weight_enabled 走：昼夜开关关掉时，门也该回到中性 1。
+	// 漏这一句会让「关掉昼夜权重」只对判鱼生效、窝料仍在按昼夜压制，
+	// 玩家看到的就是手感上的半开关（2026-11-17 修复）。
+	diel := 1.0
+	if s.tunableF("fish_diel_weight_enabled", 1) == 1 {
+		diel = groundbaitClamp(fishDielWeight(p, hour,
+			s.tunableF("fish_diel_active_boost", 2.0),
+			s.tunableF("fish_diel_inactive_penalty", 0.3)), 0.05, 1)
+	}
 	season := groundbaitClamp(fishSeasonWeight(p, water.Season), 0.05, 1)
 	rarity := groundbaitClamp(1-0.12*float64(p.RarityTier), 0.4, 1)
 	substrate := 1.0

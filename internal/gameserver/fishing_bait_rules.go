@@ -138,6 +138,10 @@ func (b ruleBait) matches(term string) bool {
 		"caddisfly":   {"毛翅目幼虫"},
 		"baitfrog":    {"青蛙"},
 		"fish_flesh":  {"鱼肉块"},
+		// 客户端只有一件鱼肉类制品（fish_pieces / 鱼块，baitType=1 杂类），
+		// 攻略文本却分写"鱼肉/鱼肉块/鱼片"——不归一的话，像江鳕、鳗鱼、葛氏鲈塘鳢
+		// 这些明写"吃鱼块/鱼肉"的鱼反而认不出鱼块。
+		"fish_pieces": {"鱼肉", "鱼肉块", "鱼肉类", "鱼片"},
 	}
 	for _, alias := range aliases[b.id] {
 		if t == ruleName(alias) {
@@ -370,6 +374,12 @@ func (s *Server) filterFishBaitSet(loc string, ids []string, keys []string, weig
 			variation := fishVariation(fmt.Sprintf("%s/%s/%s/%d", loc, key, b.id, period))
 			// evidence[j] 实为 companion tier map（1=在榜 2=热门 3=top 档），非计数。
 			comp := evidence[j][key]
+			// 中档兜底必须落在该鱼的食性族内：companion 的"在列"只说明官服有人
+			// 用这个饵钓到过它，不说明这饵在它的食谱里。普通鲤鱼（allow 全是植物饵、
+			// 生态 diet 里没有 fish 项）× 鱼块 就是 tier1/evidence=11 的孤例，
+			// 之前被直接抬到中档 0.35，于是"鲤鱼咬鱼肉"。
+			// 判不出食性族的饵（拟饵、baitType=1 杂类的煮饵/贻贝肉）照旧放行。
+			midFallback := comp >= 1 && b.baitDietCompatible(r)
 			full := allowed || comp > 0 || localEvidence[j][key]
 			if grading {
 				// rf4 占比优先；占比缺失（表空/未映射）退回 companion/local 兜底。
@@ -379,7 +389,7 @@ func (s *Server) filterFishBaitSet(loc string, ids []string, keys []string, weig
 			if full {
 				preferred++
 				score = 1.0 + 0.5*variation
-			} else if grading && (share >= medium || (share < 0 && comp >= 1) || localEvidence[j][key]) {
+			} else if grading && (share >= medium || (share < 0 && midFallback) || localEvidence[j][key]) {
 				score = maxBaitPreference * 0.35
 			} else if grading && share >= tail {
 				score = maxBaitPreference * 0.18
@@ -494,10 +504,13 @@ func (b ruleBait) matchesAny(terms []string) bool {
 	return false
 }
 
-// 非偏好只在已识别食性族内保留杂口，不把所有天然饵视为通用食物。
-func (b ruleBait) legalAlternative(r fishBaitRule) bool {
+// dietFamily 该饵能归到哪个食性大类；第二个返回值表示"能否判定"。
+// 判不出来的一律不拦（见 baitDietCompatible）：category 17 是拟饵，没有食性族；
+// baitType=1「杂类」是一锅杂烩（香煮成饵 / 贻贝肉 / 鱼块 / 河斑马纹贻贝肉），
+// 只能靠鱼块这类具体 id 单独归一，不能按大类一概而论。
+func (b ruleBait) dietFamily() (string, bool) {
 	if b.category != 27 {
-		return false
+		return "", false
 	}
 	var diet string
 	switch b.baitType {
@@ -516,9 +529,14 @@ func (b ruleBait) legalAlternative(r fishBaitRule) bool {
 	case 14:
 		diet = "鱼肉"
 	}
-	if b.id == "fish_flesh" {
+	if b.id == "fish_flesh" || b.id == "fish_pieces" {
 		diet = "鱼肉"
 	}
+	return diet, diet != ""
+}
+
+// dietFamilyAllowed 该鱼攻略 allow 里是否出现过这个食性大类的关键词。
+func dietFamilyAllowed(diet string, r fishBaitRule) bool {
 	terms := strings.Join(r.allow, "/")
 	switch diet {
 	case "虫":
@@ -545,6 +563,29 @@ func (b ruleBait) legalAlternative(r fishBaitRule) bool {
 		return strings.Contains(terms, "鱼肉") || strings.Contains(terms, "鱼片")
 	}
 	return false
+}
+
+// baitDietCompatible 该饵有没有可能在这条鱼的食谱里：食性族可判定时要求 allow
+// 出现同类关键词；判不出来时放行（保守）。与 legalAlternative 的区别是后者还要
+// 求"不是偏好"的降权语义，这里只回答"能不能进食谱"。
+func (b ruleBait) baitDietCompatible(r fishBaitRule) bool {
+	diet, ok := b.dietFamily()
+	if !ok {
+		return true
+	}
+	return dietFamilyAllowed(diet, r)
+}
+
+// 非偏好只在已识别食性族内保留杂口，不把所有天然饵视为通用食物。
+func (b ruleBait) legalAlternative(r fishBaitRule) bool {
+	if b.category != 27 {
+		return false
+	}
+	diet, ok := b.dietFamily()
+	if !ok {
+		return false
+	}
+	return dietFamilyAllowed(diet, r)
 }
 
 // 技能只提高已有的正兴趣，不能放行禁饵或不适用的拟饵。

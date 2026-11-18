@@ -114,11 +114,18 @@ type FishRosterRow struct {
 // LocRoster 该统计站地点的鱼种名册：
 // 优先读取 loc_wiki_fish 全集并连接 loc_fish 的捕获计数；为空时回退到
 // catches>0 的 loc_fish 行。
+//
+// 权重优先级：fish_weight_preset（按稀有度的档位预设）→ loc_fish.catches（攻略原值）→ 1。
+// loc_fish 是只读静态视图，攻略原值不能改也不能删，所以档位化走独立表；清空预设表
+// 即回到攻略原值。没有预设时行为与改动前完全一致。
 func (d *DB) LocRoster(ctx context.Context, statLoc string) ([]*FishRosterRow, error) {
 	rows, err := d.SQL.QueryContext(ctx, `
-		SELECT w.fish_key, COALESCE(l.catches, 1)
-		FROM loc_wiki_fish w LEFT JOIN loc_fish l
+		SELECT w.fish_key, COALESCE(p.weight, l.catches, 1)
+		FROM loc_wiki_fish w
+		LEFT JOIN loc_fish l
 		  ON l.loc = w.loc AND l.fish_key = w.fish_key
+		LEFT JOIN fish_ecology e ON e.fish_key = w.fish_key
+		LEFT JOIN fish_weight_preset p ON p.rarity_tier = e.rarity_tier
 		WHERE w.loc=?`, statLoc)
 	if err == nil {
 		out, scanErr := scanRoster(rows)
@@ -126,8 +133,12 @@ func (d *DB) LocRoster(ctx context.Context, statLoc string) ([]*FishRosterRow, e
 			return out, nil
 		}
 	}
-	rows, err = d.SQL.QueryContext(ctx,
-		`SELECT fish_key, catches FROM loc_fish WHERE loc=? AND catches>0`, statLoc)
+	rows, err = d.SQL.QueryContext(ctx, `
+		SELECT f.fish_key, COALESCE(p.weight, f.catches)
+		FROM loc_fish f
+		LEFT JOIN fish_ecology e ON e.fish_key = f.fish_key
+		LEFT JOIN fish_weight_preset p ON p.rarity_tier = e.rarity_tier
+		WHERE f.loc=? AND f.catches>0`, statLoc)
 	if err != nil {
 		return nil, err
 	}

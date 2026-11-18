@@ -2,6 +2,7 @@ package gameserver
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"path/filepath"
 	"reflect"
@@ -13,7 +14,7 @@ import (
 	"rf4server/internal/store"
 )
 
-func TestFishDistributionRegionsTimeAndActivity(t *testing.T) {
+func TestFishDistributionRegionsAndTime(t *testing.T) {
 	now := time.Unix(worldDayEpochUnix+12*realSecPerGameHour, 0)
 	c := fishRollContext{now: now, hasPos: true, x: 50, z: 70}
 	a := fishArea("map-a", c)
@@ -39,12 +40,16 @@ func TestFishDistributionRegionsTimeAndActivity(t *testing.T) {
 	if reflect.DeepEqual(w, weights(fishArea("map-a", c), now)) || reflect.DeepEqual(w, weights(a, now.Add(600*time.Second))) {
 		t.Fatal("regions and refresh periods must change schools")
 	}
-	if activityMultiplier("ruffe", 23) <= activityMultiplier("ruffe", 12) || activityMultiplier("perch", 23) >= activityMultiplier("perch", 12) {
-		t.Fatal("day and night habits reversed")
+	// 分布层只做空间散布：乘子必须等于纯散布公式，不得再挂鱼种昼夜习性。
+	// 昼夜归 fishDielWeight（生态档案 diel_mask）一处管，见 fish_diel_mask_test.go。
+	period := (now.Unix() - worldDayEpochUnix) / (4 * realSecPerGameHour)
+	v := fishVariation(fmt.Sprintf("%s/%s/%d", a, "perch", period))
+	want := 0.15 + 3.85*v*v
+	if v < 0.3 {
+		want = 0
 	}
-	// 所有鱼种都参与随机分布，资料不足的鱼不编造昼夜偏好。
-	if activityMultiplier("unknown", 23) != 1 {
-		t.Fatal("unknown activity must be neutral")
+	if got := distributionMultiplier(a, "perch", now); got != want {
+		t.Fatalf("分布乘子应只由空间散布决定，期望 %v，实得 %v", want, got)
 	}
 	zero, positive := false, false
 	for i := 0; i < 40; i++ {
@@ -207,8 +212,20 @@ func TestBsSalmonHasStaticDistributionAndBaitEvidence(t *testing.T) {
 	if !found {
 		t.Fatalf("LocRoster(%q) 缺少 bs_salmon", loc)
 	}
-	if catches != 8 {
-		t.Fatalf("bs_salmon 名册权重=%v，期望 8", catches)
+	// 名册权重现在来自稀有度档位预设（见 specs/changes/fish-weight-preset），
+	// 不再是攻略原值 8。这里按该鱼实际档位查预设表，避免把档位值写死进测试。
+	var wantTier int
+	if err := srv.DB.SQL.QueryRow(
+		`SELECT rarity_tier FROM fish_ecology WHERE fish_key='bs_salmon'`).Scan(&wantTier); err != nil {
+		t.Fatalf("读 bs_salmon 稀有度档位: %v", err)
+	}
+	var wantWeight float64
+	if err := srv.DB.SQL.QueryRow(
+		`SELECT weight FROM fish_weight_preset WHERE rarity_tier=?`, wantTier).Scan(&wantWeight); err != nil {
+		t.Fatalf("读第 %d 档预设权重: %v", wantTier, err)
+	}
+	if catches != wantWeight {
+		t.Fatalf("bs_salmon 名册权重=%v，期望第 %d 档预设 %v", catches, wantTier, wantWeight)
 	}
 	evidence := srv.loadLocalBaitEvidence(ctx, loc, "AngryWalker S8-001", "AngryWalker S8-001")
 	if !evidence["bs_salmon"] {

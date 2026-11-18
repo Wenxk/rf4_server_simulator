@@ -8,9 +8,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"rf4server/internal/worldclock"
 )
 
-const fishEcologyProfileVersion = 4
+// 5：昼夜口径归并——删除分布层的写死活性表后，档案里的 diel_mask 成为
+// 唯一昼夜依据，梅花鲈补上傍晚（11 → 13，原先漏暮、误含昼）。版本号抬高
+// 触发 ensureFishEcology 重灌（启动后用 RecalcFishRarity 校正档位）。
+const fishEcologyProfileVersion = 5
 
 //go:embed assets/fish_ecology_defs.json
 var fishEcologyDefsJSON []byte
@@ -147,7 +152,118 @@ func (s *Server) reloadFishEcologyCache(ctx context.Context) error {
 	s.fishEcologyCache = cache
 	s.fishEcologyCacheLoaded = true
 	s.fishEcologyMu.Unlock()
+	// 水域覆盖与全局档案同一次刷新：只刷新一半会出现「习性旧、覆盖新」的错配。
+	return s.reloadFishEcologyLocCache(ctx)
+}
+
+// fishEcologyLocOverride 是水域覆盖的内存形态：nil 字段继承全局档案。
+// 只覆盖「习性」字段（水层/温度/昼夜/季节/食性/天气/活跃度/启停），
+// 不覆盖体长体重与稀有度——那些属于鱼种本身，不是水域属性。
+type fishEcologyLocOverride struct {
+	layerMin, layerPref, layerMax *float64
+	tempMinC, tempPrefC, tempMaxC *float64
+	dielMask, seasonMask          *int64
+	dietJSON, weatherJSON         *string
+	activity                      *float64
+	enabled                       *bool
+}
+
+// reloadFishEcologyLocCache 全量载入水域覆盖。与全局档案同一次刷新，
+// 避免「刷新了习性却漏了覆盖」的半新半旧状态。
+func (s *Server) reloadFishEcologyLocCache(ctx context.Context) error {
+	if s == nil || s.DB == nil {
+		return nil
+	}
+	rows, err := s.DB.AllFishEcologyLoc(ctx)
+	if err != nil {
+		return err
+	}
+	cache := make(map[string]map[string]fishEcologyLocOverride, 16)
+	for _, o := range rows {
+		enabled := o.Enabled != nil && *o.Enabled != 0
+		ov := fishEcologyLocOverride{
+			layerMin: o.LayerMin, layerPref: o.LayerPref, layerMax: o.LayerMax,
+			tempMinC: o.TempMinC, tempPrefC: o.TempPrefC, tempMaxC: o.TempMaxC,
+			dielMask: o.DielMask, seasonMask: o.SeasonMask,
+			dietJSON: o.DietJSON, weatherJSON: o.WeatherJSON,
+			activity: o.Activity,
+		}
+		if o.Enabled != nil {
+			ov.enabled = &enabled
+		}
+		byKey := cache[o.StatLoc]
+		if byKey == nil {
+			byKey = map[string]fishEcologyLocOverride{}
+			cache[o.StatLoc] = byKey
+		}
+		byKey[o.FishKey] = ov
+	}
+	s.fishEcologyMu.Lock()
+	s.fishEcologyLocCache = cache
+	s.fishEcologyMu.Unlock()
 	return nil
+}
+
+// mergeFishEcology 把水域覆盖叠到全局档案上：只改有值的字段。
+func mergeFishEcology(p fishEcologyProfile, ov *fishEcologyLocOverride) fishEcologyProfile {
+	if ov == nil {
+		return p
+	}
+	if ov.layerMin != nil {
+		p.LayerMin = *ov.layerMin
+	}
+	if ov.layerPref != nil {
+		p.LayerPref = *ov.layerPref
+	}
+	if ov.layerMax != nil {
+		p.LayerMax = *ov.layerMax
+	}
+	if ov.tempMinC != nil {
+		p.TempMinC = *ov.tempMinC
+	}
+	if ov.tempPrefC != nil {
+		p.TempPrefC = *ov.tempPrefC
+	}
+	if ov.tempMaxC != nil {
+		p.TempMaxC = *ov.tempMaxC
+	}
+	if ov.dielMask != nil {
+		p.DielMask = *ov.dielMask
+	}
+	if ov.seasonMask != nil {
+		p.SeasonMask = *ov.seasonMask
+	}
+	if ov.dietJSON != nil {
+		p.DietJSON = *ov.dietJSON
+	}
+	if ov.weatherJSON != nil {
+		p.WeatherJSON = *ov.weatherJSON
+	}
+	if ov.activity != nil {
+		p.Activity = *ov.activity
+	}
+	if ov.enabled != nil {
+		p.Enabled = *ov.enabled
+	}
+	return p
+}
+
+// fishEcologyFor 是判鱼侧唯一入口：全局档案 + 该水域覆盖。
+// statLoc 为空（位置未知/静态库不可用）时保持全局，不因缺定位改手感。
+func (s *Server) fishEcologyFor(ctx context.Context, statLoc, key string) fishEcologyProfile {
+	p := s.fishEcology(ctx, key)
+	if s == nil || statLoc == "" {
+		return p
+	}
+	s.fishEcologyMu.RLock()
+	var ov *fishEcologyLocOverride
+	if byKey := s.fishEcologyLocCache[statLoc]; byKey != nil {
+		if v, ok := byKey[key]; ok {
+			ov = &v
+		}
+	}
+	s.fishEcologyMu.RUnlock()
+	return mergeFishEcology(p, ov)
 }
 
 func (s *Server) invalidateFishEcologyCache() {
@@ -157,6 +273,7 @@ func (s *Server) invalidateFishEcologyCache() {
 	s.fishEcologyMu.Lock()
 	s.fishEcologyCache = nil
 	s.fishEcologyCacheLoaded = false
+	s.fishEcologyLocCache = nil
 	s.fishEcologyMu.Unlock()
 }
 
@@ -301,12 +418,28 @@ func (s *Server) fishBiteEnvironmentWeight(ctx context.Context, key string, c fi
 	if c.rigType == 0 && c.depthCM == 0 && c.lureLayer == 0 {
 		return 1
 	}
-	if s.tunableF("fish_ecology_enabled", 0) != 1 {
+	// 昼夜层与生态总开关解耦：整套生态（水温/水层/天气/清澈度）默认关，
+	// 但「这种鱼这个时段活不活跃」是玩家能直接感知的手感，默认就参与判鱼。
+	ecologyOn := s.tunableF("fish_ecology_enabled", 0) == 1
+	dielOn := s.tunableF("fish_diel_weight_enabled", 1) == 1
+	if !ecologyOn && !dielOn {
 		return 1
 	}
 	p := s.cachedFishEcology(ctx, c, key)
-	if !p.Enabled {
+	// 「全局不出鱼」只属于生态总开关：昼夜层只是乘子，不该让鱼凭空消失。
+	if ecologyOn && !p.Enabled {
 		return 0
+	}
+	_, hour := worldDayAndHour(c.now.Unix())
+	diel := fishDielWeight(p, hour,
+		s.tunableF("fish_diel_active_boost", 2.0),
+		s.tunableF("fish_diel_inactive_penalty", 0.3))
+	// 钓法倾向：钓法族 × 鱼种水层档的显式乘子（后台可配）。它与生态总开关解耦，
+	// 因为"底钓更该上底层鱼"和"水温/水层/天气"是两件事，关掉生态不该把它一起关掉。
+	affinity := s.rigAffinityWeight(ctx, key, c)
+	if !ecologyOn {
+		// 只开昼夜层时直接返回该系数：不牵连水层、水温、天气、清澈度。
+		return clampFloat(diel*affinity, .02, 4)
 	}
 	type weightedFactor struct {
 		value     float64
@@ -315,8 +448,9 @@ func (s *Server) fishBiteEnvironmentWeight(ctx context.Context, key string, c fi
 	factors := []weightedFactor{{
 		value: s.fishLayerWeightProfile(p, c), tolerance: c.skill.LayerAccuracy,
 	}}
-	_, hour := worldDayAndHour(c.now.Unix())
-	factors = append(factors, weightedFactor{fishDielWeight(p, hour), c.skill.EcologyInterest})
+	if dielOn {
+		factors = append(factors, weightedFactor{diel, c.skill.EcologyInterest})
+	}
 	water := fishWaterConditionsFor(p, c)
 	factors = append(factors,
 		weightedFactor{fishSeasonWeight(p, water.Season), c.skill.WeatherAdaptation},
@@ -361,30 +495,52 @@ func (s *Server) fishBiteEnvironmentWeight(ctx context.Context, key string, c fi
 		}
 		factor *= math.Pow(clampFloat(value, floor, 2.0), exponent)
 	}
-	return clampFloat(factor, .08, 2.5)
+	// 钓法倾向放在幂压缩与原有夹取之后原样相乘：它是玩家/运维直接设定的"倍率"，
+	// 若也走 .35 次幂，填 1.6 实际只放大 1.18，后台就没法对着数字调了。
+	// 原有 .08~2.5 的夹取保持不变（affinity=1 时行为与改动前逐位一致），
+	// 只在乘完之后放宽到 .02~4，避免单条鱼因多层叠乘把整图鱼口抽干。
+	factor = clampFloat(factor, .08, 2.5) * affinity
+	return clampFloat(factor, .02, 4)
 }
 
-// activityForDiel 将游戏小时映射到夜、晨、日、昏四段。
-func fishActivityForHour(hour int64) float64 {
-	hour = (hour%24 + 24) % 24
-	switch {
-	case hour >= 5 && hour < 9:
-		return 1
-	case hour >= 9 && hour < 16:
-		return 2
-	case hour >= 16 && hour < 20:
-		return 3
-	default:
-		return 0
-	}
+// fishActivityForHour 把游戏小时映射到昼夜掩码的**位序**（不是时段编号）：
+// 0=晨 1=昼 2=暮 3=夜，与后台「1 晨 2 昼 4 暮 8 夜」的位定义严格一一对应。
+//
+// 分段规则本身在 internal/worldclock —— 后台也要按同一套算术算「现在哪个时段」，
+// 两边各写一份迟早会漂。2026-11-17 曾修正过一次位映射错位（原返回时段编号再被
+// 当位序用，整体错一格），改正后由 worldclock.SegmentOf 统一负责。
+func fishActivityForHour(hour int64) uint {
+	return uint(worldclock.SegmentOf(hour))
 }
 
-func fishDielWeight(profile fishEcologyProfile, hour int64) float64 {
-	bit := uint(fishActivityForHour(hour))
+// fishDielWeight 返回昼夜系数：该鱼种处在活跃时段拿加成，非活跃时段拿压制（默认 0.3）。
+//
+// 加成按「专一度」分档而不是一刀切：活跃段数越少、越是只在特定时段出没的鱼，
+// 那个时段就该越集中。全时段活跃的鱼（4 段）拿 1.0——它本来一直在，没有时段红利
+// 可拿。详见 dielActiveBoost。
+//
+// 窝料门等只要「会不会被吸引」的地方会把结果再夹到 ≤1，因此 >1 的加成只作用在判鱼权重上。
+func fishDielWeight(profile fishEcologyProfile, hour int64, activeBoost, inactivePenalty float64) float64 {
+	bit := fishActivityForHour(hour)
 	if profile.DielMask&(1<<bit) != 0 {
-		return 1
+		return dielActiveBoost(profile.DielMask, activeBoost)
 	}
-	return .35
+	return inactivePenalty
+}
+
+// dielActiveBoost 把「峰值加成 peak」按活跃段数折算：
+//
+//	1 段（专性，如纯夜行）→ peak（默认 2.0，夜间权重翻倍）
+//	2 段                   → 1+(peak-1)/3
+//	3 段                   → 1+2(peak-1)/3
+//	4 段（全天活跃）       → 1.0，没有时段红利
+//
+// 这样纯夜行鱼夜里 2.0、白天 0.3（约 6.7 倍差距），而「昼夜都活跃」的鱼几乎不受影响，
+// 不会因为开了昼夜权重就整图鱼口重新洗牌。
+// dielActiveBoost 见 worldclock.ActiveBoost —— 后台展示要用同一套折算，
+// 所以公式放在共享包里，这里只是保持判鱼侧的调用名不变。
+func dielActiveBoost(mask int64, peak float64) float64 {
+	return worldclock.ActiveBoost(mask, peak)
 }
 
 func fishEcologyJSONMap(raw string) map[string]float64 {

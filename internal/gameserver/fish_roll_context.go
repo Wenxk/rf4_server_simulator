@@ -42,6 +42,8 @@ type fishRollContext struct {
 	// emptyReason 记录把候选滤空的那一层（诊断日志用，不进玩家提示）。
 	// 指针随值拷贝存活，与 gateBlocked 同款用法。
 	emptyReason *string
+	// trace 是判鱼决策快照（nil = 不采）。开关关闭时保持 nil，判鱼路径零额外开销。
+	trace *fishRollTrace
 	// pityEnv 是保底杂口标记：连续多轮空杆后由咬钩计时器置位，
 	// 只放宽环境类因素（分布散布归零→0.15、水层地板≥0.05），
 	// 食性硬门（G1 拟饵×非掠食鱼、明确禁饵）不放宽。

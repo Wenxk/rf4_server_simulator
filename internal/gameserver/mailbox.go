@@ -1046,6 +1046,12 @@ func (s *Server) execAdminCmd(cmd *AdminCommand) {
 	case "reload_bait_rules":
 		s.invalidateBaitOverrides()
 		s.log.Info("管理指令：鱼饵规则覆盖已刷新")
+	case "reload_fish_ecology":
+		s.invalidateFishEcologyCache()
+		if err := s.reloadFishEcologyCache(s.dbCtx()); err != nil {
+			s.log.Warn("水域生态覆盖刷新失败", "err", err)
+		}
+		s.log.Info("管理指令：水域生态覆盖已刷新")
 	case "reload_fish_zones":
 		s.fishZoneMu.Lock()
 		s.fishZoneCache = nil

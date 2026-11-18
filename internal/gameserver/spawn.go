@@ -12,6 +12,7 @@ import (
 
 	"rf4server/internal/proto"
 	"rf4server/internal/wiregen"
+	"rf4server/internal/worldclock"
 )
 
 //go:embed assets/map_defs.json
@@ -23,11 +24,12 @@ var mapDefsJSON []byte
 // 地图树来自 map_defs.json；下发前会把逐日预报和逐小时天气计划重锚到当前时刻。
 // 客户端直接按 206 对象解析响应，因此不能返回空 args。
 
-// 游戏时间换算常量。
+// 游戏时间换算常量。时钟本体在 internal/worldclock（后台也要按同一套算术判断昼夜），
+// 这里保留同名别名，既有调用点不必改。
 const (
-	worldDayEpochUnix   = 1438387200 // 2015-08-01 00:00:00 UTC（游戏历元）
-	gameHoursPerRealHr  = 24         // 1 真实小时 = 24 游戏小时
-	realSecPerGameHour  = 150        // 150 真实秒 = 1 游戏小时
+	worldDayEpochUnix   = worldclock.EpochUnix          // 2015-08-01 00:00:00 UTC（游戏历元）
+	gameHoursPerRealHr  = 24                            // 1 真实小时 = 24 游戏小时
+	realSecPerGameHour  = worldclock.RealSecPerGameHour // 150 真实秒 = 1 游戏小时
 	spawnLevelKey       = "level_001_lake"
 	spawnScene          = "loc1_01"
 	dobClassID          = 205
@@ -58,10 +60,7 @@ func loadMapDefs() (map[string]json.RawMessage, error) {
 
 // worldDayAndHour 当前游戏日号（自 2015-08-01 起的真实小时数）与游戏小时。
 func worldDayAndHour(nowUnix int64) (day, hour int64) {
-	secs := nowUnix - worldDayEpochUnix
-	day = secs / 3600
-	hour = (secs / realSecPerGameHour) % 24
-	return
+	return worldclock.DayAndHour(nowUnix)
 }
 
 // irField 表示地图数据中的一个字段节点。

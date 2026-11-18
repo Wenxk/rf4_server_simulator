@@ -1338,6 +1338,7 @@ func (s *Server) rollFishFromDBWithRules(loc, bait string, gearCapKg float64, bo
 	// 硬性鱼口资格门（bite_gate_enabled，默认关）：拟饵不喂非掠食鱼、
 	// 天然饵按攻略+生态双票、水层超界只留极小杂口。剔空整杆走
 	// 「本轮无符合条件的鱼」重排。空因写进 c.emptyReason（诊断日志用）。
+	c.trace.step(rollStageRoster, keys, wts)
 	markEmpty := func(reason string) {
 		if c.emptyReason != nil {
 			*c.emptyReason = reason
@@ -1345,6 +1346,7 @@ func (s *Server) rollFishFromDBWithRules(loc, bait string, gearCapKg float64, bo
 	}
 	if gate := s.biteGateConfig(); gate.enabled {
 		keys, wts = s.applyBiteGates(cctx, keys, wts, c, gate, statLoc)
+		c.trace.step(rollStageGate, keys, wts)
 		if len(keys) == 0 {
 			markEmpty("食性/水层硬门")
 			if c.gateBlocked != nil {
@@ -1357,6 +1359,7 @@ func (s *Server) rollFishFromDBWithRules(loc, bait string, gearCapKg float64, bo
 	// 落点命中独占区只出名单鱼种，命中增益区名单内加权、名单外打折。
 	if zk, zw, hit := s.applyFishZoneRoster(cctx, statLoc, keys, wts, c); hit {
 		keys, wts = zk, zw
+		c.trace.step(rollStageZone, keys, wts)
 		if len(keys) == 0 {
 			markEmpty("区域名册（独占区无交集）")
 			if c.gateBlocked != nil {
@@ -1372,6 +1375,7 @@ func (s *Server) rollFishFromDBWithRules(loc, bait string, gearCapKg float64, bo
 			base[key] = wts[i]
 		}
 		keys, wts = s.filterFishBaitSet(statLoc, c.baits, keys, wts, c.now, c)
+		c.trace.step(rollStageBait, keys, wts)
 		if len(keys) == 0 {
 			markEmpty("饵料规则（strict）")
 			return nil
@@ -1384,6 +1388,7 @@ func (s *Server) rollFishFromDBWithRules(loc, bait string, gearCapKg float64, bo
 	// distribution function to every region without rerunning the DB pipeline.
 	if distribution && (c.query == nil || !c.query.regional) {
 		applyFishDistribution(statLoc, keys, wts, c)
+		c.trace.step(rollStageDist, keys, wts)
 		if !slices.ContainsFunc(wts, func(w float64) bool { return w > 0 }) {
 			markEmpty("分布散布（本时段本格无鱼）")
 			return nil
@@ -1392,10 +1397,13 @@ func (s *Server) rollFishFromDBWithRules(loc, bait string, gearCapKg float64, bo
 	for i, key := range keys {
 		wts[i] *= s.fishBiteEnvironmentWeight(cctx, key, c)
 	}
+	c.trace.step(rollStageEcology, keys, wts)
 	applyFishSpotBias(keys, wts, c.runtime.spotPref, c.runtime.spotData)
+	c.trace.step(rollStageSpot, keys, wts)
 	// 窝料吸引：把落点格子里那锅料的食性亲和乘到候选权重上。
 	// 关掉 groundbait_enabled 时这里一行都不执行。
 	s.applyGroundbaitWeight(cctx, &c, keys, wts)
+	c.trace.step(rollStageGroundbait, keys, wts)
 	if !slices.ContainsFunc(wts, func(w float64) bool { return w > 0 }) {
 		return nil
 	}
@@ -1428,6 +1436,9 @@ func (s *Server) rollFishFromDBWithRules(loc, bait string, gearCapKg float64, bo
 			wts[i] *= (0.9 - 0.6*cov) * prefScale
 		}
 	}
+	if tiers != nil {
+		c.trace.step(rollStageBaitTier, keys, wts)
+	}
 	scale := s.tunableF("fish_weight_scale", 1)
 	if scale <= 0 {
 		scale = 1
@@ -1446,6 +1457,8 @@ func (s *Server) rollFishFromDBWithRules(loc, bait string, gearCapKg float64, bo
 		})
 		return nil
 	}
+	// 抽签前定稿：追踪的最后一层就是真正参与抽签的权重。
+	c.trace.step(rollStageFinal, keys, wts)
 	for range len(keys) {
 		if !slices.ContainsFunc(wts, func(w float64) bool { return w > 0 }) {
 			return nil
@@ -1885,8 +1898,10 @@ func (s *Server) rollFishPoolsWithRules(loc string, gearCapKg float64, bonus fis
 		keys[i] = p.species
 		wts[i] = s.fishBiteEnvironmentWeight(s.dbCtx(), p.species, c)
 	}
+	c.trace.step(rollStagePool, keys, wts)
 	if gate := s.biteGateConfig(); gate.enabled {
 		keys, wts = s.applyBiteGates(s.dbCtx(), keys, wts, c, gate, "")
+		c.trace.step(rollStageGate, keys, wts)
 		if len(keys) == 0 {
 			return nil
 		}
@@ -1918,6 +1933,7 @@ func (s *Server) rollFishPoolsWithRules(loc string, gearCapKg float64, bonus fis
 		})
 		return nil
 	}
+	c.trace.step(rollStageFinal, keys, wts)
 	key := weightedChoice(keys, wts)
 	if strict {
 		for i := range keys {
@@ -3086,10 +3102,12 @@ func (s *Server) onRodBiteTimerTicket(uid int64, st *FishState, ticket fishingTi
 			lureLayer: lureLayer, lureAction: lureAction, lureMask: lureMask, lureSpeed: lureSpeed, rigType: rigType,
 			onBoat: boatOn, boatKnown: boatKnown, pityEnv: pity,
 			emptyReason: &reason,
+			trace:       s.newRollTrace(),
 			now:         now, weather: sess.weatherAt(st.Loc, now), happyBite: sess.currentHappyHour().BiteBonus,
 		}
 	}
 	rollCtx := buildRollCtx(false)
+	trace := rollCtx.trace
 	f := s.rollFishForRig(s.dbCtx(), uid, st.GearGuid, st.Loc, st.Bait, st.Bonus, rollCtx)
 	if f == nil {
 		st.EmptyStreak++
@@ -3099,6 +3117,7 @@ func (s *Server) onRodBiteTimerTicket(uid int64, st *FishState, ticket fishingTi
 			pityCtx := buildRollCtx(true)
 			if f = s.rollFishForRig(s.dbCtx(), uid, st.GearGuid, st.Loc, st.Bait, st.Bonus, pityCtx); f != nil {
 				st.EmptyStreak = 0
+				trace = pityCtx.trace
 				s.log.Info("保底杂口", "rod", shortGUID(st.GearGuid), "鱼种", f.Species, "连续空轮", pityN)
 			}
 		}
@@ -3114,11 +3133,20 @@ func (s *Server) onRodBiteTimerTicket(uid int64, st *FishState, ticket fishingTi
 		s.log.Info("本轮无符合条件的鱼，继续等待", "rod", shortGUID(st.GearGuid), "rig_type", st.RigType,
 			"x", math.Round(x), "z", math.Round(z), "网格", fishArea(st.Loc, rollC), "区域", zoneNote, "空因", reason,
 			"连续空轮", st.EmptyStreak)
+		s.recordFishRollTrace(s.dbCtx(), fishRollTraceInput{
+			UID: uid, Loc: st.Loc, Spot: st.Spot, X: x, Z: z,
+			RigType: st.RigType, Bait: st.Bait, EmptyReason: reason, Trace: trace,
+		})
 		s.emptyWeatherBiteLocked(sess, st, now)
 		st.mu.Unlock()
 		return
 	}
 	st.EmptyStreak = 0
+	// 追踪必须在改动 f 之前落：记录的是判鱼那一刻的选择。
+	s.recordFishRollTrace(s.dbCtx(), fishRollTraceInput{
+		UID: uid, Loc: st.Loc, Spot: st.Spot, X: x, Z: z,
+		RigType: st.RigType, Bait: st.Bait, Fish: f, Trace: trace,
+	})
 	// 鱼吃口扣份：窝被吃薄，死窝会自己缓过来（设计稿第 6 节）。
 	s.groundbaitConsumeBite(s.dbCtx(), uid, st.Loc, x, z, hasPos, st.Spot, s.tunableF("groundbait_consume_bite", 0.20))
 	if !f.BaitsKnown {

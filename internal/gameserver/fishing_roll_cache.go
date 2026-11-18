@@ -332,21 +332,31 @@ func (s *Server) cachedSettleStatics(ctx context.Context, c fishRollContext, key
 }
 
 func (s *Server) cachedFishEcology(ctx context.Context, c fishRollContext, key string) fishEcologyProfile {
+	// 生态档案按（水域 × 鱼种）取：先解析统计名册水域，缓存键随之带上 stat_loc——
+	// 区域估算会在一次会话内跨水域复用同一份 roll cache，只按 fish_key 缓存会串图。
+	statLoc := ""
+	if s != nil && s.DB != nil && c.loc != "" {
+		statLoc = s.cachedResolveStatLoc(ctx, c, c.loc)
+	}
+	cacheKey := key
+	if statLoc != "" {
+		cacheKey = statLoc + "\x00" + key
+	}
 	cache := rollCache(c)
 	if cache == nil {
-		return s.fishEcology(ctx, key)
+		return s.fishEcologyFor(ctx, statLoc, key)
 	}
 	cache.mu.Lock()
-	if cache.fishEcologyLoaded[key] {
-		profile := cache.fishEcology[key]
+	if cache.fishEcologyLoaded[cacheKey] {
+		profile := cache.fishEcology[cacheKey]
 		cache.mu.Unlock()
 		return profile
 	}
 	cache.mu.Unlock()
-	profile := s.fishEcology(ctx, key)
+	profile := s.fishEcologyFor(ctx, statLoc, key)
 	cache.mu.Lock()
-	cache.fishEcology[key] = profile
-	cache.fishEcologyLoaded[key] = true
+	cache.fishEcology[cacheKey] = profile
+	cache.fishEcologyLoaded[cacheKey] = true
 	cache.mu.Unlock()
 	return profile
 }

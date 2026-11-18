@@ -21,7 +21,7 @@
     "aggression": 1.3401,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "葛氏鲈塘鳢",
       "profile": "deterministic species ecology baseline",
@@ -50,7 +50,7 @@
     "aggression": 1.2211,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "花鲶",
       "profile": "deterministic species ecology baseline",
@@ -79,7 +79,7 @@
     "aggression": 1.2555,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "北极红点鲑",
       "profile": "deterministic species ecology baseline",
@@ -108,7 +108,7 @@
     "aggression": 1.2652,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "茴鱼",
       "profile": "deterministic species ecology baseline",
@@ -137,7 +137,7 @@
     "aggression": 1.2088,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "秋白鲑﻿",
       "profile": "deterministic species ecology baseline",
@@ -166,7 +166,7 @@
     "aggression": 1.2092,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "大西洋鲑鱼",
       "profile": "deterministic species ecology baseline",
@@ -195,7 +195,7 @@
     "aggression": 1.2278,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "亚洲胡瓜鱼",
       "profile": "deterministic species ecology baseline",
@@ -224,7 +224,7 @@
     "aggression": 0.9998,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "鳄雀鳝",
       "profile": "deterministic species ecology baseline",
@@ -253,7 +253,7 @@
     "aggression": 0.9884,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "白化鲃鱼",
       "profile": "deterministic species ecology baseline",
@@ -282,7 +282,7 @@
     "aggression": 1.02,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "十指金眼鲷",
       "profile": "deterministic species ecology baseline",
@@ -311,7 +311,7 @@
     "aggression": 0.9867,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "极北鳐﻿",
       "profile": "deterministic species ecology baseline",
@@ -340,7 +340,7 @@
     "aggression": 0.9794,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "钝头鳐﻿",
       "profile": "deterministic species ecology baseline",
@@ -369,7 +369,7 @@
     "aggression": 1.2989,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "赤梢鱼",
       "profile": "deterministic species ecology baseline",
@@ -398,7 +398,7 @@
     "aggression": 1.0923,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "大西洋鳕﻿",
       "profile": "deterministic species ecology baseline",
@@ -427,7 +427,7 @@
     "aggression": 1.0386,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "大西洋鲱﻿",
       "profile": "deterministic species ecology baseline",
@@ -456,7 +456,7 @@
     "aggression": 1.0057,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "上口欧鳊",
       "profile": "deterministic species ecology baseline",
@@ -485,7 +485,7 @@
     "aggression": 1.0655,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黑鲩",
       "profile": "deterministic species ecology baseline",
@@ -514,7 +514,7 @@
     "aggression": 1.0419,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "蓝鳃太阳鱼",
       "profile": "deterministic species ecology baseline",
@@ -543,7 +543,7 @@
     "aggression": 1.0548,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "勃氏西鯡",
       "profile": "deterministic species ecology baseline",
@@ -572,7 +572,7 @@
     "aggression": 1.2678,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "贝加尔白鲑",
       "profile": "deterministic species ecology baseline",
@@ -601,7 +601,7 @@
     "aggression": 1.0581,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黑等鳍叉尾带鱼",
       "profile": "deterministic species ecology baseline",
@@ -630,7 +630,7 @@
     "aggression": 1.2951,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "董氏须鳅",
       "profile": "deterministic species ecology baseline",
@@ -659,7 +659,7 @@
     "aggression": 1.3644,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "俄罗斯梭吻鲈",
       "profile": "deterministic species ecology baseline",
@@ -688,7 +688,7 @@
     "aggression": 1.3817,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "欧洲鳇",
       "profile": "deterministic species ecology baseline",
@@ -717,7 +717,7 @@
     "aggression": 0.9939,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "鳙鱼",
       "profile": "deterministic species ecology baseline",
@@ -746,7 +746,7 @@
     "aggression": 1.0386,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黑牛胭脂鱼",
       "profile": "deterministic species ecology baseline",
@@ -775,7 +775,7 @@
     "aggression": 0.9926,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黑斑刺盖太阳鱼",
       "profile": "deterministic species ecology baseline",
@@ -804,7 +804,7 @@
     "aggression": 1.3616,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "眼点丽鱼",
       "profile": "deterministic species ecology baseline",
@@ -833,7 +833,7 @@
     "aggression": 1.0677,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "欧鳊",
       "profile": "deterministic species ecology baseline",
@@ -862,7 +862,7 @@
     "aggression": 1.2255,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "隆头鳟（黑海鲑）",
       "profile": "manual baseline cloned from l_salmon (same salmonid, same 14k/20k lines), 2026-11-15",
@@ -891,7 +891,7 @@
     "aggression": 1.0655,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "大口水牛鱼",
       "profile": "deterministic species ecology baseline",
@@ -920,7 +920,7 @@
     "aggression": 1.2864,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "西伯利亚杜父鱼",
       "profile": "deterministic species ecology baseline",
@@ -949,7 +949,7 @@
     "aggression": 1.281,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "江鳕",
       "profile": "deterministic species ecology baseline",
@@ -978,7 +978,7 @@
     "aggression": 1.0578,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "金鲫",
       "profile": "deterministic species ecology baseline",
@@ -1007,7 +1007,7 @@
     "aggression": 1.0052,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "常见拟鲤",
       "profile": "deterministic species ecology baseline",
@@ -1036,7 +1036,7 @@
     "aggression": 1.4651,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "皱鳃鲨",
       "profile": "deterministic species ecology baseline",
@@ -1065,7 +1065,7 @@
     "aggression": 1.021,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "常见鲃鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -1094,7 +1094,7 @@
     "aggression": 0.9116,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "欧鲌",
       "profile": "deterministic species ecology baseline",
@@ -1123,7 +1123,7 @@
     "aggression": 1.0748,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "里海西鲱",
       "profile": "deterministic species ecology baseline",
@@ -1152,7 +1152,7 @@
     "aggression": 1.1381,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "里海七鳃鳗",
       "profile": "deterministic species ecology baseline",
@@ -1181,7 +1181,7 @@
     "aggression": 1.0681,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "大鼻软口鱼",
       "profile": "deterministic species ecology baseline",
@@ -1210,7 +1210,7 @@
     "aggression": 1.0012,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "欧洲鱿鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -1239,7 +1239,7 @@
     "aggression": 1.0553,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "普通鲤鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -1268,7 +1268,7 @@
     "aggression": 0.9757,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "鳞鲤(白化)",
       "profile": "deterministic species ecology baseline",
@@ -1297,7 +1297,7 @@
     "aggression": 1.0462,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "鳞鲤(人面鲤)",
       "profile": "deterministic species ecology baseline",
@@ -1326,7 +1326,7 @@
     "aggression": 1.0385,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "匈红鲤(鳞鲤)",
       "profile": "deterministic species ecology baseline",
@@ -1355,7 +1355,7 @@
     "aggression": 1.0465,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黑长鲳﻿",
       "profile": "deterministic species ecology baseline",
@@ -1384,7 +1384,7 @@
     "aggression": 1.4535,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "姥鲨",
       "profile": "deterministic species ecology baseline",
@@ -1413,7 +1413,7 @@
     "aggression": 1.3645,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黑海欧洲鰉",
       "profile": "deterministic species ecology baseline",
@@ -1442,7 +1442,7 @@
     "aggression": 1.261,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "斑点叉尾鮰",
       "profile": "deterministic species ecology baseline",
@@ -1471,7 +1471,7 @@
     "aggression": 1.044,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "长体西鯡",
       "profile": "deterministic species ecology baseline",
@@ -1500,7 +1500,7 @@
     "aggression": 0.9738,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "蒙古红鲌",
       "profile": "deterministic species ecology baseline",
@@ -1529,7 +1529,7 @@
     "aggression": 1.2459,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "廓里湖红点鲑",
       "profile": "deterministic species ecology baseline",
@@ -1558,7 +1558,7 @@
     "aggression": 1.0173,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "大鳞麻哈鱼",
       "profile": "deterministic species ecology baseline",
@@ -1587,7 +1587,7 @@
     "aggression": 1.0426,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "大西洋银鲛",
       "profile": "deterministic species ecology baseline",
@@ -1616,7 +1616,7 @@
     "aggression": 1.2464,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "宽鼻白鲑﻿",
       "profile": "deterministic species ecology baseline",
@@ -1645,7 +1645,7 @@
     "aggression": 1.0246,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "冰岛海扇蛤",
       "profile": "deterministic species ecology baseline",
@@ -1674,7 +1674,7 @@
     "aggression": 1.0572,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "亚口鱼",
       "profile": "deterministic species ecology baseline",
@@ -1703,7 +1703,7 @@
     "aggression": 1.1495,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "绿青鳕﻿",
       "profile": "deterministic species ecology baseline",
@@ -1732,7 +1732,7 @@
     "aggression": 1.0486,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "三花鲤鱼",
       "profile": "deterministic species ecology baseline",
@@ -1761,7 +1761,7 @@
     "aggression": 1.1232,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "欧洲康吉鳗",
       "profile": "deterministic species ecology baseline",
@@ -1790,7 +1790,7 @@
     "aggression": 1.0332,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "河鳌虾",
       "profile": "deterministic species ecology baseline",
@@ -1819,7 +1819,7 @@
     "aggression": 1.0049,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "银鲫",
       "profile": "deterministic species ecology baseline",
@@ -1848,7 +1848,7 @@
     "aggression": 0.8865,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "小齿狼鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -1877,7 +1877,7 @@
     "aggression": 0.946,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "雅罗鱼",
       "profile": "deterministic species ecology baseline",
@@ -1906,7 +1906,7 @@
     "aggression": 1.0609,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "丁克斯带形鲤",
       "profile": "deterministic species ecology baseline",
@@ -1935,7 +1935,7 @@
     "aggression": 1.0236,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "丁克斯镜鲤",
       "profile": "deterministic species ecology baseline",
@@ -1964,7 +1964,7 @@
     "aggression": 0.9772,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "丁克斯无鳞鲤",
       "profile": "deterministic species ecology baseline",
@@ -1993,7 +1993,7 @@
     "aggression": 1.2454,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黄斑红点鲑﻿",
       "profile": "deterministic species ecology baseline",
@@ -2022,7 +2022,7 @@
     "aggression": 0.9816,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "河斑马纹贻贝",
       "profile": "deterministic species ecology baseline",
@@ -2051,7 +2051,7 @@
     "aggression": 0.9204,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "诸子鲦",
       "profile": "deterministic species ecology baseline",
@@ -2080,7 +2080,7 @@
     "aggression": 1.35,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "梭鲈鱼",
       "profile": "deterministic species ecology baseline",
@@ -2109,7 +2109,7 @@
     "aggression": 0.9711,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "东方欧鳊",
       "profile": "deterministic species ecology baseline",
@@ -2138,7 +2138,7 @@
     "aggression": 1.2607,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "胡瓜鱼",
       "profile": "deterministic species ecology baseline",
@@ -2167,7 +2167,7 @@
     "aggression": 1.0587,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "食用蟹",
       "profile": "deterministic species ecology baseline",
@@ -2196,7 +2196,7 @@
     "aggression": 1.0829,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "鳗鱼",
       "profile": "deterministic species ecology baseline",
@@ -2225,7 +2225,7 @@
     "aggression": 1.1144,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "雷氏七鳃鳗",
       "profile": "deterministic species ecology baseline",
@@ -2254,7 +2254,7 @@
     "aggression": 1.2749,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "铲鮰",
       "profile": "deterministic species ecology baseline",
@@ -2283,7 +2283,7 @@
     "aggression": 1.0465,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "珠蚌",
       "profile": "deterministic species ecology baseline",
@@ -2312,7 +2312,7 @@
     "aggression": 1.0254,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "青蛙",
       "profile": "deterministic species ecology baseline",
@@ -2341,7 +2341,7 @@
     "aggression": 1.0178,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "淡水石首鱼",
       "profile": "deterministic species ecology baseline",
@@ -2370,7 +2370,7 @@
     "aggression": 1.067,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "草鱼",
       "profile": "deterministic species ecology baseline",
@@ -2399,7 +2399,7 @@
     "aggression": 1.0113,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "白化草鱼",
       "profile": "deterministic species ecology baseline",
@@ -2428,7 +2428,7 @@
     "aggression": 1.1113,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "美洲真鰶",
       "profile": "deterministic species ecology baseline",
@@ -2457,7 +2457,7 @@
     "aggression": 1.027,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "金丁鱥",
       "profile": "deterministic species ecology baseline",
@@ -2486,7 +2486,7 @@
     "aggression": 1.2118,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "湖鳟鱼",
       "profile": "deterministic species ecology baseline",
@@ -2515,7 +2515,7 @@
     "aggression": 1.2432,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "莱文氏红点鲑",
       "profile": "deterministic species ecology baseline",
@@ -2544,7 +2544,7 @@
     "aggression": 1.0179,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "湖鱥",
       "profile": "deterministic species ecology baseline",
@@ -2573,7 +2573,7 @@
     "aggression": 1.1901,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "粉鲑﻿",
       "profile": "deterministic species ecology baseline",
@@ -2602,7 +2602,7 @@
     "aggression": 0.9151,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "常见鮈鱼",
       "profile": "deterministic species ecology baseline",
@@ -2631,7 +2631,7 @@
     "aggression": 1.1869,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "马舌鲽﻿",
       "profile": "deterministic species ecology baseline",
@@ -2660,7 +2660,7 @@
     "aggression": 1.0901,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "庸鲽﻿",
       "profile": "deterministic species ecology baseline",
@@ -2689,7 +2689,7 @@
     "aggression": 1.015,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "绯写锦鲤",
       "profile": "deterministic species ecology baseline",
@@ -2718,7 +2718,7 @@
     "aggression": 1.0393,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "多指鞭冠𩽾𩾌",
       "profile": "deterministic species ecology baseline",
@@ -2747,7 +2747,7 @@
     "aggression": 1.133,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "长拟庸鲽﻿",
       "profile": "deterministic species ecology baseline",
@@ -2776,7 +2776,7 @@
     "aggression": 1.2757,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "杂交条纹狼鲈",
       "profile": "deterministic species ecology baseline",
@@ -2805,7 +2805,7 @@
     "aggression": 1.0712,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黑背西鲱",
       "profile": "deterministic species ecology baseline",
@@ -2834,7 +2834,7 @@
     "aggression": 1.246,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "里海鲑鱼",
       "profile": "deterministic species ecology baseline",
@@ -2863,7 +2863,7 @@
     "aggression": 1.3081,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "达氏鳇",
       "profile": "deterministic species ecology baseline",
@@ -2892,7 +2892,7 @@
     "aggression": 0.9783,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "鲤鲫",
       "profile": "deterministic species ecology baseline",
@@ -2921,7 +2921,7 @@
     "aggression": 1.5113,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "白斑角鲨﻿",
       "profile": "deterministic species ecology baseline",
@@ -2950,7 +2950,7 @@
     "aggression": 1.0377,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "大麻哈鱼",
       "profile": "deterministic species ecology baseline",
@@ -2979,7 +2979,7 @@
     "aggression": 1.211,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "银鳟鱼",
       "profile": "deterministic species ecology baseline",
@@ -3008,7 +3008,7 @@
     "aggression": 0.9753,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "红白锦鲤",
       "profile": "deterministic species ecology baseline",
@@ -3037,7 +3037,7 @@
     "aggression": 1.2381,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "白斑红点鲑",
       "profile": "deterministic species ecology baseline",
@@ -3066,7 +3066,7 @@
     "aggression": 0.9779,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "库图拟鲤",
       "profile": "deterministic species ecology baseline",
@@ -3095,7 +3095,7 @@
     "aggression": 0.984,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "库尔斯多夫丁鱥",
       "profile": "deterministic species ecology baseline",
@@ -3124,7 +3124,7 @@
     "aggression": 1.044,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "带形镜鲤",
       "profile": "deterministic species ecology baseline",
@@ -3153,7 +3153,7 @@
     "aggression": 1.0126,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "带形镜鲤(白化)",
       "profile": "deterministic species ecology baseline",
@@ -3182,7 +3182,7 @@
     "aggression": 0.9934,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "带形镜鲤(人面鲤)",
       "profile": "deterministic species ecology baseline",
@@ -3211,7 +3211,7 @@
     "aggression": 0.9058,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "湖大吻鱥",
       "profile": "deterministic species ecology baseline",
@@ -3240,7 +3240,7 @@
     "aggression": 1.2255,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "拉多加鲑",
       "profile": "deterministic species ecology baseline",
@@ -3269,7 +3269,7 @@
     "aggression": 1.3035,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "拉多加鲟",
       "profile": "deterministic species ecology baseline",
@@ -3298,7 +3298,7 @@
     "aggression": 1.4667,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "鼠鲨",
       "profile": "deterministic species ecology baseline",
@@ -3327,7 +3327,7 @@
     "aggression": 1.0539,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "斑点月鱼",
       "profile": "deterministic species ecology baseline",
@@ -3356,7 +3356,7 @@
     "aggression": 1.2239,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "细鳞鲑﻿",
       "profile": "deterministic species ecology baseline",
@@ -3385,7 +3385,7 @@
     "aggression": 1.2409,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "图们江细鳞鲑",
       "profile": "deterministic species ecology baseline",
@@ -3414,7 +3414,7 @@
     "aggression": 1.1178,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "长吻黄盖鲽﻿",
       "profile": "deterministic species ecology baseline",
@@ -3443,7 +3443,7 @@
     "aggression": 1.279,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "大口黑鲈",
       "profile": "deterministic species ecology baseline",
@@ -3472,7 +3472,7 @@
     "aggression": 1.018,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "钓鮟鱇",
       "profile": "deterministic species ecology baseline",
@@ -3501,7 +3501,7 @@
     "aggression": 1.1726,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "伊氏狼绵鳚",
       "profile": "deterministic species ecology baseline",
@@ -3530,7 +3530,7 @@
     "aggression": 1.1515,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "半裸狼绵鳚",
       "profile": "deterministic species ecology baseline",
@@ -3559,7 +3559,7 @@
     "aggression": 0.9931,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "镜鲤",
       "profile": "deterministic species ecology baseline",
@@ -3588,7 +3588,7 @@
     "aggression": 1.0104,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "镜鲤(白化)",
       "profile": "deterministic species ecology baseline",
@@ -3617,7 +3617,7 @@
     "aggression": 0.9974,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "镜鲤(人面鲤)",
       "profile": "deterministic species ecology baseline",
@@ -3646,7 +3646,7 @@
     "aggression": 1.0598,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "匈红鲤(镜鲤)",
       "profile": "deterministic species ecology baseline",
@@ -3675,7 +3675,7 @@
     "aggression": 0.973,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "圆点五色锦鲤",
       "profile": "deterministic species ecology baseline",
@@ -3704,7 +3704,7 @@
     "aggression": 1.1886,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "魣鳕﻿",
       "profile": "deterministic species ecology baseline",
@@ -3733,7 +3733,7 @@
     "aggression": 1.1279,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "短角大杜父鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -3762,7 +3762,7 @@
     "aggression": 0.8897,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "花狼鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -3791,7 +3791,7 @@
     "aggression": 1.132,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "北大西洋长尾鳕",
       "profile": "deterministic species ecology baseline",
@@ -3820,7 +3820,7 @@
     "aggression": 1.0546,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "大西洋鲭﻿",
       "profile": "deterministic species ecology baseline",
@@ -3849,7 +3849,7 @@
     "aggression": 1.2452,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "花羔红点斑鲑",
       "profile": "deterministic species ecology baseline",
@@ -3878,7 +3878,7 @@
     "aggression": 1.0509,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "大西洋白姑鱼",
       "profile": "deterministic species ecology baseline",
@@ -3907,7 +3907,7 @@
     "aggression": 1.1761,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "单鳍鳕﻿",
       "profile": "deterministic species ecology baseline",
@@ -3936,7 +3936,7 @@
     "aggression": 1.1569,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "牙鳕﻿",
       "profile": "deterministic species ecology baseline",
@@ -3965,7 +3965,7 @@
     "aggression": 1.1818,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "欧洲无须鳕﻿",
       "profile": "deterministic species ecology baseline",
@@ -3994,7 +3994,7 @@
     "aggression": 1.0037,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "绿鲤",
       "profile": "deterministic species ecology baseline",
@@ -4023,7 +4023,7 @@
     "aggression": 1.2316,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "堪察加虹鳟",
       "profile": "deterministic species ecology baseline",
@@ -4052,7 +4052,7 @@
     "aggression": 1.1806,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "蓝魣鳕﻿",
       "profile": "deterministic species ecology baseline",
@@ -4081,7 +4081,7 @@
     "aggression": 1.1968,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "穆松白鲑﻿",
       "profile": "deterministic species ecology baseline",
@@ -4110,7 +4110,7 @@
     "aggression": 1.0089,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "贻贝",
       "profile": "deterministic species ecology baseline",
@@ -4139,7 +4139,7 @@
     "aggression": 1.3577,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "常见狗鱼",
       "profile": "deterministic species ecology baseline",
@@ -4168,7 +4168,7 @@
     "aggression": 1.0367,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "鸣海浅黄锦鲤",
       "profile": "deterministic species ecology baseline",
@@ -4197,7 +4197,7 @@
     "aggression": 1.0008,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "无鳞鲤",
       "profile": "deterministic species ecology baseline",
@@ -4226,7 +4226,7 @@
     "aggression": 1.009,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "无鳞鲤(白化)",
       "profile": "deterministic species ecology baseline",
@@ -4255,7 +4255,7 @@
     "aggression": 1.0326,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "无鳞鲤 (人面鲤)",
       "profile": "deterministic species ecology baseline",
@@ -4284,7 +4284,7 @@
     "aggression": 1.1972,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "内维红点鲑",
       "profile": "deterministic species ecology baseline",
@@ -4313,7 +4313,7 @@
     "aggression": 1.1988,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "白北鲑﻿",
       "profile": "deterministic species ecology baseline",
@@ -4342,7 +4342,7 @@
     "aggression": 0.9848,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "红大麻哈鱼",
       "profile": "deterministic species ecology baseline",
@@ -4371,7 +4371,7 @@
     "aggression": 0.9782,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "橙黄金锦鲤",
       "profile": "deterministic species ecology baseline",
@@ -4400,7 +4400,7 @@
     "aggression": 1.0176,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "马苏鱼",
       "profile": "deterministic species ecology baseline",
@@ -4429,7 +4429,7 @@
     "aggression": 1.0074,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "马苏大麻哈鱼",
       "profile": "deterministic species ecology baseline",
@@ -4458,7 +4458,7 @@
     "aggression": 1.229,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "东西伯利亚茴鱼",
       "profile": "deterministic species ecology baseline",
@@ -4487,7 +4487,7 @@
     "aggression": 1.3669,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "波罗的海鲟鱼",
       "profile": "deterministic species ecology baseline",
@@ -4516,7 +4516,7 @@
     "aggression": 1.394,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "裸腹鲟",
       "profile": "deterministic species ecology baseline",
@@ -4545,7 +4545,7 @@
     "aggression": 1.0567,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "牡蛎",
       "profile": "deterministic species ecology baseline",
@@ -4574,7 +4574,7 @@
     "aggression": 1.3669,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "波斯鲟",
       "profile": "deterministic species ecology baseline",
@@ -4603,7 +4603,7 @@
     "aggression": 0.8937,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "大西洋狼鳚﻿",
       "profile": "deterministic species ecology baseline",
@@ -4632,7 +4632,7 @@
     "aggression": 1.2103,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黑口红点鲑",
       "profile": "deterministic species ecology baseline",
@@ -4661,7 +4661,7 @@
     "aggression": 1.2071,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "粗壮红点鲑",
       "profile": "deterministic species ecology baseline",
@@ -4690,7 +4690,7 @@
     "aggression": 1.2509,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "高白鲑",
       "profile": "deterministic species ecology baseline",
@@ -4719,7 +4719,7 @@
     "aggression": 1.3571,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "鲈鱼",
       "profile": "deterministic species ecology baseline",
@@ -4748,7 +4748,7 @@
     "aggression": 1.3153,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黑线鳕﻿",
       "profile": "deterministic species ecology baseline",
@@ -4777,7 +4777,7 @@
     "aggression": 1.0366,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "圆鳍鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -4806,7 +4806,7 @@
     "aggression": 1.0968,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "青鳕﻿",
       "profile": "deterministic species ecology baseline",
@@ -4835,7 +4835,7 @@
     "aggression": 1.0122,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "石斑鱼",
       "profile": "deterministic species ecology baseline",
@@ -4864,7 +4864,7 @@
     "aggression": 1.1593,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "蓝鳕﻿",
       "profile": "deterministic species ecology baseline",
@@ -4893,7 +4893,7 @@
     "aggression": 1.0035,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "驼背太阳鱼",
       "profile": "deterministic species ecology baseline",
@@ -4922,7 +4922,7 @@
     "aggression": 1.0356,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "框形镜鲤",
       "profile": "deterministic species ecology baseline",
@@ -4951,7 +4951,7 @@
     "aggression": 1.0416,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "框形镜鲤(白化)",
       "profile": "deterministic species ecology baseline",
@@ -4980,7 +4980,7 @@
     "aggression": 1.0291,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "框形镜鲤(人面鲤)",
       "profile": "deterministic species ecology baseline",
@@ -5009,7 +5009,7 @@
     "aggression": 1.3662,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "俄罗斯鲟",
       "profile": "deterministic species ecology baseline",
@@ -5038,7 +5038,7 @@
     "aggression": 1.0454,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "海平鲉﻿",
       "profile": "deterministic species ecology baseline",
@@ -5067,7 +5067,7 @@
     "aggression": 0.8822,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "小冠太阳鱼",
       "profile": "deterministic species ecology baseline",
@@ -5096,7 +5096,7 @@
     "aggression": 1.2752,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "拉多加白鲑",
       "profile": "deterministic species ecology baseline",
@@ -5125,7 +5125,7 @@
     "aggression": 1.2222,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "鳟鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -5154,7 +5154,7 @@
     "aggression": 1.2099,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "虹鳟",
       "profile": "deterministic species ecology baseline",
@@ -5183,7 +5183,7 @@
     "aggression": 0.9859,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "帝王蟹",
       "profile": "deterministic species ecology baseline",
@@ -5212,7 +5212,7 @@
     "aggression": 0.9141,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "",
       "profile": "deterministic species ecology baseline",
@@ -5241,7 +5241,7 @@
     "aggression": 0.9402,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "红鳍鱼",
       "profile": "deterministic species ecology baseline",
@@ -5256,7 +5256,7 @@
     "temp_min_c": 8.5245,
     "temp_pref_c": 17.8598,
     "temp_max_c": 27.3602,
-    "diel_mask": 11,
+    "diel_mask": 13,
     "season_mask": 15,
     "diet_json": "{\"crustacean\":0.85,\"fish\":1.45,\"lure\":1.8597161670895215,\"plant\":0.21664401608817682,\"worm\":1.7966118598485532}",
     "weather_json": "{\"clear\":0.9707,\"cloudy\":1.0721,\"few_clouds\":1.0464,\"fog\":0.9298,\"heavy_rain\":0.9391,\"rain\":1.0753,\"thunderstorm\":0.8247,\"wind\":1.0468}",
@@ -5270,7 +5270,7 @@
     "aggression": 1.296,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "梅花鲈",
       "profile": "deterministic species ecology baseline",
@@ -5299,7 +5299,7 @@
     "aggression": 1.3542,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "长吻梅花鲈",
       "profile": "deterministic species ecology baseline",
@@ -5328,7 +5328,7 @@
     "aggression": 1.0449,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "银鲷鱼",
       "profile": "deterministic species ecology baseline",
@@ -5357,7 +5357,7 @@
     "aggression": 1.2835,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "圆腹雅罗鱼",
       "profile": "deterministic species ecology baseline",
@@ -5386,7 +5386,7 @@
     "aggression": 1.3597,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "条纹狼鲈",
       "profile": "deterministic species ecology baseline",
@@ -5415,7 +5415,7 @@
     "aggression": 1.0501,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "鲢鱼",
       "profile": "deterministic species ecology baseline",
@@ -5444,7 +5444,7 @@
     "aggression": 1.0511,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "C2超级怪胎﻿",
       "profile": "deterministic species ecology baseline",
@@ -5473,7 +5473,7 @@
     "aggression": 1.1549,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黑尾叉牙七鳃鳗",
       "profile": "deterministic species ecology baseline",
@@ -5502,7 +5502,7 @@
     "aggression": 1.0061,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "竹刀鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -5531,7 +5531,7 @@
     "aggression": 1.1083,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "欧飘鱼",
       "profile": "deterministic species ecology baseline",
@@ -5560,7 +5560,7 @@
     "aggression": 1.2831,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "美洲红点鲑",
       "profile": "deterministic species ecology baseline",
@@ -5589,7 +5589,7 @@
     "aggression": 1.0924,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "沙丁鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -5618,7 +5618,7 @@
     "aggression": 1.1622,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "鲽鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -5647,7 +5647,7 @@
     "aggression": 1.0318,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "尖吻平鲉﻿",
       "profile": "deterministic species ecology baseline",
@@ -5676,7 +5676,7 @@
     "aggression": 1.0139,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "北海平鲉﻿",
       "profile": "deterministic species ecology baseline",
@@ -5705,7 +5705,7 @@
     "aggression": 1.2244,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "塞凡湖鳟",
       "profile": "deterministic species ecology baseline",
@@ -5734,7 +5734,7 @@
     "aggression": 1.0363,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "斑点雀鳝",
       "profile": "deterministic species ecology baseline",
@@ -5763,7 +5763,7 @@
     "aggression": 0.9977,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "短头梭鲃",
       "profile": "deterministic species ecology baseline",
@@ -5792,7 +5792,7 @@
     "aggression": 1.0151,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "拟鲌",
       "profile": "deterministic species ecology baseline",
@@ -5821,7 +5821,7 @@
     "aggression": 0.9983,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黑海欧白鱼",
       "profile": "deterministic species ecology baseline",
@@ -5850,7 +5850,7 @@
     "aggression": 1.1907,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "沃尔霍夫白鲑",
       "profile": "deterministic species ecology baseline",
@@ -5879,7 +5879,7 @@
     "aggression": 1.2679,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黑白鲑",
       "profile": "deterministic species ecology baseline",
@@ -5908,7 +5908,7 @@
     "aggression": 1.2603,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "廓里湖白鲑",
       "profile": "deterministic species ecology baseline",
@@ -5937,7 +5937,7 @@
     "aggression": 1.2747,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "莱芒湖白鲑",
       "profile": "deterministic species ecology baseline",
@@ -5966,7 +5966,7 @@
     "aggression": 1.2813,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "拉多加湖湖泊白鲑",
       "profile": "deterministic species ecology baseline",
@@ -5995,7 +5995,7 @@
     "aggression": 1.2442,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "奥斯特罗格白鲑",
       "profile": "deterministic species ecology baseline",
@@ -6024,7 +6024,7 @@
     "aggression": 1.2275,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "驼背白鲑",
       "profile": "deterministic species ecology baseline",
@@ -6053,7 +6053,7 @@
     "aggression": 1.217,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "瓦拉姆白鲑",
       "profile": "deterministic species ecology baseline",
@@ -6082,7 +6082,7 @@
     "aggression": 1.2057,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "武克希白鲑",
       "profile": "deterministic species ecology baseline",
@@ -6111,7 +6111,7 @@
     "aggression": 1.3079,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "小口黑鲈",
       "profile": "deterministic species ecology baseline",
@@ -6140,7 +6140,7 @@
     "aggression": 1.4422,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "小头睡鲨",
       "profile": "deterministic species ecology baseline",
@@ -6169,7 +6169,7 @@
     "aggression": 1.2976,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "斑点黑鲈",
       "profile": "deterministic species ecology baseline",
@@ -6198,7 +6198,7 @@
     "aggression": 1.3447,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "闪光鲟",
       "profile": "deterministic species ecology baseline",
@@ -6227,7 +6227,7 @@
     "aggression": 1.3142,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "小体鲟",
       "profile": "deterministic species ecology baseline",
@@ -6256,7 +6256,7 @@
     "aggression": 1.0657,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "九棘刺",
       "profile": "deterministic species ecology baseline",
@@ -6285,7 +6285,7 @@
     "aggression": 0.9806,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "平腹多刺魚",
       "profile": "deterministic species ecology baseline",
@@ -6314,7 +6314,7 @@
     "aggression": 1.0144,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "三刺鱼",
       "profile": "deterministic species ecology baseline",
@@ -6343,7 +6343,7 @@
     "aggression": 1.2264,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "斯维里河白鲑",
       "profile": "deterministic species ecology baseline",
@@ -6372,7 +6372,7 @@
     "aggression": 1.0687,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "贝加尔雅罗鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -6401,7 +6401,7 @@
     "aggression": 0.9684,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "犬首鮈",
       "profile": "deterministic species ecology baseline",
@@ -6430,7 +6430,7 @@
     "aggression": 0.9894,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "湖拟鲤﻿",
       "profile": "deterministic species ecology baseline",
@@ -6459,7 +6459,7 @@
     "aggression": 1.3789,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "西伯利亚小体鲟﻿",
       "profile": "deterministic species ecology baseline",
@@ -6488,7 +6488,7 @@
     "aggression": 1.2475,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "小白鲑﻿",
       "profile": "deterministic species ecology baseline",
@@ -6517,7 +6517,7 @@
     "aggression": 1.2305,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "哲罗鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -6546,7 +6546,7 @@
     "aggression": 1.0364,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "亚速海拟鲤",
       "profile": "deterministic species ecology baseline",
@@ -6575,7 +6575,7 @@
     "aggression": 0.9798,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "丁鱥",
       "profile": "deterministic species ecology baseline",
@@ -6604,7 +6604,7 @@
     "aggression": 1.4999,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "北方蓝鳍金枪鱼",
       "profile": "deterministic species ecology baseline",
@@ -6633,7 +6633,7 @@
     "aggression": 1.0873,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "棱鲱",
       "profile": "deterministic species ecology baseline",
@@ -6662,7 +6662,7 @@
     "aggression": 1.0557,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "珠星三块鱼",
       "profile": "deterministic species ecology baseline",
@@ -6691,7 +6691,7 @@
     "aggression": 1.1653,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "叉牙楔齿七鳃鰻",
       "profile": "deterministic species ecology baseline",
@@ -6720,7 +6720,7 @@
     "aggression": 1.2177,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "图冈白鲑﻿",
       "profile": "deterministic species ecology baseline",
@@ -6749,7 +6749,7 @@
     "aggression": 1.1564,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "大菱鲆﻿",
       "profile": "deterministic species ecology baseline",
@@ -6778,7 +6778,7 @@
     "aggression": 1.134,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "乌克兰七鳃鳗",
       "profile": "deterministic species ecology baseline",
@@ -6807,7 +6807,7 @@
     "aggression": 0.9825,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "文鳊",
       "profile": "deterministic species ecology baseline",
@@ -6836,7 +6836,7 @@
     "aggression": 0.9948,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "真柱白鮭﻿",
       "profile": "deterministic species ecology baseline",
@@ -6865,7 +6865,7 @@
     "aggression": 1.2173,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "欧白鲑",
       "profile": "deterministic species ecology baseline",
@@ -6894,7 +6894,7 @@
     "aggression": 1.2192,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "泥鳅鱼",
       "profile": "deterministic species ecology baseline",
@@ -6923,7 +6923,7 @@
     "aggression": 1.018,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "里海拟鲤",
       "profile": "deterministic species ecology baseline",
@@ -6952,7 +6952,7 @@
     "aggression": 1.0428,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "黑库图拟鲤",
       "profile": "deterministic species ecology baseline",
@@ -6981,7 +6981,7 @@
     "aggression": 1.2292,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "欧洲六须鲇",
       "profile": "deterministic species ecology baseline",
@@ -7010,7 +7010,7 @@
     "aggression": 1.2958,
     "rarity_tier": 3,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "白化鲇鱼",
       "profile": "deterministic species ecology baseline",
@@ -7039,7 +7039,7 @@
     "aggression": 1.0627,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "白眼欧鳊",
       "profile": "deterministic species ecology baseline",
@@ -7068,7 +7068,7 @@
     "aggression": 1.3627,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "玻璃梭鲈",
       "profile": "deterministic species ecology baseline",
@@ -7097,7 +7097,7 @@
     "aggression": 1.0226,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "太阳鱼",
       "profile": "deterministic species ecology baseline",
@@ -7126,7 +7126,7 @@
     "aggression": 1.2089,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "白鲑鱼",
       "profile": "deterministic species ecology baseline",
@@ -7155,7 +7155,7 @@
     "aggression": 1.3574,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "金眼狼鲈",
       "profile": "deterministic species ecology baseline",
@@ -7184,7 +7184,7 @@
     "aggression": 0.9771,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "白刺盖太阳鱼",
       "profile": "deterministic species ecology baseline",
@@ -7213,7 +7213,7 @@
     "aggression": 1.0438,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "剑鱼",
       "profile": "deterministic species ecology baseline",
@@ -7242,7 +7242,7 @@
     "aggression": 1.003,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "四白锦鲤",
       "profile": "deterministic species ecology baseline",
@@ -7271,7 +7271,7 @@
     "aggression": 1.1406,
     "rarity_tier": 1,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "绵鳚﻿",
       "profile": "deterministic species ecology baseline",
@@ -7300,7 +7300,7 @@
     "aggression": 1.2882,
     "rarity_tier": 2,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "北极茴鱼﻿",
       "profile": "deterministic species ecology baseline",
@@ -7329,7 +7329,7 @@
     "aggression": 1.3355,
     "rarity_tier": 0,
     "enabled": true,
-    "profile_version": 4,
+    "profile_version": 5,
     "source": {
       "name": "东西伯利亚鲟﻿",
       "profile": "deterministic species ecology baseline",
