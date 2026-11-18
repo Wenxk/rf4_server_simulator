@@ -20,7 +20,8 @@ test('params tabs preserve edits and upstream embedded API routing',async()=>{
    await page.clock.install();
    await page.goto('http://127.0.0.1:19214'+prefix+'/#params');
    await page.locator('button[data-page="gameplay"]').waitFor();
-   assert.equal(await page.locator('#paramsBody .tunable-group[data-page="gameplay"]').count(),7);
+   // 9 组：玩法手感/钩型与咬口/判鱼追踪/昼夜权重/电轮/摩擦片/受力磨损/负载节拍/角色状态条
+   assert.equal(await page.locator('#paramsBody .tunable-group[data-page="gameplay"]').count(),9);
    assert.equal(await page.locator('#tun_condition_health_enabled').innerText(),'健康动态（饥寒掉血）：开（点击关闭）');
    assert.equal(await page.locator('#tun_condition_fishing_pause_enabled').innerText(),'垂钓中精力停摆：开（点击关闭）');
    assert.equal(await page.locator('#paramsBody .tunable-group[data-page="reward"]').count(),5);

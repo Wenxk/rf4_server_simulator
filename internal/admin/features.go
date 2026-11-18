@@ -420,6 +420,13 @@ func (s *Server) handleFishConfig(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 500, err.Error())
 		return
 	}
+	applyDielWeightView(cfg, s.dielWeightTunables(r.Context()))
+	// 稀有度阈值一并带出：前端表头的分档说明必须跟库里实际阈值一致，
+	// 否则改了阈值、说明还写着旧数字，会让人以为是没生效。
+	if cuts, active, err := s.db.FishRarityThresholds(r.Context()); err == nil {
+		cfg.RarityCuts = cuts[:]
+		cfg.RarityActive = active
+	}
 	writeJSON(w, cfg)
 }
 

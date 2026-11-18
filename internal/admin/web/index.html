@@ -15,8 +15,27 @@ button,input,select,textarea{font:inherit;color:var(--text)}button{cursor:pointe
 .grid{display:grid;gap:16px}.stats{grid-template-columns:repeat(4,minmax(0,1fr))}.card{background:linear-gradient(160deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px}.stat .k{color:var(--muted);font-size:12px}.stat .v{font-size:30px;font-weight:800;margin:6px 0}.stat .s{font-size:11px;color:var(--accent2)}.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.section-head h2{font-size:16px;margin:0}.section-head small{color:var(--muted)}.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.toolbar .grow{flex:1;min-width:190px}.split{display:grid;grid-template-columns:340px minmax(0,1fr);gap:16px;align-items:start}.player-list{max-height:calc(100vh - 170px);overflow:auto}.player-row{display:flex;justify-content:space-between;gap:10px;padding:11px;border-radius:11px;border:1px solid transparent;cursor:pointer}.player-row:hover,.player-row.on{background:#14273b;border-color:#2a4963}.player-row .n{font-weight:700}.player-row .id{font-size:11px;color:var(--muted)}.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 8px;background:#1c3148;color:#bcd1e4;font-size:11px}.pill.ok{background:#123a2e;color:#6ff0b7}.pill.bad{background:#441d28;color:#ff91a1}.online-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}.online-dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}.online-dot.off{background:var(--danger);box-shadow:0 0 6px #ff617866}.player-flags{display:flex;align-items:center;gap:8px;flex:none}.legend{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:11px;white-space:nowrap}.empty{padding:42px 16px;text-align:center;color:var(--muted)}
 .player-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:16px}.player-hero h2{margin:0;font-size:21px}.player-hero .sub{color:var(--muted);font-size:12px}.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin:12px 0 16px;overflow:auto}.tabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);padding:9px 12px}.tabs button.on{color:#fff;border-color:var(--accent)}.form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.field label{display:block;color:var(--muted);font-size:11px;margin:0 0 5px}.field.span2{grid-column:span 2}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
 .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{padding:10px 11px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}th{position:sticky;top:0;background:#101e2d;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;z-index:1}tr:last-child td{border-bottom:0}tbody tr:hover{background:#15263a}.mono{font-family:Consolas,monospace}.mini-input{padding:6px 8px;border-radius:7px;min-width:72px}.item-cell{display:flex;align-items:center;gap:12px}.fish-icon{width:80px;height:40px;object-fit:contain;flex:0 0 80px;border-radius:8px;cursor:zoom-in;transition:transform .16s ease,box-shadow .16s ease;transform-origin:left center}.fish-icon:hover{transform:scale(1.6);box-shadow:0 14px 34px #000c}.item-icon{width:52px;height:52px;object-fit:contain;border-radius:8px;background:#0b1726;border:1px solid var(--line);padding:3px;flex:0 0 52px;cursor:zoom-in;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;transform-origin:left center}.item-icon:hover{transform:scale(2.4);box-shadow:0 14px 34px #000c;border-color:var(--accent)}tbody tr:has(.item-icon:hover){position:relative;z-index:12}.table-wrap:has(.item-icon:hover){overflow:visible}.tag{font-size:10px;padding:2px 6px;border-radius:5px;background:#25405b}.tag.gold{background:#493c1d;color:#ffd479}.tag.blue{background:#183e60;color:#84d5ff}.muted{color:var(--muted)}.right{text-align:right}.danger-text{color:#ff8797}
-.skills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.skill{border:1px solid var(--line);border-radius:12px;padding:12px;background:#0e1b29}.skill .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.skill .top>div{min-width:0;overflow-wrap:anywhere}.skill .top>.pill{flex:none}.skill .edit .btn{flex:none;white-space:nowrap}.bar{height:7px;background:#08111b;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#32c9a3,#43a9ff)}.skill .edit{display:flex;gap:8px;margin-top:10px;align-items:center}.skill input{min-width:0;padding:7px 9px}.fish-table td{white-space:normal}.switch{appearance:none;width:38px;height:21px;border-radius:20px;background:#26394d;position:relative;cursor:pointer;border:1px solid #38506a;padding:0}.switch:after{content:"";position:absolute;width:15px;height:15px;border-radius:50%;background:#91a6ba;top:2px;left:2px;transition:.18s}.switch:checked{background:#1b725a}.switch:checked:after{left:19px;background:#b9ffe9}
-.modal-bg{position:fixed;inset:0;background:#02070dcc;backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.modal-bg.on{display:flex}.modal{background:#101d2b;border:1px solid #2a465f;border-radius:18px;box-shadow:0 28px 90px #000c;width:min(760px,96vw);max-height:90vh;overflow:auto;padding:20px}.modal h3{margin:0 0 4px}.modal .sub{color:var(--muted);font-size:12px;margin-bottom:16px}.results{margin-top:9px;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px}.result{padding:9px 11px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;cursor:pointer}.result:hover{background:#172b40}.result:last-child{border:0}.attach-row{display:grid;grid-template-columns:1fr 90px 38px;gap:8px;margin-bottom:8px}.mail-box{display:grid;grid-template-columns:1fr 340px;gap:16px}.log{max-height:250px;overflow:auto;font:12px/1.6 Consolas,monospace;background:#08121d;border-radius:10px;padding:12px;color:#a9bed3}
+.skills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.skill{border:1px solid var(--line);border-radius:12px;padding:12px;background:#0e1b29}.skill .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.skill .top>div{min-width:0;overflow-wrap:anywhere}.skill .top>.pill{flex:none}.skill .edit .btn{flex:none;white-space:nowrap}.bar{height:7px;background:#08111b;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#32c9a3,#43a9ff)}.skill .edit{display:flex;gap:8px;margin-top:10px;align-items:center}.skill input{min-width:0;padding:7px 9px}.fish-table td{white-space:normal}
+.diel-tags{display:flex;gap:3px;margin-top:4px}
+.diel-tags i{font-style:normal;font-size:10.5px;line-height:1;padding:2px 4px;border-radius:4px;border:1px solid var(--line);color:var(--muted);opacity:.5}
+.diel-tags i.on{opacity:1;color:#b9ffe9;border-color:#1b725a;background:rgba(27,114,90,.32)}
+.diel-tags i.now{box-shadow:0 0 0 1px #43a9ff}
+.eff-val{font-family:Consolas,monospace;font-weight:600}
+.eff-val.up{color:#ffd479}
+.eff-val.down{color:#7f93a8}
+.rarity-move.up{color:#ffd479}
+.rarity-move.down{color:#7f93a8}
+.diel-legend{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
+.rarity-hint{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:4px;font-size:10.5px;line-height:1.2}
+.rarity-hint .tier{font-style:normal;padding:1px 5px;border-radius:4px;border:1px solid var(--line);color:var(--muted)}
+.rarity-hint .tier-0{color:#b9ffe9;border-color:#1b725a;background:rgba(27,114,90,.28)}
+.rarity-hint .tier-1{color:#cfe3b0;border-color:#5c7a33;background:rgba(92,122,51,.24)}
+.rarity-hint .tier-2{color:#ffd479;border-color:#8a6a1f;background:rgba(138,106,31,.26)}
+.rarity-hint .tier-3{color:#ff9f9f;border-color:#8a3a3a;background:rgba(138,58,58,.26)}
+.rarity-hint .susp{color:#ffce56;border-bottom:1px dashed #ffce56;cursor:help}
+.rarity-hint .susp.low{color:#8fb8e0;border-bottom-color:#8fb8e0}
+.diel-legend b{font-family:Consolas,monospace}.switch{appearance:none;width:38px;height:21px;border-radius:20px;background:#26394d;position:relative;cursor:pointer;border:1px solid #38506a;padding:0}.switch:after{content:"";position:absolute;width:15px;height:15px;border-radius:50%;background:#91a6ba;top:2px;left:2px;transition:.18s}.switch:checked{background:#1b725a}.switch:checked:after{left:19px;background:#b9ffe9}
+.modal-bg{position:fixed;inset:0;background:#02070dcc;backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.modal-bg.on{display:flex}.modal{background:#101d2b;border:1px solid #2a465f;border-radius:18px;box-shadow:0 28px 90px #000c;width:min(760px,96vw);max-height:90vh;overflow:auto;padding:20px}.modal h3{margin:0 0 4px}.modal .sub{color:var(--muted);font-size:12px;margin-bottom:16px}.eco-glob{margin:-6px 0 14px;padding:9px 11px;border-radius:10px;background:#0d1e2e;border:1px solid var(--line);color:#bcd1e4;font-size:11.5px;line-height:1.65}.results{margin-top:9px;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px}.result{padding:9px 11px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;cursor:pointer}.result:hover{background:#172b40}.result:last-child{border:0}.attach-row{display:grid;grid-template-columns:1fr 90px 38px;gap:8px;margin-bottom:8px}.mail-box{display:grid;grid-template-columns:1fr 340px;gap:16px}.log{max-height:250px;overflow:auto;font:12px/1.6 Consolas,monospace;background:#08121d;border-radius:10px;padding:12px;color:#a9bed3}
 .toast{position:fixed;right:22px;bottom:22px;display:flex;flex-direction:column;gap:8px;z-index:80}.toast div{padding:11px 14px;border-radius:11px;background:#17364b;border:1px solid #2d6680;box-shadow:var(--shadow);animation:in .2s ease}@keyframes in{from{opacity:0;transform:translateX(15px)}to{opacity:1;transform:none}}.toast .bad{background:#481f2a;border-color:#7a3443}.toast .ok{background:#143b31;border-color:#286a58}
 #login{min-height:100vh;display:grid;place-items:center;padding:20px}.login-card{width:min(390px,95vw);padding:28px;background:linear-gradient(160deg,#132539,#0b1521);border:1px solid #2a455f;border-radius:22px;box-shadow:0 30px 90px #000b}.login-card .logo{width:58px;height:58px;margin-bottom:18px}.login-card h1{font-size:23px;margin:0 0 4px}.login-card p{color:var(--muted);margin:0 0 20px}.login-card .field{margin-bottom:12px}
 .notice{position:fixed;left:0;right:0;top:0;z-index:95;display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 54px 12px 20px;background:linear-gradient(90deg,#ff9f1c,#ff4d6d 45%,#c026d3);color:#fff;font-weight:800;font-size:15px;letter-spacing:.02em;text-shadow:0 1px 2px #0006;box-shadow:0 10px 30px #0007;animation:noticeIn .35s ease}.notice[hidden]{display:none}.notice .pulse{width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#fff;box-shadow:0 0 0 0 #ffffff99;animation:pulse 1.6s infinite}.notice .msg{max-width:min(1100px,84vw);text-align:center;line-height:1.5}.notice .msg b{color:#fff45c;font-size:16px}.notice .close{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;border:1px solid #ffffff66;background:#00000026;color:#fff;font-size:15px;line-height:1;display:grid;place-items:center;padding:0}.notice .close:hover{background:#00000055}@keyframes noticeIn{from{transform:translateY(-100%)}to{transform:none}}@keyframes pulse{0%{box-shadow:0 0 0 0 #ffffff99}70%{box-shadow:0 0 0 12px #ffffff00}100%{box-shadow:0 0 0 0 #ffffff00}}body.notice-on{padding-top:56px}
@@ -258,7 +277,7 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
     </section>
     <section class="view" id="view-players"><div class="split"><div class="card player-list"><div class="toolbar"><input class="grow" id="playerSearch" placeholder="搜索 UID / 昵称" onkeydown="if(event.key==='Enter')loadPlayers()"><button class="btn sm" onclick="loadPlayers()">搜索</button><span class="legend"><span class="online-dot on"></span>在线<span class="online-dot off"></span>不在线</span></div><div id="playerList" style="margin-top:12px"></div></div><div class="card" id="playerDetail"><div class="empty">选择左侧玩家开始管理</div></div></div></section>
     <section class="view" id="view-stores"><div class="card"><div class="toolbar"><select id="storeSelect" class="grow" onchange="loadStoreItems()"></select><input id="storeSearch" placeholder="搜索商品 / 名称" onkeydown="if(event.key==='Enter')loadStoreItems()"><button class="btn" onclick="loadStoreItems()">查询</button></div><div id="storeSummary" class="muted" style="margin:12px 0"></div><div class="table-wrap" id="storeTable"></div></div></section>
-    <section class="view" id="view-fish"><div class="card" id="fishRulesCard" style="margin-bottom:12px"><div class="rules-strip"><h2>鱼口模式</h2><span id="biteModeInline" style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap"><span id="biteModeBody">读取中…</span></span><small class="muted" id="biteModeStatus"></small></div><div class="rules-strip" style="margin-top:8px"><label class="rule-item"><span>硬性鱼口约束</span><input type="checkbox" class="switch" id="biteGateSwitch" disabled onchange="toggleFishRules('gate',this)"></label><label class="rule-item"><span>逐鱼种生态</span><input type="checkbox" class="switch" id="fishEcologySwitch" disabled onchange="toggleFishRules('ecology',this)"></label><label class="rule-item"><span>鱼群随机分布</span><input type="checkbox" class="switch" id="fishDistributionSwitch" disabled onchange="toggleFishRules('distribution',this)"></label><label class="rule-item"><span>鱼类吃饵偏好</span><input type="checkbox" class="switch" id="fishRulesSwitch" disabled onchange="toggleFishRules('bait',this)"></label><label class="rule-item"><span>天气与温度鱼口</span><input type="checkbox" class="switch" id="fishWeatherSwitch" disabled onchange="toggleFishRules('weather',this)"></label><label class="rule-item"><span>欢乐时光</span><input type="checkbox" class="switch" id="happyHourSwitch" disabled onchange="toggleFishRules('happy',this)"></label><small class="muted" id="rulesStatus"></small><button class="btn alt sm" id="rulesHelpBtn" aria-expanded="false" onclick="toggleRulesHelp()">说明 ⌄</button></div><div id="rulesHelp" hidden><p class="muted" style="margin:0 0 8px">各项独立保存；硬性约束、生态、天气、饵料和分布规则默认关闭，欢乐时光默认开启。上方「鱼口模式」一键切换五项组合。</p><div class="rule-help"><b>硬性鱼口约束</b><span id="biteGateMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>逐鱼种生态</b><span id="fishEcologyMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>鱼群随机分布</b><span id="fishDistributionMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>鱼类吃饵偏好</b><span id="fishRulesMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>天气与温度鱼口</b><span id="fishWeatherMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>欢乐时光</b><span id="happyHourMessage" role="status">正在读取开关。</span></div></div></div><div class="grid fish-layout" style="grid-template-columns:270px minmax(0,1fr)"><div class="card"><div class="section-head"><h2>水域</h2></div><input id="fishSearch" placeholder="筛选水域" oninput="renderFishAreas()"><div id="fishAreas"></div></div><div class="card" id="fishEditor"><div class="empty">选择水域配置鱼口</div></div></div></section>
+    <section class="view" id="view-fish"><div class="card" id="fishRulesCard" style="margin-bottom:12px"><div class="rules-strip"><h2>鱼口模式</h2><span id="biteModeInline" style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap"><span id="biteModeBody">读取中…</span></span><small class="muted" id="biteModeStatus"></small></div><div class="rules-strip" style="margin-top:8px"><label class="rule-item"><span>硬性鱼口约束</span><input type="checkbox" class="switch" id="biteGateSwitch" disabled onchange="toggleFishRules('gate',this)"></label><label class="rule-item"><span>逐鱼种生态</span><input type="checkbox" class="switch" id="fishEcologySwitch" disabled onchange="toggleFishRules('ecology',this)"></label><label class="rule-item"><span>鱼群随机分布</span><input type="checkbox" class="switch" id="fishDistributionSwitch" disabled onchange="toggleFishRules('distribution',this)"></label><label class="rule-item"><span>鱼类吃饵偏好</span><input type="checkbox" class="switch" id="fishRulesSwitch" disabled onchange="toggleFishRules('bait',this)"></label><label class="rule-item"><span>天气与温度鱼口</span><input type="checkbox" class="switch" id="fishWeatherSwitch" disabled onchange="toggleFishRules('weather',this)"></label><label class="rule-item"><span>欢乐时光</span><input type="checkbox" class="switch" id="happyHourSwitch" disabled onchange="toggleFishRules('happy',this)"></label><small class="muted" id="rulesStatus"></small><button class="btn alt sm" id="rulesHelpBtn" aria-expanded="false" onclick="toggleRulesHelp()">说明 ⌄</button></div><div id="rulesHelp" hidden><p class="muted" style="margin:0 0 8px">各项独立保存；硬性约束、生态、天气、饵料和分布规则默认关闭，欢乐时光默认开启。上方「鱼口模式」一键切换五项组合。</p><div class="rule-help"><b>硬性鱼口约束</b><span id="biteGateMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>逐鱼种生态</b><span id="fishEcologyMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>鱼群随机分布</b><span id="fishDistributionMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>鱼类吃饵偏好</b><span id="fishRulesMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>天气与温度鱼口</b><span id="fishWeatherMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>欢乐时光</b><span id="happyHourMessage" role="status">正在读取开关。</span></div></div></div><div class="grid fish-layout" style="grid-template-columns:270px minmax(0,1fr)"><div class="card"><div class="section-head"><h2>水域</h2></div><input id="fishSearch" placeholder="筛选水域" oninput="renderFishAreas()"><div id="fishAreas"></div></div><div class="card" id="fishEditor"><div class="empty">选择水域配置鱼口</div></div></div><div class="card" id="rollTraceCard" style="margin-top:12px"><div class="section-head"><div><h2>判鱼追踪</h2><small>最近的真实咬钩判定：候选鱼种在各层乘完后的权重 · 空轮的空因 · 只读诊断，不影响玩法</small></div><span class="muted" id="rollTraceStatus"></span><button class="btn alt sm" id="rollTraceScope" onclick="loadRollTrace(true,!ROLL_TRACE_ALL)">看全部水域</button><button class="btn alt sm" onclick="loadRollTrace(true)">刷新</button></div><div id="rollTraceBody"><div class="empty">加载中…</div></div></div></section>
     <section class="view" id="view-hooks"><div class="card"><div class="section-head"><div><h2>真实钩子型号档案</h2><small>物理数据来自 item_def；倍率和兜底值只影响咬口，不改钩子拉力</small></div></div><div class="toolbar"><input class="grow" id="hookSearch" placeholder="搜索 item_id / 厂牌，如 triple_20686、simmons" onkeydown="if(event.key==='Enter')loadHookProfiles()"><select id="hookSize"><option value="">全部尺寸</option></select><select id="hookFamily"><option value="">全部钩型族</option><option value="classic">Classic</option><option value="carp">Carp</option><option value="treble">Treble</option><option value="jighead">Jighead</option><option value="offset">Offset</option><option value="marine">Marine</option><option value="other">Other</option></select><button class="btn" onclick="loadHookProfiles()">查询</button></div><p class="muted" style="margin:10px 0">默认倍率 1.0、兜底值 0；修改后写入审计，最多 30 秒由主服热加载。入口容量按真实钩体长度计算。</p><div class="table-wrap" id="hookProfilesTable"><div class="empty">读取中…</div></div></div></section>
     <section class="view" id="view-bait"><div class="card"><div class="section-head"><div><h2>鱼饵偏好</h2><small id="baitSummary" class="muted">正在读取…</small></div></div><div class="toolbar"><input class="grow" id="baitSearch" placeholder="搜索鱼种 key / 中文名，如 pike、狗鱼" onkeydown="if(event.key==='Enter')loadBaitPrefs()"><input id="baitLoc" placeholder="水域（可选）" onkeydown="if(event.key==='Enter')loadBaitPrefs()"><select id="baitFilter" onchange="loadBaitPrefs()"><option value="">全部鱼种</option><option value="tier3">有 tier3 饵</option><option value="norule">规则表无条目</option><option value="rule">规则表有条目</option></select><button class="btn" onclick="loadBaitPrefs()">查询</button></div><p class="muted" style="margin:10px 0">规则来自编译进服务端的 fishing_bait_rules.txt（严格模式生效）；tier 来自 companion_bait_fish 实证（tier3 权重×8 / tier2 ×4 / 在列 ×2）；「证据」是实证条数。点击行展开全部饵；点右侧「编辑」可改吃/不吃/底钓只吃并配置多组轮换。</p><div class="table-wrap" id="baitTable"></div></div></section>
     <section class="view" id="view-mail"><div class="mail-box"><div class="card"><div class="section-head"><h2>撰写邮件</h2><small>队列约 2 秒内由主服投递</small></div><div class="form-grid" style="grid-template-columns:1fr 1fr"><div class="field"><label>收件人 UID</label><input id="mailUid" type="number"></div><div class="field"><label>快捷载入玩家</label><input id="mailPlayerSearch" placeholder="搜索并回车" onkeydown="if(event.key==='Enter')findMailPlayer()"></div></div><div class="field" style="margin-top:12px"><label>邮件正文</label><textarea id="mailText" placeholder="写给玩家的消息…"></textarea></div><div class="section-head" style="margin-top:14px"><h2>附件</h2><button class="btn alt sm" onclick="addAttachment()">+ 添加附件</button></div><div id="attachments"></div><div class="actions"><button class="btn good" onclick="sendMail()">发送邮件</button><button class="btn alt" onclick="previewMail()">预览</button></div></div><div class="card"><div class="section-head"><h2>发送预览</h2></div><div id="mailPreview" class="empty">填写邮件后点击预览</div><div class="section-head" style="margin-top:20px"><h2>常用模板</h2></div><div class="actions"><button class="btn alt sm" onclick="mailTemplate('补偿')">补偿邮件</button><button class="btn alt sm" onclick="mailTemplate('活动奖励')">活动奖励</button><button class="btn alt sm" onclick="mailTemplate('测试')">测试邮件</button></div></div></div></section>
@@ -419,6 +438,11 @@ const TUNABLE_DEFS=[
   ['bite_gate_diet_floor','单票小口系数',0.05,'攻略证据与生态食性只认一边时权重乘该系数；两边都不认或明确禁饵则整鱼剔除'],
   ['bite_empty_retry_scale','空轮重排倍率',1,'空轮（无符合条件的鱼）后下一轮等待时间的倍率：0.25=空轮 5 秒重试（正常 20 秒上限不变）；1=与正常咬钩同节奏'],
   ['bite_gate_pity_rounds','保底杂口轮数',0,'连续空杆 N 轮后放宽环境因素（分布散布/水层地板）重掷一次保口；0=关闭。食性硬门不放宽：泥鳅永不攻拟饵'],
+  ['fish_roll_trace_enabled','判鱼追踪开关',1,'1=每杆真实咬钩都留一份决策快照（候选鱼种与各层权重），供「钓场与鱼口」页的判鱼追踪面板排错；0=完全不采、零开销。纯诊断，不参与判鱼'],
+  ['fish_roll_trace_keep','判鱼追踪保留条数',300,'追踪表按此条数环形保留，超出丢最旧；0=不落库。单玩家咬钩约 30 秒一次，300 条足够回溯最近一段时间'],
+  ['fish_diel_weight_enabled','昼夜权重开关',1,'1=按鱼种昼夜习性调整判鱼权重：活跃时段乘加成、非活跃时段乘压制。独立于生态总开关，生态关着也生效；0=昼夜完全中性'],
+  ['fish_diel_active_boost','昼夜·活跃时段倍率',2,'活跃时段的**峰值**倍率，只给「只在一个时段出没」的专性鱼全额；两段出没折三分之一、三段折三分之二、全天活跃不加成。夜行鱼夜里翻倍靠它。与「非活跃时段倍率」共同决定昼夜对比'],
+  ['fish_diel_inactive_penalty','昼夜·非活跃时段倍率',0.3,'该鱼种不在活跃时段时的权重倍率；越小昼夜差异越明显。0.3 配峰值 2.0，纯夜行鱼夜间/白天约 6.7 倍对比'],
   ['fish_weight_scale','鱼体重倍率',1,'全地图鱼重整体缩放，2=两倍重'],
   ['fish_weight_cap','鱼重受钓具上限',0,'1=超出钓具负重的鱼按上限截断；0=不限制'],
   ['electric_locked_multiplier','电轮锁轮倍率',3,'电轮锁轮有效承力=当前机械承力与电机承力较小者的该倍率；默认3'],
@@ -1156,6 +1180,8 @@ async function loadTunables(){
   {id:'gameplay',tab:'玩法与钓组',sub:'咬钩 · 手感 · 电轮 · 摩擦片磨损',groups:[
     ['玩法手感','咬钩快慢、饵料偏好、鱼的大小与挣扎力度',['bite_probability','bite_delay_fixed','bite_delay_scale','bite_delay_max','bite_delay_lure_max','bait_pref_scale','bait_pref_weight_shift','bite_gate_lure_diet_min','bite_gate_layer_floor','fish_weight_scale','fish_weight_cap','fight_power_scale','fish_pull_ln_slope','fish_pull_fallback_k','fish_initial_stamina_ratio']],
     ['钩型与咬口','嘬饵总开关与发鱼软匹配；后台钩型倍率仍独立生效',['hook_nibble_enabled','hook_spawn_match_strength']],
+    ['判鱼追踪','只读诊断：记录每杆判鱼的候选与各层权重，用于回答「为什么空军」；不参与判鱼数值',['fish_roll_trace_enabled','fish_roll_trace_keep']],
+    ['昼夜权重','按鱼种昼夜习性给判鱼权重加权/压制：夜行鱼到了夜里权重上调，日行鱼夜里被压低。独立于生态总开关',['fish_diel_weight_enabled','fish_diel_active_boost','fish_diel_inactive_penalty']],
     ['电轮参数','电轮锁轮倍率与电机功率折算；改后最多 30 秒生效',['electric_locked_multiplier','electric_motor_kg_per_power']],
     ['摩擦片磨损','泄力打滑通道的系数（2026-11-12 拍平：速率不分档位，旧档位键 reel_slip_wear_low/s25~s28/max 已停用不再读取）；改后最多 30 秒生效，只影响后续结算',['reel_slip_wear','reel_slip_calibration_seconds','reel_slip_deadband_ratio']],
     ['受力磨损速率','轮件/竿件/前导按搏鱼受力秒扣磨损的速率；0=关通道',['wear_stress_oil_per_s','wear_stress_gear_per_s','wear_stress_bearing_per_s','wear_stress_spool_per_s','wear_stress_guides_per_s','wear_stress_rodblank_per_s','wear_leader_per_stress_sec']],
@@ -1514,9 +1540,9 @@ async function resetStoreRow(i){
 let FISH_AREAS=[];
 const FISH_RULE_SWITCHES={
   gate:{key:'bite_gate_enabled',prefix:'biteGate',enabled:null,on:'硬性资格门：拟饵不再被非掠食鱼（泥鳅、鲤族）攻击；水层超界只保留约1%极小杂口。推荐与吃饵偏好/生态/天气/分布一起开启。',off:'不做硬性约束，任何鱼都可能咬任何饵（旧版手感）。'},
-  ecology:{key:'fish_ecology_enabled',prefix:'fishEcology',enabled:null,on:'启用 252 种鱼的水层/昼夜/季节/天气/底质/拟饵动作等生态权重，影响吃口与候选鱼种。',off:'生态因子全部中性，不影响判鱼。'},
+  ecology:{key:'fish_ecology_enabled',prefix:'fishEcology',enabled:null,on:'启用 252 种鱼的水层/季节/天气/底质/拟饵动作等生态权重，影响吃口与候选鱼种。昼夜权重已独立成单独开关，默认就生效，不受这里影响。',off:'以上生态因子全部中性。注意昼夜权重仍按「游戏参数 → 昼夜权重」独立生效，要连昼夜一起关需到那里关。'},
   weather:{key:'fish_weather_enabled',prefix:'fishWeather',enabled:null,on:'按游戏内温度、天气和鱼种习性影响吃口；底钓、浮钓会间歇试口。',off:'关闭天气鱼口修正，沿用原来的一次判鱼流程。'},
-  distribution:{key:'fish_distribution_enabled',prefix:'fishDistribution',enabled:null,on:'按地图鱼种、所在区域和游戏昼夜变化鱼口，每四个游戏小时重新分布。',off:'沿用现有分布，各处水域可出鱼，不增加点位限制。'},
+  distribution:{key:'fish_distribution_enabled',prefix:'fishDistribution',enabled:null,on:'按地图鱼种和所在区域变化鱼口，每四个游戏小时重新分布（只管位置，昼夜由「昼夜权重」单独控制）。',off:'沿用现有分布，各处水域可出鱼，不增加点位限制。'},
   bait:{key:'fish_bait_rules_enabled',prefix:'fishRules',enabled:null,on:'根据钩上饵料筛选鱼种。',off:'沿用现有吃饵逻辑，不增加吃饵限制。'},
   happy:{key:'happy_hour_enabled',prefix:'happyHour',default:true,enabled:null,on:'会员在线钓鱼期间全程生效：经验额外50%、鱼口提高10%、熟练度增长触发率提高25%；时长跟随会员，无每日限制。',off:'暂停欢乐时光加成，会员资格与到期时间不受影响。'}
 };
@@ -1644,6 +1670,8 @@ async function loadFishAreas(){
     const first=[...FISH_AREAS].sort((a,b)=>orderOf(a)-orderOf(b))[0];
     await selectFishArea(first.loc,true);
   }
+  // 判鱼追踪是只读诊断，失败不阻塞页面主体
+  loadRollTrace().catch(()=>null);
 }
 // 水域展示顺序：与游戏客户端地图选择顺序一致，未列出的水域排在最后（保持原有相对顺序）。
 const FISH_AREA_ORDER=['克马羚诺也湖','埃尔克湖','惟有诺克河','旧奥斯特罗格湖','白河','廓里湖','梅德韦杰湖','沃尔霍夫河','北顿涅茨河','苏拉河','拉多加湖','琥珀湖','拉多加湖群岛','阿赫图巴河','铜湖','下通古斯卡河','亚马河','挪威海'];
@@ -1671,6 +1699,8 @@ async function selectFishArea(loc,force=false){
   const [cfg]=await Promise.all([api('/api/fish/config?loc='+encodeURIComponent(loc)),ensureBaitMap().catch(()=>null)]);
   FISH_CFG=cfg;
   renderFishEditor();
+  // 追踪面板跟着当前水域走（只读，失败不打断）
+  loadRollTrace().catch(()=>null);
 }
 let FISH_TAB='roster';
 // 页签骨架只建一次：左侧纸地图画布（网格/区域/拖拽三层 canvas），右侧区域列表+内联编辑面板
@@ -1757,7 +1787,7 @@ function renderFishEditor(){
   $('#fishTabBodyRoster').innerHTML=`<div class="section-head"><div><h2 class="mono">${esc(c.area)}</h2><small>${c.fish.length} 个鱼种 · 权重 0 或关闭即排除</small></div><button class="btn" onclick="showAddFish()">+ 添加鱼种</button></div>
     <div class="params-bar"><span class="tag blue">咬钩</span><span class="vals">概率 <b>${s.bite_probability}</b> · 延迟 <b>${fixedText}</b> · 倍率 <b>×${s.bite_delay_scale}</b> · 上限 <b>${s.bite_delay_max}s</b> / 路亚 <b>${s.bite_delay_lure_max}s</b></span><button class="btn alt sm" id="paramsToggle" aria-expanded="false" onclick="toggleFishParams()">调整</button></div>
     <div class="params-form" id="fishParamsForm" hidden><div class="form-grid" style="grid-template-columns:repeat(5,minmax(0,1fr))"><div class="field"><label for="fishProb">上鱼概率 (0-1)</label><input id="fishProb" type="number" min="0" max="1" step="0.01" value="${s.bite_probability}" onchange="FISH_DIRTY=true"><div class="tunable-hint">1=每竿必出；0.5=一半概率出鱼</div></div><div class="field"><label for="fishFixed">固定延迟秒（0=不用）</label><input id="fishFixed" type="number" min="0" step="0.1" value="${s.bite_delay_fixed}" onchange="FISH_DIRTY=true"><div class="tunable-hint">填 0=按延迟倍率随机</div></div><div class="field"><label for="fishScale">延迟倍率</label><input id="fishScale" type="number" min="0" step="0.05" value="${s.bite_delay_scale}" onchange="FISH_DIRTY=true"><div class="tunable-hint">0.5=快一倍，2=慢一倍</div></div><div class="field"><label for="fishMax">普通竿延迟上限</label><input id="fishMax" type="number" min="1" step="0.5" value="${s.bite_delay_max}" onchange="FISH_DIRTY=true"><div class="tunable-hint">等待超过该秒数必定咬钩</div></div><div class="field"><label for="fishLureMax">路亚延迟上限</label><input id="fishLureMax" type="number" min="0.5" step="0.5" value="${s.bite_delay_lure_max}" onchange="FISH_DIRTY=true"><div class="tunable-hint">路亚钓法等待的秒数上限</div></div></div></div>
-    <div class="toolbar" style="margin:0 0 10px"><input class="grow" id="fishFilter" placeholder="筛选当前水域鱼种" value="${esc(keepFilter)}" oninput="renderFishRows()"><button class="btn alt sm" id="fishAllOn" onclick="fishSetAll(true)">全部启用</button><button class="btn alt sm" id="fishAllOff" onclick="fishSetAll(false)">全部关闭</button></div><div id="fishRows"></div><div class="actions"><button class="btn good" onclick="saveFishConfig()">保存鱼口配置</button><button class="btn alt" onclick="selectFishArea(FISH_AREA,true)">放弃修改</button><button class="btn bad" onclick="resetFishConfig()">恢复默认鱼口</button></div>`;
+    ${dielBarHTML(c)}${rarityBarHTML(c)}<div class="toolbar" style="margin:0 0 10px"><input class="grow" id="fishFilter" placeholder="筛选当前水域鱼种" value="${esc(keepFilter)}" oninput="renderFishRows()"><button class="btn alt sm" id="fishAllOn" onclick="fishSetAll(true)">全部启用</button><button class="btn alt sm" id="fishAllOff" onclick="fishSetAll(false)">全部关闭</button><button class="btn alt sm" onclick="openWeightPreset()" title="按稀有度档位（常规/少见/罕见/极罕见）重写所有水域的基础权重，可回滚">按稀有度重设权重</button></div><div id="fishRows"></div><div class="actions"><button class="btn good" onclick="saveFishConfig()">保存鱼口配置</button><button class="btn alt" onclick="selectFishArea(FISH_AREA,true)">放弃修改</button><button class="btn bad" onclick="resetFishConfig()">恢复默认鱼口</button></div>`;
   renderFishRows();
   setFishTab(FISH_TAB,true);
   zmapSetup();
@@ -1774,16 +1804,257 @@ function syncFishRows(){
   FISH_CFG.fish.forEach((f,i)=>{const w=$('#fw_'+i),e=$('#fe_'+i);
     if(w){const raw=w.value.trim();const num=Number(raw);f.weight=raw!==''&&Number.isFinite(num)?num:f.base_weight}
     if(e)f.enabled=e.checked});
+  // 改完权重就地刷新「当前权重」：那一列是 权重 × 当前时段系数，
+  // 不跟着输入框变的话，玩家会以为权重调整没生效。
+  FISH_CFG.fish.forEach((f,i)=>{const el=$('#eff_'+i);if(!el)return;
+    const eff=(Number(f.weight)||0)*(Number(f.diel_factor)||1);el.textContent=eff.toFixed(1)});
   FISH_DIRTY=true;
+}
+// 昼夜展示：段位序 0=晨 1=昼 2=暮 3=夜，与后台掩码「1 晨 2 昼 4 暮 8 夜」一一对应。
+const DIEL_NAMES=['晨','昼','暮','夜'];
+function dielTagsHTML(f){
+  const mask=Number(f.diel_mask)||0;
+  const now=Number(FISH_CFG?FISH_CFG.diel_now_segment:0);
+  if(!mask)return '<div class="diel-tags"><i class="now" title="没有生态档案，全天同权重">无档案</i></div>';
+  // 四段全画出来：活跃段实心、非活跃段淡出、当前所处时段描一圈蓝边，
+  // 这样「这条鱼什么时候活跃」和「现在是哪个时段」在同一个格子里读得出来。
+  return `<div class="diel-tags">${DIEL_NAMES.map((n,i)=>{
+    const on=(mask>>i)&1;
+    const cls=[on?'on':'',i===now?'now':''].filter(Boolean).join(' ');
+    return `<i class="${cls}" title="${on?'活跃':'不活跃'}${i===now?'（当前时段）':''}">${n}</i>`;
+  }).join('')}</div>`;
+}
+// 稀有度依据：档位是按「全服渔获数四分位」切的，本图份额是本图攻略渔获的占比。
+// 两者打架时最有信息量——档位说极罕见、本图却占 6%，实际是常见鱼（锦鲤变种被全服
+// 登记数拖低）；反过来档位说常规、本图只占 1%，那是全服常见但这一图几乎没有（拟鲤/鲫鱼）。
+function rarityHintHTML(f){
+  const tier=Math.max(0,Math.min(3,Number(f.rarity_tier)||0));
+  const label=f.rarity_label||['常规','少见','罕见','极罕见'][tier];
+  const lc=Number(f.loc_catches)||0;
+  const lr=Number(f.loc_rank)||0;
+  const lt=Number(f.loc_total)||0;
+  const ls=Number(f.loc_species)||0;
+  const gc=Number(f.global_catches)||0;
+  if(!lc&&!gc)return '';
+  const share=lt>0?lc/lt:0;
+  // 双向核对：档位说稀有、本图份额却高（锦鲤变种被全服登记数拖低）；
+  // 或档位说常规、本图几乎没有（拟鲤/鲫鱼全服常见，但在这一图只占 1%）。
+  // 阈值按鱼种数归一：均匀份额 u=1/鱼种数，高于 1.8u 算常见、低于 0.6u 算少见。
+  // 固定百分比在大图上会误伤（挪威海 57 种鱼，均匀份额才 1.75%）。
+  // 小样本图（总渔获 <20 条）份额不可信，不标。
+  const enough=lt>=20&&lc>0&&ls>0;
+  const u=ls>0?1/ls:0;
+  const suspHigh=enough&&tier>=2&&share>=1.8*u;
+  const suspLow=enough&&tier<=1&&share<=0.6*u;
+  const tipHigh=`档位 ${label}，但本图占了 ${(share*100).toFixed(1)}%——全服登记数偏低，可下调档位或手工填覆盖权重`;
+  const tipLow=`档位 ${label}，但本图只占 ${(share*100).toFixed(1)}%——全服常见不代表这张图常见，可上调档位或手工填覆盖权重`;
+  const parts=[`<i class="tier tier-${tier}">${esc(label)}</i>`];
+  const tw=Number(f.tier_weight)||0;
+  if(tw>0)parts.push(`<span class="muted mono">档位权重 ${tw}</span>`);
+  if(lc)parts.push(`<span class="muted">本图 ${lc} 条·第 ${lr} 位（${(share*100).toFixed(1)}%）</span>`);
+  else parts.push(`<span class="muted">本图无渔获记录</span>`);
+  if(gc)parts.push(`<span class="muted">· 全服 ${gc}</span>`);
+  if(suspHigh)parts.push(`<span class="susp" title="${esc(tipHigh)}">图内常见</span>`);
+  if(suspLow)parts.push(`<span class="susp low" title="${esc(tipLow)}">本图少见</span>`);
+  return `<div class="rarity-hint">${parts.join('')}</div>`;
+}
+function rarityBarHTML(c){
+  const cuts=(c&&Array.isArray(c.rarity_cuts)&&c.rarity_cuts.length===3)?c.rarity_cuts:[30,14,7];
+  const [a,b,d]=cuts.map(v=>Number(v)||0);
+  return `<div class="params-bar"><span class="tag">稀有度</span><span class="vals">档位按<b>全服渔获数</b>绝对阈值切（≥${a} 常规 / ${b}~${a-1} 少见 / ${d}~${b-1} 罕见 / ≤${d-1} 极罕见）——依据是攻略站全服登记数，<b>不受本服测试进度影响</b>；「本图 N 条·第 M 位（份额）」是该水域攻略渔获的名次，只作交叉核对。两侧打架会标出来：<span class="susp">图内常见</span> 说明档位被全服登记数拖低、该给更高权重；<span class="susp low">本图少见</span> 说明全服常见但这一图几乎没有、该给更低权重。要改就填「覆盖权重」，参照同一行的「档位权重」；整批不合适点右边「重算稀有度」。</span><button class="btn alt sm" onclick="openRarityRecalc()" title="按全服渔获数绝对阈值重算所有鱼种的稀有度档位，可连带重设基础权重">重算稀有度</button><button class="btn alt sm" onclick="openRigAffinity()" title="按钓法族（浮钓/底钓/路亚/海钓/飞钓）× 鱼种水层档设置判鱼概率">钓法倾向</button></div>`;
+}
+function effCellHTML(f,i){
+  const w=Number(f.weight)||0;
+  const k=Number(f.diel_factor)||1;
+  const eff=Number.isFinite(Number(f.effective_weight))?Number(f.effective_weight):w*k;
+  const cls=k>1.001?'up':(k<0.999?'down':'');
+  return `<span class="eff-val ${cls}" id="eff_${i}">${eff.toFixed(1)}</span><div class="muted mono" id="effx_${i}">×${k.toFixed(2)}</div>`;
+}
+function dielBarHTML(c){
+  if(!c)return '';
+  if(!c.diel_weight_enabled)return `<div class="params-bar"><span class="tag">昼夜</span><span class="vals">昼夜权重已关闭：所有鱼种全天同权重，「当前权重」等于覆盖权重本身</span></div>`;
+  const peak=Number(c.diel_peak_boost)||2;
+  const pen=Number(c.diel_penalty)||0.3;
+  const hh=String(Number(c.game_hour)||0).padStart(2,'0');
+  return `<div class="params-bar"><span class="tag blue">昼夜</span><span class="vals diel-legend">现在是 <b>${esc(c.diel_now_name||'')}</b>（游戏第 <b>${Number(c.game_day)||0}</b> 天 ${hh}:00）· 活跃时段最高 <b>×${peak}</b>（只在这几段出没的鱼，段数越少加成越高）· 非活跃 <b>×${pen}</b> · 「当前权重」= 覆盖权重 × 当前时段系数</span></div>`;
 }
 function renderFishRows(){
   if(!FISH_CFG)return;const q=($('#fishFilter')?.value||'').toLowerCase();
   const rows=FISH_CFG.fish.map((f,i)=>({f,i})).filter(x=>!q||`${x.f.fish_key} ${x.f.name_zh}`.toLowerCase().includes(q));
-  $('#fishRows').innerHTML=`<div class="table-wrap"><table class="fish-table"><thead><tr><th>启用</th><th>鱼种</th><th>爱吃的饵（静态规则 / 实证 · 轮换）</th><th>基础权重</th><th>覆盖权重</th><th>来源</th></tr></thead><tbody>${rows.map(({f,i})=>`<tr><td><input class="switch" type="checkbox" id="fe_${i}" ${f.enabled?'checked':''} onchange="syncFishRows()"></td><td><div class="item-cell"><img class="fish-icon" src="icons/fish/${encodeURIComponent(String(f.fish_key||'').toLowerCase().replace(/\./g,'_'))}.png" onerror="this.style.display='none'"><div><b>${esc(f.name_zh||f.fish_key)}</b><div class="muted mono">${esc(f.fish_key)}</div></div></div></td><td>${baitSummaryHTML(f.fish_key,f)}</td><td>${Number(f.base_weight).toFixed(2)}</td><td><input class="mini-input" id="fw_${i}" type="number" min="0" step="0.1" value="${f.weight}" onchange="syncFishRows()"></td><td>${f.has_override?'<span class="tag gold">覆盖</span>':'<span class="tag">静态</span>'}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">没有匹配鱼种</td></tr>'}</tbody></table></div>`;
+  $('#fishRows').innerHTML=`<div class="table-wrap"><table class="fish-table"><thead><tr><th>启用</th><th>鱼种</th><th>爱吃的饵（静态规则 / 实证 · 轮换）</th><th>基础权重</th><th>当前权重</th><th>覆盖权重</th><th>生态</th><th>来源</th></tr></thead><tbody>${rows.map(({f,i})=>`<tr><td><input class="switch" type="checkbox" id="fe_${i}" ${f.enabled?'checked':''} onchange="syncFishRows()"></td><td><div class="item-cell"><img class="fish-icon" src="icons/fish/${encodeURIComponent(String(f.fish_key||'').toLowerCase().replace(/\./g,'_'))}.png" onerror="this.style.display='none'"><div><b>${esc(f.name_zh||f.fish_key)}</b><div class="muted mono">${esc(f.fish_key)}</div>${dielTagsHTML(f)}${rarityHintHTML(f)}</div></div></td><td>${baitSummaryHTML(f.fish_key,f)}</td><td>${Number(f.base_weight).toFixed(2)}</td><td>${effCellHTML(f,i)}</td><td><input class="mini-input" id="fw_${i}" type="number" min="0" step="0.1" value="${f.weight}" onchange="syncFishRows()"></td><td><button class="btn alt sm" data-key="${esc(f.fish_key)}" onclick="openEcoOverride(this.dataset.key)">生态</button></td><td>${f.has_override?'<span class="tag gold">覆盖</span>':'<span class="tag">静态</span>'}</td></tr>`).join('')||'<tr><td colspan="8" class="empty">没有匹配鱼种</td></tr>'}</tbody></table></div>`;
   const filtered=q.length>0;
   const on=$('#fishAllOn'),off=$('#fishAllOff');
   if(on)on.textContent=filtered?'启用筛选结果':'全部启用';
   if(off)off.textContent=filtered?'关闭筛选结果':'全部关闭';
+}
+// ---- 基础权重按稀有度档位重设 ----
+// 影响面是「所有水域的 loc_fish.catches」，不只是当前这张图，所以弹窗里先把
+// 每档多少鱼、多少行、现在平均多少摆出来，再让用户决定。
+const FISH_TIER_NAMES=['常规','少见','罕见','极罕见'];
+const FISH_TIER_HINTS=[
+  '到处都是的杂鱼，新手图的主要目标',
+  '要多跑几趟才碰得上',
+  '需要挑点位/时段/钓组才出',
+  '几十上百杆才一条，通常是该图的招牌目标',
+];
+async function openWeightPreset(){
+  let d;
+  try{d=await api('/api/fish/weights/preset')}catch(e){return toast(e.message,'bad')}
+  const w=Array.isArray(d.weights)?d.weights:[100,40,15,5];
+  const tiers=Array.isArray(d.tiers)?d.tiers:[];
+  const rows=tiers.length?tiers.map(t=>`<tr><td><b>${FISH_TIER_NAMES[t.tier]||t.label}</b><div class="muted" style="font-size:11px">${FISH_TIER_HINTS[t.tier]||''}</div></td><td>${t.species}</td><td>${t.rows}</td><td class="mono">${Number(t.avg_base).toFixed(1)}</td><td><input class="mini-input" id="tp_${t.tier}" type="number" min="0.1" step="1" value="${w[t.tier]}"></td></tr>`).join(''):'<tr><td colspan="5" class="empty">没有读到稀有度档案</td></tr>';
+  const state=d.active
+    ? `当前生效的是<b>档位预设</b>（共 ${d.rows||0} 条「水域 × 鱼种」）。`
+    : `当前还没启用档位预设，走的是<b>攻略站原值</b>——这就是各图权重差十倍的原因。`;
+  showModal('按稀有度重设基础权重',
+    '把所有水域的基础权重按这四档统一。只有相对比例有意义：常规 100 与极罕见 5，意味着后者被抽中的概率是前者的 1/20。',
+    `<div class="tunable-hint" style="margin:0 0 10px">${state}</div>
+    <div class="table-wrap"><table class="fish-table"><thead><tr><th>档位</th><th>鱼种数</th><th>涉及行</th><th>攻略原值均值</th><th>预设权重</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="tunable-hint" style="margin-top:10px">保存后立即生效，不用重启。已手工设过覆盖权重的鱼不受影响（覆盖优先）；攻略原值一直保留在静态库里，随时可以用下面的「回滚」还原。</div>
+    <div class="actions"><button class="btn good" onclick="applyWeightPreset()">确认重设</button><button class="btn alt" onclick="restoreWeightPreset()">回滚到攻略原值</button><button class="btn alt" onclick="closeModal()">取消</button></div>`);
+}
+async function applyWeightPreset(){
+  const w=[0,1,2,3].map(i=>{const el=$('#tp_'+i);return el?Number(el.value):null});
+  if(w.some(v=>v===null||!Number.isFinite(v)||v<0.1))return toast('四档都要填不小于 0.1 的数','bad');
+  try{
+    const r=await api('/api/fish/weights/preset',{method:'POST',body:JSON.stringify({tier0:w[0],tier1:w[1],tier2:w[2],tier3:w[3]})});
+    toast(`已生效：${r.updated||0} 档权重立即作用于所有水域`,'good');
+    closeModal();
+    if(FISH_AREA)await selectFishArea(FISH_AREA,true);
+  }catch(e){toast(e.message,'bad')}
+}
+async function restoreWeightPreset(){
+  if(!window.confirm('清空档位预设，基础权重回到攻略站原始渔获计数？\n\n各图权重会重新变得尺度不一（琥珀湖 1~15、铜湖 1~199）。'))return;
+  try{
+    const r=await api('/api/fish/weights/restore',{method:'POST',body:'{}'});
+    toast(`已回滚到攻略原值（清除 ${r.restored||0} 档预设）`,'good');
+    closeModal();
+    if(FISH_AREA)await selectFishArea(FISH_AREA,true);
+  }catch(e){toast(e.message,'bad')}
+}
+// ---- 稀有度重算：按全服渔获数的绝对阈值 ----
+// 依据是 species_grade.catches（StaticTables，攻略站全服登记数），与本地测试完全无关：
+// 后台怎么调权重、本服钓上多少条，都不会改变分档依据。改完重写 fish_ecology.rarity_tier，
+// 基础权重跟着档位一起变。
+let RARITY_PREVIEW_TIMER=null;
+function rarityCutsFromInputs(){
+  return [0,1,2].map(i=>{const el=$('#rc'+i);return el?Number(el.value):NaN});
+}
+async function openRarityRecalc(){
+  let d;
+  try{d=await api('/api/fish/rarity')}catch(e){return toast(e.message,'bad')}
+  const cuts=(Array.isArray(d.cuts)&&d.cuts.length===3)?d.cuts:[30,14,7];
+  showModal('按全服渔获数重算稀有度',
+    '依据是攻略站的<b>全服登记渔获数</b>，与你在本服的测试进度无关——测试期人为调高权重、多钓了几十条稀有鱼，都不会污染这个分档依据。改完会重写每个鱼种的档位，基础权重随档位一起变。',
+    `<div class="toolbar" style="margin:0 0 10px;gap:14px;flex-wrap:wrap">
+      <label class="muted">常规 ≥ <input class="mini-input" id="rc0" type="number" min="1" step="1" value="${cuts[0]}" oninput="scheduleRarityPreview()"></label>
+      <label class="muted">少见 ≥ <input class="mini-input" id="rc1" type="number" min="1" step="1" value="${cuts[1]}" oninput="scheduleRarityPreview()"></label>
+      <label class="muted">罕见 ≥ <input class="mini-input" id="rc2" type="number" min="1" step="1" value="${cuts[2]}" oninput="scheduleRarityPreview()"></label>
+      <span class="muted" style="font-size:12px">低于罕见下限即为极罕见</span>
+    </div>
+    <div id="rarityPreview"><div class="muted">正在计算…</div></div>
+    <label class="muted" style="display:flex;gap:6px;align-items:center;margin-top:10px"><input type="checkbox" id="rcReset" checked>同时按档位重设基础权重（不重设的话，库里还是按旧档位写的，看不出变化）</label>
+    <div class="actions"><button class="btn good" onclick="applyRarityRecalc()">应用并重算</button><button class="btn alt" onclick="restoreRarityDefault()">恢复默认阈值</button><button class="btn alt" onclick="closeModal()">取消</button></div>`);
+  await loadRarityPreview(cuts);
+}
+function scheduleRarityPreview(){
+  clearTimeout(RARITY_PREVIEW_TIMER);
+  RARITY_PREVIEW_TIMER=setTimeout(()=>{
+    const c=rarityCutsFromInputs();
+    if(c.every(x=>Number.isFinite(x)&&x>=1))loadRarityPreview(c);
+  },220);
+}
+async function loadRarityPreview(cuts){
+  const box=$('#rarityPreview');if(!box)return;
+  let d;
+  try{d=await api(`/api/fish/rarity?cut0=${cuts[0]}&cut1=${cuts[1]}&cut2=${cuts[2]}`)}catch(e){box.innerHTML=`<div class="muted">预览失败：${esc(e.message)}</div>`;return}
+  const tiers=Array.isArray(d.tiers)?d.tiers:[];
+  const rows=tiers.map(t=>{
+    const obs=(Number(t.min_obs)>=0)?`${t.min_obs}~${t.max_obs} 条`:'<span class="muted">无</span>';
+    const delta=Number(t.species)-Number(t.before);
+    const cls=delta>0?'up':(delta<0?'down':'');
+    const thr=t.tier<3?`≥ ${t.min_catches}`:`≤ ${cuts[2]-1}`;
+    return `<tr><td><b>${FISH_TIER_NAMES[t.tier]||t.label}</b><div class="muted mono" style="font-size:11px">${thr}</div></td><td><b>${t.species}</b> 种</td><td class="mono rarity-move ${cls}">${delta>0?'+':''}${delta}</td><td class="mono">${obs}</td></tr>`;
+  }).join('');
+  const tot=tiers.reduce((a,t)=>a+Number(t.species||0),0);
+  box.innerHTML=`<div class="table-wrap"><table class="fish-table"><thead><tr><th>档位 / 阈值</th><th>重算后鱼种数</th><th>相对现在</th><th>实际全服渔获区间</th></tr></thead><tbody>${rows||'<tr><td colspan="4" class="empty">无数据</td></tr>'}</tbody></table></div><div class="tunable-hint" style="margin-top:8px">共 ${tot} 种鱼有全服数据；没有全服数据的鱼保持原档不动（没有依据就不改）。</div>`;
+}
+async function applyRarityRecalc(){
+  const c=rarityCutsFromInputs();
+  if(!c.every(x=>Number.isFinite(x)&&x>=1))return toast('三个阈值都要填不小于 1 的整数','bad');
+  if(!(c[0]>c[1]&&c[1]>c[2]))return toast('阈值必须严格递减：常规 > 少见 > 罕见','bad');
+  const reset=!!$('#rcReset')?.checked;
+  try{
+    const r=await api('/api/fish/rarity',{method:'POST',body:JSON.stringify({cut0:c[0],cut1:c[1],cut2:c[2],reset_weights:reset})});
+    toast(`已重算：${r.changed||0} 种鱼换档${reset?`，基础权重重设 ${r.updated||0} 档`:''}`,'good');
+    closeModal();
+    if(FISH_AREA)await selectFishArea(FISH_AREA,true);
+  }catch(e){toast(e.message,'bad')}
+}
+async function restoreRarityDefault(){
+  const reset=!!$('#rcReset')?.checked;
+  if(!window.confirm(`把阈值恢复成默认 30 / 14 / 7 并重算所有鱼种档位？${reset?'\n\n基础权重也会跟着重设。':''}`))return;
+  try{
+    const r=await api('/api/fish/rarity/restore',{method:'POST',body:JSON.stringify({reset_weights:reset})});
+    toast(`已恢复默认阈值：${r.changed||0} 种鱼换档`,'good');
+    closeModal();
+    if(FISH_AREA)await selectFishArea(FISH_AREA,true);
+  }catch(e){toast(e.message,'bad')}
+}
+async function restoreWeightPreset(){
+  if(!window.confirm('把基础权重还原成攻略站的原始渔获计数？\n\n档位预设会被撤销，迁移后补齐的名册行没有原值、保持当前权重。'))return;
+  try{
+    const r=await api('/api/fish/weights/restore',{method:'POST',body:'{}'});
+    toast(`已回滚 ${r.restored||0} 行`,'good');
+    closeModal();
+    if(FISH_AREA)await selectFishArea(FISH_AREA,true);
+  }catch(e){toast(e.message,'bad')}
+}
+// ---- 钓法倾向：钓法族 × 鱼种水层档 ----
+// 这一层回答"同样够得着，这种钓法更该上哪种鱼"：底钓偏底层、浮钓/飞钓偏表层。
+// 乘子原样生效（不走判鱼链的幂压缩），保存后 30 秒内作用于判鱼。
+async function openRigAffinity(){
+  let d;
+  try{d=await api('/api/fish/rig_affinity')}catch(e){return toast(e.message,'bad')}
+  const fams=Array.isArray(d.families)?d.families:[];
+  const bands=Array.isArray(d.bands)?d.bands:[];
+  const w={};
+  (d.rows||[]).forEach(r=>{w[r.rig_family+'/'+r.layer_band]=r.weight});
+  const head=`<tr><th>钓法 / 水层</th>${bands.map(b=>`<th>${esc(b.label)}<div class="muted mono" style="font-size:10px;font-weight:400">${esc(b.hint||'')}</div></th>`).join('')}</tr>`;
+  const body=fams.map(f=>`<tr><td><b>${esc(f.label)}</b></td>${bands.map(b=>{
+    const v=w[f.key+'/'+b.key];
+    return `<td><input class="mini-input" id="ra_${f.key}_${b.key}" type="number" min="${d.min_weight||0.05}" max="${d.max_weight||5}" step="0.05" value="${v==null?1:v}"></td>`;
+  }).join('')}</tr>`).join('');
+  const state=d.enabled?'':'<div class="tunable-hint" style="margin:0 0 10px">当前<b>关闭</b>（rig_affinity_enabled=0），这套矩阵不参与判鱼。</div>';
+  showModal('钓法倾向：钓法 × 水层',
+    '同样够得着的情况下，不同钓法也该有不同偏向：底钓贴底、浮钓随饵下沉、飞钓在水面拖。这一层是<b>直接乘子</b>——填 1.6 就是 1.6 倍，不走判鱼链的幂压缩；上一层的几何水层匹配照旧生效，两层相乘。',
+    `${state}
+    <div class="table-wrap"><table class="fish-table"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+    <div class="tunable-hint" style="margin-top:10px">建议 0.2~2.0：低于 0.2 基本等于封掉这种组合（真要封鱼种请用生态的「启用」），高于 2 会把同图其他鱼压没。保存后 30 秒内生效。</div>
+    <div class="actions"><button class="btn good" onclick="applyRigAffinity()">保存</button><button class="btn alt" onclick="restoreRigAffinityDefaults()">恢复默认</button><button class="btn alt" onclick="closeModal()">取消</button></div>`);
+}
+async function applyRigAffinity(){
+  const rows=[];
+  document.querySelectorAll('input[id^="ra_"]').forEach(el=>{
+    const m=/^ra_([a-z]+)_(.+)$/.exec(el.id);
+    if(!m)return;
+    const v=Number(el.value);
+    if(Number.isFinite(v))rows.push({rig_family:m[1],layer_band:m[2],weight:v});
+  });
+  if(!rows.length)return toast('没有可保存的格子','bad');
+  try{
+    const r=await api('/api/fish/rig_affinity',{method:'POST',body:JSON.stringify({rows})});
+    toast(`已保存 ${r.updated||0} 格，30 秒内作用于判鱼`,'good');
+    closeModal();
+  }catch(e){toast(e.message,'bad')}
+}
+async function restoreRigAffinityDefaults(){
+  if(!window.confirm('把钓法倾向矩阵恢复成出厂值（底钓偏底层、浮钓/飞钓偏表层）？'))return;
+  try{
+    const r=await api('/api/fish/rig_affinity/restore',{method:'POST',body:'{}'});
+    toast(`已恢复 ${r.updated||0} 格出厂值`,'good');
+    closeModal();
+  }catch(e){toast(e.message,'bad')}
 }
 function fishSetAll(on){
   syncFishRows();
@@ -1811,6 +2082,106 @@ async function resetFishConfig(){askConfirm('恢复默认鱼口','清除「'+FIS
 async function showAddFish(){showModal('添加鱼种到水域','搜索鱼库后添加到当前覆盖列表',`<input id="fishAddSearch" placeholder="中文名或 fish_key" oninput="debounce('fishAdd',searchFishPool)"><div class="results" id="fishAddResults"></div>`);searchFishPool()}
 async function searchFishPool(){const q=$('#fishAddSearch').value.trim();const list=await api('/api/fish/pool?q='+encodeURIComponent(q)+'&limit=80');$('#fishAddResults').innerHTML=list.map(x=>`<div class="result" data-key="${esc(x.fish_key)}" data-name="${esc(x.name_zh)}" onclick="addFishFromPool(this.dataset.key,this.dataset.name)"><div class="item-cell"><img class="fish-icon" src="icons/fish/${encodeURIComponent(String(x.fish_key||'').toLowerCase().replace(/\./g,'_'))}.png" onerror="this.style.display='none'"><div><b>${esc(x.name_zh)}</b><div class="muted mono">${esc(x.fish_key)}</div></div></div><span class="tag">${fmt(x.min_g)}-${fmt(x.max_g)}g</span></div>`).join('')||'<div class="empty">无结果</div>'}
 function addFishFromPool(key,name){syncFishRows();if(FISH_CFG.fish.some(f=>f.fish_key===key)){closeModal();return toast('该鱼种已在列表','bad')}FISH_CFG.fish.push({fish_key:key,name_zh:name,base_weight:0,weight:1,enabled:true,has_override:true});closeModal();renderFishRows();toast('已加入，记得保存')}
+
+// ---- 判鱼追踪（fish_roll_trace，只读）：回答「为什么空军 / 为什么是这条鱼」----
+// 数据由 gameserver 的真实咬钩路径落库，后台只读展示；payload 是各层权重快照。
+const ROLL_STAGE_LABEL={roster:'名册',pool:'鱼池兜底',gate:'硬门',zone:'区域',bait:'饵规则',dist:'分布',ecology:'生态',spot:'钓点',groundbait:'窝料',bait_tier:'饵效',final:'抽签'};
+let ROLL_TRACE_ALL=false;
+async function loadRollTrace(force,all){
+  if(all!==undefined)ROLL_TRACE_ALL=all;
+  const box=$('#rollTraceBody'),st=$('#rollTraceStatus');
+  if(!box)return;
+  const loc=ROLL_TRACE_ALL?'':(FISH_AREA||'');
+  const scope=$('#rollTraceScope');
+  if(scope)scope.textContent=ROLL_TRACE_ALL?'只看当前水域':'看全部水域';
+  try{
+    const data=await api('/api/fish/roll-trace?limit=30&loc='+encodeURIComponent(loc));
+    const rows=data.traces||[];
+    if(st)st.textContent=(loc||'全部水域')+' · '+rows.length+' 条';
+    box.innerHTML=rows.length?rows.map(renderRollTraceRow).join(''):'<div class="empty">还没有追踪记录：先抛一竿；若一直没有，到「游戏参数」确认 fish_roll_trace_enabled 未被关闭。</div>';
+  }catch(e){box.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+}
+function renderRollTraceRow(r){
+  let p={stages:[],candidates:[]};
+  try{p=JSON.parse(r.payload||'{}')}catch(e){}
+  const stages=p.stages||[],cands=p.candidates||[];
+  const when=new Date((r.ts||0)*1000).toLocaleTimeString('zh-CN',{hour12:false});
+  const result=r.hit?`<span class="tag gold">中鱼 ${esc(r.chosen||'')} · ${fmt(r.weight_g)}g</span>`
+    :`<span class="tag">空轮</span>${r.empty_reason?`<span class="tag">${esc(r.empty_reason)}</span>`:''}`;
+  const table=cands.length
+    ?`<div class="table-wrap"><table class="fish-table"><thead><tr><th>鱼种</th>${stages.map(s=>`<th>${esc(ROLL_STAGE_LABEL[s]||s)}</th>`).join('')}</tr></thead><tbody>${cands.map(c=>`<tr><td class="mono">${esc(c.key)}</td>${(c.w||[]).map(w=>`<td>${Number(w).toFixed(2)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
+    :'<div class="muted">没有候选快照（本杆走了内置鱼池兜底，或追踪刚开启）。</div>';
+  return `<div style="padding:8px 0;border-top:1px solid var(--border,rgba(255,255,255,.1))"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b class="mono">${when}</b><span class="tag">${esc(r.loc||'')}</span>${result}<small class="muted">饵 ${esc(r.bait||'-')} · 网格 (${Math.round(r.x||0)},${Math.round(r.z||0)}) · 候选权重和 ${Number(r.total_weight||0).toFixed(2)}</small></div><details style="margin-top:6px"><summary class="muted">候选与各层权重</summary>${table}</details></div>`;
+}
+
+// ---- 生态覆盖（fish_ecology_loc）：某水域某鱼种的习性覆盖，留空即继承全局 ----
+async function openEcoOverride(fishKey){
+  if(!FISH_AREA)return toast('先在左侧选水域','bad');
+  let row=null,g=null;
+  try{
+    const d=await api('/api/fish/ecology-loc?loc='+encodeURIComponent(FISH_AREA)+'&fish_key='+encodeURIComponent(fishKey));
+    row=(d.overrides||[]).find(o=>o.fish_key===fishKey)||null;
+    g=d.global||null;
+  }catch(e){return toast(e.message,'bad')}
+  const v=x=>x===null||x===undefined?'':x;
+  const num=(x,d)=>(x===null||x===undefined)?'—':Number(x).toFixed(d);
+  const maskText=(m,names)=>{if(m===null||m===undefined)return'';const on=names.filter((_,i)=>m&(1<<i));return on.length?on.join('/'):'无'};
+  // 继承提示写成「继承 <全局值>」：只显示"继承"两个字，看不出这张图当前到底用多少。
+  const inh=(val,d)=>val===null||val===undefined?'继承':'继承 '+Number(val).toFixed(d);
+  const globLine=g
+    ?`当前继承全局档案：水层 ${num(g.layer_min,2)}~${num(g.layer_max,2)}（偏好 ${num(g.layer_pref,2)}）· 水温 ${num(g.temp_min_c,1)}~${num(g.temp_max_c,1)}℃（偏好 ${num(g.temp_pref_c,1)}）· 活跃 ${num(g.activity,2)} · 昼夜 ${maskText(g.diel_mask,['晨','昼','暮','夜'])||'—'} · 季节 ${maskText(g.season_mask,['春','夏','秋','冬'])||'—'} · ${g.enabled===0?'全局不出鱼':'全局出鱼'}`
+    :'该鱼种没有全局档案，判鱼侧按内置默认值兜底；这里的覆盖会成为唯一依据。';
+  const f=(id,label,val,step,hint,ph)=>`<div class="field"><label for="${id}">${label}</label><input id="${id}" type="number" step="${step}" value="${v(val)}" placeholder="${ph}"><div class="tunable-hint">${hint}</div></div>`;
+  showModal('生态覆盖 · '+FISH_AREA+' · '+fishKey,
+    '留空 = 继承全局档案；只填你关心的字段即可（同一鱼种在其他水域不受影响）',
+    `<div class="eco-glob">${esc(globLine)}</div>
+    <div class="form-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+      ${f('eco_lmin','栖息水层 下限',row?.layer_min,'0.01','0~1，1=水面',inh(g?.layer_min,2))}
+      ${f('eco_lpref','栖息水层 偏好',row?.layer_pref,'0.01','权重峰值所在水层',inh(g?.layer_pref,2))}
+      ${f('eco_lmax','栖息水层 上限',row?.layer_max,'0.01','0~1，越大越深',inh(g?.layer_max,2))}
+      ${f('eco_tmin','水温 下限 ℃',row?.temp_min_c,'0.5','低于此温度几乎不开口',inh(g?.temp_min_c,1))}
+      ${f('eco_tpref','水温 偏好 ℃',row?.temp_pref_c,'0.5','最活跃的温度',inh(g?.temp_pref_c,1))}
+      ${f('eco_tmax','水温 上限 ℃',row?.temp_max_c,'0.5','高于此温度几乎不开口',inh(g?.temp_max_c,1))}
+      ${f('eco_diel','昼夜掩码 0-15',row?.diel_mask,'1','位掩码：1 晨 2 昼 4 暮 8 夜'+(g?.diel_mask!=null?'；当前 '+maskText(g.diel_mask,['晨','昼','暮','夜']):''),inh(g?.diel_mask,0))}
+      ${f('eco_season','季节掩码 0-15',row?.season_mask,'1','位掩码：1 春 2 夏 4 秋 8 冬'+(g?.season_mask!=null?'；当前 '+maskText(g.season_mask,['春','夏','秋','冬']):''),inh(g?.season_mask,0))}
+      ${f('eco_act','活跃度',row?.activity,'0.05','1=常规，>1 更活跃',inh(g?.activity,2))}
+    </div>
+    <div class="field" style="margin-top:8px"><label for="eco_enabled">该水域是否出这种鱼</label>
+      <select id="eco_enabled"><option value="">继承全局${g?(g.enabled===0?'（全局不出鱼）':'（全局出鱼）'):''}</option><option value="1" ${row&&row.enabled===1?'selected':''}>出鱼</option><option value="0" ${row&&row.enabled===0?'selected':''}>不出鱼</option></select>
+      <div class="tunable-hint">选「不出鱼」= 把该鱼种从这张图的候选里去掉，其他图不受影响</div>
+    </div>
+    <div class="actions"><button class="btn good" onclick="saveEcoOverride('${esc(fishKey)}')">保存覆盖</button>${row?'<button class="btn bad" onclick="deleteEcoOverride(\''+esc(fishKey)+'\')">清除覆盖</button>':''}<button class="btn alt" onclick="closeModal()">取消</button></div>`);
+}
+function ecoNum(id){
+  const raw=($('#'+id)?.value||'').trim();
+  if(raw==='')return null;
+  const n=Number(raw);
+  return Number.isFinite(n)?n:NaN;
+}
+async function saveEcoOverride(fishKey){
+  const body={stat_loc:FISH_AREA,fish_key:fishKey,
+    layer_min:ecoNum('eco_lmin'),layer_pref:ecoNum('eco_lpref'),layer_max:ecoNum('eco_lmax'),
+    temp_min_c:ecoNum('eco_tmin'),temp_pref_c:ecoNum('eco_tpref'),temp_max_c:ecoNum('eco_tmax'),
+    diel_mask:ecoNum('eco_diel'),season_mask:ecoNum('eco_season'),activity:ecoNum('eco_act')};
+  const en=($('#eco_enabled')?.value||'').trim();
+  body.enabled=en===''?null:Number(en);
+  for(const [k,val] of Object.entries(body)){
+    if(typeof val==='number'&&Number.isNaN(val)){
+      const labels={layer_min:'栖息水层下限',layer_pref:'栖息水层偏好',layer_max:'栖息水层上限',
+        temp_min_c:'水温下限',temp_pref_c:'水温偏好',temp_max_c:'水温上限',
+        diel_mask:'昼夜掩码',season_mask:'季节掩码',activity:'活跃度'};
+      return toast((labels[k]||k)+' 不是有效数字','bad');
+    }
+  }
+  try{await api('/api/fish/ecology-loc',{method:'POST',body:JSON.stringify(body)});toast('已保存，30 秒内生效');closeModal()}
+  catch(e){toast(e.message,'bad')}
+}
+async function deleteEcoOverride(fishKey){
+  askConfirm('清除生态覆盖','删除后「'+FISH_AREA+' · '+fishKey+'」回到继承全局档案。',async()=>{
+    try{await api('/api/fish/ecology-loc/delete',{method:'POST',body:JSON.stringify({stat_loc:FISH_AREA,fish_key:fishKey})});toast('已清除，30 秒内生效');closeModal()}
+    catch(e){toast(e.message,'bad')}
+  });
+}
 
 // ---- 区域固定鱼种（fish_zone）：纸地图拖拽编辑 + 本图名册选鱼 ----
 // 坐标换算与 docs/fish-query-coordinates.md 同源：图像像素=(世界-原点)×scale+offset；
