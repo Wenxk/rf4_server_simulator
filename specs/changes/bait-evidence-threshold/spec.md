@@ -165,3 +165,60 @@ item_id 自动命中 36%（拟饵类高、天然饵与组合饵待手工补表�
    推断"（见 Evidence 交叉验证段），但仍缺导入者口径确认；阈值 tunable 化兜底语义漂移。
 3. 规则文本宽放行（狗鱼"各类饵"）不在本 spec：若分级上线后浮钓仍能钓到明显不该出现的
    鱼种，问题在 allow 文本，另立 spec 修文本。
+
+## 修订 2026-11-18：中档兜底加食性族约束（实机事故）
+
+### 事故
+
+玩家在琥珀湖用**鱼块**（`fish_pieces`）钓上**普通鲤鱼**（`carp`）。判鱼追踪
+（`fish_roll_trace` id=4）记录的饵料层权重 `11 → 6.64125`，倍率正好是
+`maxBaitPreference×0.35`，即落进了中档。
+
+### 根因
+
+中档兜底的条件写成 `share < 0 && comp >= 1`——只要 companion 有这行（即使 tier=1
+「在列」）就给 0.35，**完全不看这饵在不在该鱼的食谱里**。实测数据：
+
+| 项 | 值 |
+|---|---|
+| companion `fish_pieces`×`carp` | tier=1，evidence=11（孤例） |
+| `fishing_bait_rules.txt` 普通鲤鱼 allow | 马铃薯块/菜叶/蜂蜜面团/玉米粥/椰子类/玉米类/一束藻类 |
+| `fish_ecology.diet_json`（carp） | plant 1.90 / boilie 2.00 / worm 1.62 / crustacean 0.95，**无 fish 项** |
+| `loc_bait_fish`（琥珀湖） | 无 `carp`×鱼块 行 |
+| `rf4records_catch` | 本库 **0 行**（管道未灌库），`share` 恒为 -1 |
+
+即三条独立证据都说"鲤鱼不吃鱼块"，但 tier=1 一条就把倍率抬到 0.6，压过了同批真正
+吃鱼块的鳗鱼（tier3，满分）。本 spec 原文写的是「tier == 2 中档」，实现写成 `>= 1`，
+是首版就存在的实现漂移。
+
+另注：`rf4records_catch` 为空意味着**占比优先档位在本服从未生效**，所有判定都在走
+companion 兜底——兜底路径的宽松度就是实际手感。
+
+### 修法
+
+1. 中档兜底要求**食性族相容**：`comp >= 1 && b.baitDietCompatible(r)`。
+   天然饵的食性族能判定时（虫/植物/煮饵/颗粒/玉米/饵鱼/鱼肉），必须在该鱼的 allow
+   里出现过同类关键词；判不出来时放行——拟饵（category 17）没有食性族，
+   `baitType=1`「杂类」是一锅杂烩（香煮成饵 / 贻贝肉 / 鱼块），不能一概而论。
+2. 鱼块归一到鱼肉族：`matches` 的 `fish_pieces` 补别名「鱼肉/鱼肉块/鱼肉类/鱼片」，
+   `legalAlternative`/`dietFamily` 里 `fish_pieces` 也归 `鱼肉`。客户端只有这一件
+   鱼肉类制品（`fish_pieces`，baitType=1 杂类），而攻略文本分写"鱼肉/鱼肉块/鱼片"，
+   不归一的话江鳕、鳗鱼、葛氏鲈塘鳢这些**明写吃鱼肉**的鱼反而认不出鱼块。
+3. tier3 强证据不受食性族限制（985 条官服渔获的煮饵×鲤鱼就是真实钓法）；
+   碎尾（跨族 + 只有 tier1）走 `legalAlternative`，无替代则排除。
+
+### 边界与取舍
+
+- 跨族但不是孤例的真实钓法会一起被挡。本服可用的补偿通道是后台规则覆盖
+  （`bait_rotation_admin` 同源的表单）与 `bait_share_*` 阈值，**不要**用放宽
+  `comp >= 1` 来兜。
+- `share >= 0.2%`（`bait_share_tail`）与 `localEvidence` 仍可越过食性族：前者是官服
+  实测占比，后者是本图攻略记录，都是"确实吃到过"的正面证据，不是"上过榜"。
+
+### 验收
+
+- 新增 `TestBaitCompanionEvidenceStaysInsideDietFamily`：鲤鱼×鱼块（tier1）排除；
+  葛氏鲈塘鳢×鱼块（allow 含鱼肉）满分；常见拟鲤×虫饵（同族 tier1）中档；
+  鲤鱼×虫饵（跨族 tier1）排除；鲤鱼×跨族 tier3 满分。
+- 既有 `TestBaitWeightReadsLivePrimaryAndSecondaryBaits` 不改：它依赖"虫饵×常见拟鲤
+  tier1 中档"，正是本修订要保留的同族行为。
