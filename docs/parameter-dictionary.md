@@ -37,6 +37,8 @@
    延迟 = 样本池 × 天气因子 × 技能 × 保底6s × 上限 × 倍率 × 钩型自动因子
    参数：bite_delay_fixed（>0 直接短路整条链）/ bite_delay_scale / bite_delay_max /
          bite_delay_lure_max / fish_weather_enabled / fish_bite_setting（水域整组覆盖）
+   开 bite_pace_enabled 时，底层杆再乘饵效节奏因子（好/中/差 = ×1.0/1.6/3.0），
+   路亚不改窗口、只改单轮判定概率（0.30/0.10/0.02）
    ↓
 ② 到点掷骰：这轮咬不咬
    p = bite_probability（水域可覆盖）→ 若开了饵料规则或天气鱼口则封顶 0.95
@@ -75,6 +77,19 @@
 | `bite_empty_retry_scale` | `1` | 空轮（无符合条件的鱼）后下一轮等待的倍率。0.25=空轮 5 秒重试 | 只改「空竿后重试」节奏，不改咬钩概率；调太小会刷屏式空竿 |
 | `fish_bite_setting`（表） | 无行 | 水域级**五项整组替换**：`bite_probability` + 四个延迟参数。有行即全换，不再逐项回落 | 该图从此与全局参数脱钩，后台「游戏参数」页对这张图全部失效且**界面无提示** |
 
+**饵效控速（`bite_pace_enabled`，默认关，无后台入口）**——独立于判鱼候选的一层，
+只改「多快来鱼」，不改鱼种权重、档位与候选集合：
+
+| 键 | 默认 | 作用 / 影响范围 |
+|---|---|---|
+| `bite_pace_enabled` | `0` | 总开关；关=完全走 legacy 延迟链。三处消费点（延迟分支 / 单轮概率 / 保底收缩）都受当前开关门控，热关立即回退 |
+| `pace_score_good` / `pace_score_mid` | `0.75` / `0.45` | 饵效对口分的两档阈值：≥好、≥中，其余为差 |
+| `pace_factor_mid` / `pace_factor_bad` | `1.6` / `3.0` | 底层杆（非路亚）延迟乘数；好档为 1.0 |
+| `pace_prob_good` / `pace_prob_mid` / `pace_prob_bad` | `1.0` / `0.5` / `0.12` | 底层杆单轮判定概率 |
+| `pace_lure_prob_good` / `_mid` / `_bad` | `0.30` / `0.10` / `0.02` | 路亚（含铁板）单轮概率；**延迟窗口不动**，保住收线窗口约束 |
+| `pace_bottom_max` / `pace_marine_max` / `pace_marine_min` | `60` / `30` / `3` | 延迟 clamp：底/浮 `[6,60]`，海底钓族 `[3,30]` |
+| `pace_groundbait_gain` / `_floor` / `_min_factor` | `0.62` / `3.0` / `0.35` | 打窝压缩：`1−gain×窝强度×死窝闸门`，下限降到 3 秒；死窝不加速 |
+
 ### 3.2 判鱼权重链开关（决定「哪些机制参与选鱼」）
 
 这五个开关由「鱼汛模式」卡片原子统管：**真实鱼汛=五开，遗留=五关**，手改单个开关后卡片显示 `mixed`。
@@ -84,7 +99,7 @@
 | `bite_gate_enabled` | `0` | 硬性鱼口门：拟饵×食性硬剔 / 水层超界打地板 / 天然饵食性资格。插在水域覆盖之后、饵料规则之前 | 剔空候选会让这杆空竿重排（不从默认鱼池捞鱼）；关了等于整层不存在 |
 | `fish_ecology_enabled` | `0` | 逐鱼种生态总开关：水层/季节/天气/水温/光照/底质/动作等约 14 个因子，整体 clamp [0.08,2.5] | 关=整层中性，但**不影响昼夜层**（昼夜独立默认开）；表单鱼 `enabled=0` 仍会彻底封鱼 |
 | `fish_weather_enabled` | `0` | 天气与温度鱼口：按小时天气修正权重，并让底钓/浮钓间歇试口；同时参与延迟因子 | 与饵料规则任一开启都会把 `bite_probability` 封顶 0.95 |
-| `fish_bait_rules_enabled` | `0` | 鱼类吃饵偏好：规则表写「吃 X」的鱼只咬命中列表的饵（硬资格），命中后权重取食谱强度 | 关掉后「鱼饵偏好」页保存的规则**全部不生效**，页面有横幅但容易忽略 |
+| `fish_bait_rules_enabled` | `0` | 鱼类吃饵偏好：allow 命中给满分档（1.0~1.5）；companion tier3 在本轮无任何饵命中 allow 时越级满分，tier1~2 给低权重档；同食性大类保底 | 关掉后「鱼饵偏好」页保存的规则**全部不生效**；allow 不是绝对门槛，companion 覆盖的饵仍可能咬 |
 | `fish_distribution_enabled` | `0` | 鱼群随机分布：按「区域×鱼种×4 游戏小时」确定性哈希，`v<0.3` 直接权重 0 | 只改空间分布，不参与昼夜；关掉后同图任何位置权重一致 |
 | `happy_hour_enabled` | `1` | 欢乐时光：**不是权重乘子**，是选鱼定稿后的二次掷骰，`chance=interest×1.1×天气活跃度`，interest≤0.1 封顶 | 以为「鱼口+10%」会变成「低兴趣鱼几乎必过」的误判；三开关全关时此掷骰整体跳过 |
 
@@ -109,7 +124,7 @@
 
 | 键 | 默认（范围） | 作用 / 影响范围 | 误改风险 |
 |---|---|---|---|
-| `bait_pref_scale` | `1` | 饵效强度（**只在饵料规则关闭时生效**）：tier3×8 / tier2×4 / 在列×2，未上榜按覆盖度打折。设 0=整层关闭 | 开着饵料规则时改它完全无效；设 0 会连带关掉 `bait_pref_weight_shift` |
+| `bait_pref_scale` | `1` | companion 饵效证据层的强度（**只在饵料规则关闭时生效**）：tier3×8 / tier2×4 / 在列×2，未上榜按覆盖度打折。设 0=整层关闭 | 开着饵料规则时改它完全无效；设 0 会连带关掉 `bait_pref_weight_shift` |
 | `bait_pref_weight_shift` | `1` | 不改权重，改**体重分布峰值**：tier≥2 时 mode=1+0.12×tier×shift | 只影响「上什么体型」，不影响「上什么鱼」；被 `bait_pref_scale=0` 关闭 |
 | `bite_gate_lure_diet_min` | `0.30`（0~1） | 硬门 G1：拟饵时，生态食性 `lure` 权重低于此值的鱼直接出候选 | 只作用于拟饵；天然饵走食性键映射，不受此值影响 |
 | `bite_gate_layer_floor` | `0.01`（0~1） | 硬门 G2：钓层落在 `[LayerMin−0.15, LayerMax+0.15]` 之外时权重乘此系数 | 0=完全杜绝杂口，0.01≈保留 1%；容差 0.15 是编译期常量 |
@@ -241,6 +256,7 @@
 | `fish_roll_trace_enabled` | `1`（0/1） | 判鱼追踪：每杆真实咬钩落一份决策快照，供后台排错；0=零开销 |
 | `fish_roll_trace_keep` | `300`（0~5000） | 追踪表环形保留条数；0=不落库 |
 | `fish_trophy_probe_all` / `fish_trophy_probe_place` | `0` / 空 | 奖杯面板逐格探针，只对指定水域生效 |
+| `bait_share_min_count` | `5` | **仅后台展示**：官服占比的每饵最小样本量，低于此值不计入。rf4 占比已不参与判鱼 |
 | `fish_model_variant` | `1` | 鱼模型族总开关；0=每鱼种只用默认族 |
 | `fish_variant_parr_max_g` / `_smolt_max_g` / `_juvenile_max_m` | `1500` / `4000` / `0.35` | 幼鱼/降海幼鱼族的体重与体长上限，需同时满足 |
 | `tc_laminate_gift_source` | 见代码 | 塑封卡册礼物来源码，改库 30 秒生效 |
@@ -274,7 +290,7 @@
 | `fish_ecology` | `fish_key` | 全局习性基线 | `layer_min/pref/max`、`temp_min/pref/max`、`diel_mask`、`season_mask`、`diet_json`、`weather_json`、`action_json`、`aggression`、`enabled`、`rarity_tier`（由静态库同步，勿手改） |
 | `fish_ecology_loc` | `(stat_loc, fish_key)` | **部分覆盖**：空列继承全局 | 同上但仅习性字段；`enabled=0` = 该水域不出这种鱼 |
 | `fish_zone` / `fish_zone_fish` | `id` / `(zone_id, fish_key)` | 名册与分布乘法复合 | `kind`（grid_rect/sea_zone）、`mode`（exclusive/boost）、`boost` 默认 3.0、`keep_others` 默认 0.35。多区重叠：独占取交集、增益连乘 |
-| `fish_bait_override` | `fish_zh` | **整行替换**内置 252 条规则 | `allow_json`（吃，硬资格）/ `deny_json` / `bottom_json`（底钓只吃）/ `condition`（前置条件）/ `groups_json`+`rotate_sec`+`rotate_mode`（≥60s，soft=×3/×0.5，strict=组外不咬）/ `enabled` |
+| `fish_bait_override` | `fish_zh` | **整行替换**内置 252 条规则 | `allow_json`（吃，命中给满分档）/ `deny_json` / `bottom_json`（底钓只吃）/ `condition`（前置条件）/ `groups_json`+`rotate_sec`+`rotate_mode`（≥60s，soft=×3/×0.5，strict=组外不咬）/ `enabled` |
 | `hook_bite_profile` | `item_id` | 四列调参，物理列只读 | `solid_scale_bp` / `hold_scale_bp`（基点，10000=1.0）/ `small_fish_floor_bp` / `over_capacity_hold_floor_bp` |
 | `fish_grade_lines` | `fish_key` | 档位线来源 | `qualified_g < trophy_g < blue_trophy_g`（CHECK 约束）；改它等于改「什么算星鱼/蓝冠」 |
 | `fish_roll_trace` | 自增 | 纯诊断，不参与判鱼 | 逐层权重快照：roster→gate→zone→bait→dist→ecology→spot→groundbait→bait_tier→final |
@@ -315,6 +331,8 @@
 | 固定延迟 | `bite_delay_fixed>0` → 天气、技能、倍率、上限 | **短路**（钩型因子仍在最外层） |
 | 概率封顶 | 饵料规则 ∨ 天气鱼口 → `bite_probability` | 条件性 cap 0.95 |
 | 饵效层 | `bait_pref_scale=0` → 饵效证据 + `bait_pref_weight_shift` | 整层关闭 |
+| 饵料证据分档 | 规则命中 → 满分；companion tier3（本轮无任何饵命中规则）→ 满分；tier1~2 → 0.35 档；同食性大类 → 0.05 档 | 逐档降权，非硬门 |
+| 官服占比 / 本图渔获 | `rf4records_catch` / `loc_bait_fish` → 判鱼与节奏打分 | **不参与**（占比仅后台展示） |
 | 生态层 | `fish_ecology_enabled=0` → 约 14 个因子 | 整层中性，**不影响昼夜层** |
 | 鱼种覆盖静默失效 | `fish_weight_override` 全 0 且三规则开关全关 → 整组覆盖 | **静默回退静态名册** |
 | 多钩实验 | `multi_hook_bite=0` → 其余 `multi_hook_*` | 子参数全部无效 |

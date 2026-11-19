@@ -48,9 +48,10 @@ func TestWeatherAndBaitAffectActualBitesWithIndependentSwitches(t *testing.T) {
 		t.Fatalf("weather without bait/distribution switches had no absolute effect: %d", weatherOnly)
 	}
 	setBaitRuleSwitch(t, s, "1")
-	// 命中爱吃饵的蚯蚓照常咬；「补充饵」不在设定里，整轮不咬；坏天气仍压低吃口。
+	// 命中爱吃饵的蚯蚓照常咬；「补充饵」不在设定里，只走合法替代的低权重档，
+	// 数量必须远少于正口饵（规则不再是绝对门槛，2026-11-19 证据口径）；坏天气仍压低吃口。
 	preferred, offList, badWeather := count("rule_worm", weather), count("rule_other", weather), count("rule_worm", storm)
-	if preferred < 60 || offList != 0 || badWeather >= preferred {
+	if preferred < 60 || offList*8 > preferred || badWeather >= preferred {
 		t.Fatalf("allow list or weather effect broken: preferred=%d off-list=%d storm=%d", preferred, offList, badWeather)
 	}
 	if count("rule_lure", weather) != 0 {

@@ -2,6 +2,12 @@
 
 Status: done
 
+> 本文记录的「allow 硬资格」已于 2026-11-19 撤销：改为按上游口径的**三档打分**——
+> allow 命中给满分档；`companion_bait_fish` tier3 在本轮无任何饵命中 allow 时可越级满分，
+> tier1~2 给低权重档；同食性大类保留保底档。本图渔获与 rf4 官服占比仍不参与判鱼
+> （后者只在后台展示）。现行口径见 `docs/gameplay.md`「鱼类吃饵偏好」与
+> `specs/capabilities/bite-bait-and-spawn.md` §7。
+
 ## Problem Statement
 
 2026-11-18 的 `bait-diet-only` 把「爱吃饵」设定连同渔获记录一起从判鱼里删掉了，

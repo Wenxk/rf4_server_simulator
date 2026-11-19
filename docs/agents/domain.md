@@ -54,6 +54,7 @@
 | 命令响应形状/args code | `specs/capabilities/protocol-contract.md`（若引出新规则） |
 | 结算、奖励、终态（剪线/断竿/跑鱼/放生入护） | `specs/capabilities/settlement-and-idempotency.md` |
 | 咬钩、饵料、食性、派鱼与发鱼模式 | `specs/capabilities/bite-bait-and-spawn.md` |
+| 咬钩节奏、饵效控速、打窝压缩 | `specs/capabilities/bite-pace.md` |
 | 成就规则与解锁推送 | `specs/capabilities/achievements.md` |
 | 查鱼回复与口径 | `specs/capabilities/fish-query.md` |
 | 启动装配与初始化步骤 | `specs/capabilities/runtime-and-launch.md` |

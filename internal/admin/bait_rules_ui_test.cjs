@@ -61,6 +61,14 @@ test('bait rule editor supports cascade, rotation groups and unsaved close guard
   await page.locator('#modal .section-head button').click();
   await page.waitForFunction(()=>!document.getElementById('modalBg').classList.contains('on'));
   assert.equal(saved,null);
+  // 偏好饵类：重新打开编辑器，点「拟饵」应写入「吃」名单，并随保存一起提交。
+  await page.locator('#baitTable .bait-edit').click();
+  await page.locator('#brInterval').waitFor();
+  await page.getByRole('button',{name:'拟饵',exact:true}).click();
+  assert.ok(await page.locator('#modal .tag').filter({hasText:'拟饵'}).count()>=1,'class chip should add a tag');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await page.waitForFunction(()=>!document.getElementById('modalBg').classList.contains('on'));
+  assert.ok(saved&&Array.isArray(saved.allow)&&saved.allow.includes('拟饵'),'class term should be saved into allow');
   assert.deepEqual(errors,[]);
   await context.close();
  }finally{await browser.close();}

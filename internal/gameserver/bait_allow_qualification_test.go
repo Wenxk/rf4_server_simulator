@@ -5,19 +5,16 @@ import (
 	"time"
 )
 
-// 爱吃饵硬约束（用户 2026-11-19 口径）：规则表写了「吃 X」的鱼，钩上的饵必须
-// 命中 allow 才进候选；鱼种食谱 diet_json 是紧随其后的第二道资格门。
-// 攻略 allow 是鱼口设定本身；companion 官服榜、本图渔获、rf4 占比这些
-// 「谁钓到过」的人类记录仍然一律不参与判鱼。
-func TestBaitBiteIgnoresHumanRecords(t *testing.T) {
+// 证据口径（用户 2026-11-19）：判定只认规则表 allow 与 companion 饵效档位。
+// 本图渔获（loc_bait_fish）与 rf4records 官服占比都不参与——两者都只说明
+// 「谁钓到过」，接进判定会让同一鱼种同一款饵在不同钓场/不同数据批次下漂移。
+func TestBaitScoreIgnoresLocalCatchesAndOfficialShare(t *testing.T) {
 	s, db := seedBaitRuleTest(t)
 	for _, q := range []string{
-		`INSERT INTO loc_alias(alias,loc) VALUES('level_905_diet_a','diet-only-a'),('level_905_diet_b','diet-only-b')`,
+		`INSERT INTO loc_alias(alias,loc) VALUES('level_905_diet_a','diet-only-a')`,
 		`INSERT INTO loc_fish(loc,fish_key,name_zh,catches) VALUES
-			('diet-only-a','c.roach','常见拟鲤',100),('diet-only-a','a_salmon','大西洋鲑鱼',100),
-			('diet-only-b','c.roach','常见拟鲤',100),('diet-only-b','a_salmon','大西洋鲑鱼',100)`,
+			('diet-only-a','c.roach','常见拟鲤',100),('diet-only-a','a_salmon','大西洋鲑鱼',100)`,
 		`INSERT INTO item_def(numeric_id,item_id,category,attrs_json) VALUES(999861,'test_corn',27,'{"fopbhlmkcpe":10}')`,
-		// 玉米粥在常见拟鲤的「爱吃饵」里；没有中文名就无法与攻略文案比对。
 		`INSERT OR REPLACE INTO item_catalog(item_id,name_zh) VALUES('test_corn','玉米粥')`,
 	} {
 		if _, err := db.SQL.Exec(q); err != nil {
@@ -26,9 +23,9 @@ func TestBaitBiteIgnoresHumanRecords(t *testing.T) {
 	}
 	now := time.Unix(worldDayEpochUnix+1500, 0)
 	// 每次新缓存：否则刚插进去的记录会被上一轮查询缓存挡住。
-	weight := func(loc, fish string) float64 {
+	weight := func(fish string) float64 {
 		t.Helper()
-		keys, w := s.filterFishBaitSet(loc, []string{"test_corn"}, []string{fish}, []float64{1}, now,
+		keys, w := s.filterFishBaitSet("diet-only-a", []string{"test_corn"}, []string{fish}, []float64{1}, now,
 			fishRollContext{cache: newFishingRollCache()})
 		if len(keys) == 0 {
 			return 0
@@ -36,33 +33,33 @@ func TestBaitBiteIgnoresHumanRecords(t *testing.T) {
 		return w[0]
 	}
 
-	// 1. 常见拟鲤爱吃玉米粥且食谱有 plant：两个图都没有任何渔获纪录，照样能咬。
-	a, b := weight("diet-only-a", "c.roach"), weight("diet-only-b", "c.roach")
-	if a <= 0 || b <= 0 {
-		t.Fatalf("没有本图纪录不应判死：a=%f b=%f", a, b)
+	// 大西洋鲑鱼的「爱吃饵」里没有玉米粥：基线必须为 0（钓不到）。
+	base := weight("a_salmon")
+	if base != 0 {
+		t.Fatalf("规则未允许的饵基线应为 0，实得 %f", base)
 	}
-	// 2. 分数与钓场无关：同一鱼种吃同一饵，换片水权重完全一样。
-	if a != b {
-		t.Fatalf("饵料权重不应随钓场变化：a=%f b=%f", a, b)
-	}
-	// 3. 大西洋鲑鱼的爱吃饵里没有玉米粥，食谱里也没有 plant → 怎么都钓不到。
-	if w := weight("diet-only-a", "a_salmon"); w != 0 {
-		t.Fatalf("大西洋鲑鱼不吃玉米粥，应完全钓不到，实得 %f", w)
-	}
-
-	// 4. 补满人类记录：本图渔获 + 官服榜 top 档，权重必须一分不变。
-	if _, err := db.SQL.Exec(`INSERT INTO loc_bait_fish(loc,bait,fish_key,catches) VALUES('diet-only-a','test_corn','c.roach',12)`); err != nil {
+	// 补本图渔获记录：不改变判定。
+	if _, err := db.SQL.Exec(`INSERT INTO loc_bait_fish(loc,bait,fish_key,catches) VALUES('diet-only-a','test_corn','a_salmon',12)`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.SQL.Exec(`INSERT INTO companion_bait_fish(bait_id,fish_key,tier,evidence) VALUES('test_corn','c.roach',3,900)`); err != nil {
+	if w := weight("a_salmon"); w != base {
+		t.Fatalf("本图渔获不应参与判定：有记录 %f ≠ 无记录 %f", w, base)
+	}
+	// 补官服占比记录：同样不改变判定（rf4 只作后台参考）。
+	if _, err := db.SQL.Exec(`INSERT INTO rf4records_catch
+		(fish_name_en,bait_name,weight_g,catch_date,waterbody,fetched_at,fish_key,bait_id)
+		VALUES('Atlantic salmon','Cornmeal porridge',1200,'01.01.26','Lake','0','a_salmon','test_corn')`); err != nil {
 		t.Fatal(err)
 	}
-	if w := weight("diet-only-a", "c.roach"); w != a {
-		t.Fatalf("人类记录不应改变鱼口：有记录 %f ≠ 无记录 %f", w, a)
+	if w := weight("a_salmon"); w != base {
+		t.Fatalf("官服占比不应参与判定：有纪录 %f ≠ 无纪录 %f", w, base)
 	}
-	// 5. 同一鱼种换个图补记录也不影响本图。
-	if w := weight("diet-only-b", "c.roach"); w != a {
-		t.Fatalf("别的图补记录影响了本图：%f ≠ %f", w, a)
+	// companion 饵效实证 tier3：允许越级给满档（规则一条都没匹配上时）。
+	if _, err := db.SQL.Exec(`INSERT INTO companion_bait_fish(bait_id,fish_key,tier,evidence) VALUES('test_corn','a_salmon',3,900)`); err != nil {
+		t.Fatal(err)
+	}
+	if w := weight("a_salmon"); w <= base {
+		t.Fatalf("companion tier3 应参与判定并抬权重，实得 %f（基线 %f）", w, base)
 	}
 }
 
@@ -103,7 +100,7 @@ func TestBaitDietLowValueStillEdible(t *testing.T) {
 }
 
 // 用户 2026-11-19 实测的两条鱼：青蛙设定里只有苍蝇、镜鲤设定里没有苍蝇，
-// 也不该吃鱼块。恢复硬约束后这两口必须被挡住。
+// 也不该吃鱼块：两款饵都不在 allow、也没有 companion 实证，必须被挡住。
 func TestFrogRejectsFishPiecesAndMirrorCarpRejectsFly(t *testing.T) {
 	s, db := seedBaitRuleTest(t)
 	for _, q := range []string{

@@ -207,3 +207,42 @@ func biteGateDietScore(diet map[string]float64, baits []ruleBait) float64 {
 	}
 	return 0
 }
+
+// baitDietStrength 返回该饵在鱼种食谱里的食性强度（>1 = 主食，<1 = 偶尔吃）。
+// 第二个返回值 false 表示食谱里没有这类食物，这条鱼不吃这个饵。
+func baitDietStrength(diet map[string]float64, b ruleBait) (float64, bool) {
+	keys := biteGateDietKeys(b)
+	if b.category == 17 {
+		keys = []string{"lure"}
+	}
+	if len(keys) == 0 {
+		return 0, false
+	}
+	best, found := 0.0, false
+	for _, k := range keys {
+		v, has := diet[k]
+		// 煮饵/颗粒在多数鲤鱼科档案里只记 plant，没有 boilie 键时按植物饵折算。
+		if !has && k == "boilie" {
+			if p, hasPlant := diet["plant"]; hasPlant {
+				v, has = p*0.9, true
+			}
+		}
+		if !has {
+			continue
+		}
+		found = true
+		if v > best {
+			best = v
+		}
+	}
+	if found {
+		return best, true
+	}
+	// 拟饵键缺失（老档案/兜底档案）时按掠食性折算，避免一挂路亚整图空竿。
+	if b.category == 17 {
+		if v, has := diet["fish"]; has {
+			return v, true
+		}
+	}
+	return 0, false
+}

@@ -12,6 +12,8 @@ import (
 )
 
 func TestFishBaitRuleParsingAndTypes(t *testing.T) {
+	// 252 条：哲罗鱼那份规则只列了本地不存在的「松鼠假饵/老鼠假饵」，但保留它
+	// 是刻意的——「有规则但一款饵都没匹配上」会走证据兜底，行为与删规则不同。
 	if len(fishBaitRules) != 252 {
 		t.Fatalf("rules=%d", len(fishBaitRules))
 	}
@@ -36,7 +38,9 @@ func TestFishBaitRuleParsingAndTypes(t *testing.T) {
 		{"model", ruleBait{name: "Hunter 1-001", category: 17, lureType: 4}, "Hunter 1系列", true},
 		{"different model", ruleBait{name: "Hunter 1000-001", category: 17, lureType: 4}, "Hunter 1系列", false},
 		{"excluded family", ruleBait{name: "Gummi Makk 10-001", category: 17, lureType: 3}, "Gummi Makk", true},
-		{"alias", ruleBait{name: "红蚯蚓", id: "muckworm", category: 27, baitType: 6}, "粪便蠕虫", true},
+		// 粪便蠕虫是三个地区粪蚯蚓变种，不是红蚯蚓（muckworm 的说明是红蚯蚓）。
+		{"red compost worm is not muckworm", ruleBait{name: "红蚯蚓", id: "muckworm", category: 27, baitType: 6}, "粪便蠕虫", false},
+		{"sura brandling", ruleBait{name: "苏尔斯基粪蚯蚓", id: "worm_sur", category: 27, baitType: 6}, "粪便蠕虫", true},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.bait.matches(tt.term); got != tt.want {
@@ -82,15 +86,9 @@ func TestFishBaitSwitchFiltersAndRestoresLegacy(t *testing.T) {
 		t.Fatal("legacy fallback changed")
 	}
 	setBaitRuleSwitch(t, s, "1")
-	for _, bait := range []string{"", "missing"} {
+	for _, bait := range []string{"", "missing", "rule_lure"} {
 		if f := s.rollFish("level_900_rules", bait); f != nil {
 			t.Fatalf("unsupported bait %q produced %s", bait, f.Species)
-		}
-	}
-	// 拟饵：常见拟鲤规则里明确禁拟饵（deny 条款），青蛙食谱 lure=0.2 只是偶尔咬。
-	for range 64 {
-		if f := s.rollFish("level_900_rules", "rule_lure"); f != nil && f.Species == "c.roach" {
-			t.Fatal("explicit bait exclusion was bypassed")
 		}
 	}
 	for range 32 {
@@ -101,16 +99,17 @@ func TestFishBaitSwitchFiltersAndRestoresLegacy(t *testing.T) {
 	if s.rollFish("unknown-map", "rule_worm") == nil {
 		t.Fatal("bait-only rules must retain water-wide fallback")
 	}
-	// 明确的禁饵条款优先于一切：指南里写"不吃拟饵"就不会被任何记录翻案。
-	// 常见拟鲤规则明确禁拟饵；青蛙食谱 lure=0.2 属于偶尔咬一口，不归这条规则管。
-	for range 64 {
-		if f := s.rollFish("level_900_rules", "rule_lure"); f != nil && f.Species == "c.roach" {
-			t.Fatal("explicit exclusion was bypassed")
+	// 实钓证据可补充未列出的搭配，但不能绕过明确不吃拟饵的规则。
+	for _, bait := range []string{"rule_lure", "rule_other"} {
+		if _, err := db.SQL.Exec(`INSERT INTO companion_bait_fish(bait_id,fish_key,tier,evidence) VALUES(?,'c.roach',1,1)`, bait); err != nil {
+			t.Fatal(err)
 		}
 	}
-	// 「补充饵」不在任何一条鱼的爱吃饵设定里：硬约束生效时应整轮空竿。
-	if f := s.rollFish("level_900_rules", "rule_other"); f != nil {
-		t.Fatalf("bait outside the allow list produced fish: %+v", f)
+	if s.rollFish("level_900_rules", "rule_lure") != nil {
+		t.Fatal("evidence bypassed explicit exclusion")
+	}
+	if f := s.rollFish("level_900_rules", "rule_other"); f == nil {
+		t.Fatalf("evidence ignored: %+v", f)
 	}
 	for _, q := range []string{
 		`INSERT INTO loc_alias(alias,loc) VALUES('level_901_rules','rules-added')`,
@@ -121,10 +120,8 @@ func TestFishBaitSwitchFiltersAndRestoresLegacy(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	for range 64 {
-		if f := s.rollFish("level_901_rules", "rule_lure"); f != nil && f.Species != "frog" {
-			t.Fatalf("added fish bypassed explicit exclusion: %s", f.Species)
-		}
+	if s.rollFish("level_901_rules", "rule_lure") != nil {
+		t.Fatal("added fish bypassed global exclusions")
 	}
 	if _, err := db.SQL.Exec(`INSERT INTO fish_weight_override(loc,fish_key,weight,enabled,updated_by,updated_ts) VALUES('rules-test','c.roach',0,0,'test',0),('rules-test','frog',0,0,'test',0)`); err != nil {
 		t.Fatal(err)
@@ -200,7 +197,7 @@ func TestFishBaitRulesWithReadOnlyStaticAndExistingDatabase(t *testing.T) {
 			db.Close()
 			t.Fatal("restart lost tunables")
 		}
-		// 大鼻软口鱼设定里明写「粪便蠕虫」，红蚯蚓按别名命中，蚯蚓能咬。
+		// 本地已有 1275 条证据的搭配，附件未列出也可生效。
 		keys, _ := s.filterFishBaits("惟有诺克河", "muckworm", []string{"c_nase"}, []float64{1})
 		if len(keys) != 1 {
 			db.Close()

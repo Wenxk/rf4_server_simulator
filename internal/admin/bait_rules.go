@@ -344,3 +344,19 @@ func cleanGroups(in [][]string) [][]string {
 	}
 	return out
 }
+
+// baitShareMinCount 是后台占比展示的最小样本口径：官服纪录里单饵样本量
+// 低于该值的比例不计入（默认 5，可用 tunable 覆盖）。该数据只作参考展示，
+// 不参与判鱼。
+func (s *Server) baitShareMinCount(ctx context.Context) int {
+	var v string
+	if err := s.db.SQL.QueryRowContext(ctx,
+		`SELECT value FROM tunables WHERE key='bait_share_min_count'`).Scan(&v); err != nil {
+		return 5
+	}
+	n, err := strconv.Atoi(strings.TrimSpace(v))
+	if err != nil || n < 1 {
+		return 5
+	}
+	return n
+}

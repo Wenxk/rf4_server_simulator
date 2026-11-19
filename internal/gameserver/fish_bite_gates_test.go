@@ -195,8 +195,8 @@ func TestBiteGateDietQualification(t *testing.T) {
 	if !seen["vjun"] || !seen["crucian"] {
 		t.Fatalf("worm must roll both loach and crucian, saw %v", seen)
 	}
-	// 玉米粥：银鲫爱吃且 plant=2.02 是主食 → 放行；泥鳅的设定里没有玉米粥
-	// （食谱 plant=0.2 只是偶尔吃）→ 被爱吃饵硬约束挡在门外。
+	// 玉米粥：银鲫爱吃 → 规则命中给满分档；泥鳅的设定里没有玉米粥、也没有
+	// companion 实证 → 饵料层给 0（食谱 plant=0.2 只说明「偶尔吃」，不单独放行）。
 	cache := newFishingRollCache()
 	now := time.Now()
 	_, vw := s.filterFishBaitSet("gates-diet", []string{"rule_corn"}, []string{"vjun"}, []float64{1}, now, fishRollContext{cache: cache})

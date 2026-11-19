@@ -32,32 +32,32 @@ var (
 // fishEcologyProfile 是鱼口系统使用的鱼种生态基线。水层使用 0=水面、1=水底
 // 的归一化坐标，后续可叠加具体钓点水深，不把某条河的实际米数写死在鱼种上。
 type fishEcologyProfile struct {
-	FishKey        string  `json:"fish_key"`
-	LayerMin       float64 `json:"layer_min"`
-	LayerPref      float64 `json:"layer_pref"`
-	LayerMax       float64 `json:"layer_max"`
-	TempMinC       float64 `json:"temp_min_c"`
-	TempPrefC      float64 `json:"temp_pref_c"`
-	TempMaxC       float64 `json:"temp_max_c"`
-	DielMask       int64   `json:"diel_mask"`
-	SeasonMask     int64   `json:"season_mask"`
-	DietJSON       string  `json:"diet_json"`
-	WeatherJSON    string  `json:"weather_json"`
-	ActionJSON     string  `json:"action_json"`
-	SubstrateJSON  string  `json:"substrate_json"`
-	ColorJSON      string  `json:"color_json"`
-	CurrentPref    float64 `json:"current_pref"`
-	Activity       float64 `json:"activity"`
-	LightPref      float64 `json:"light_pref"`
-	ClarityPref    float64 `json:"clarity_pref"`
-	Aggression     float64 `json:"aggression"`
+	FishKey       string  `json:"fish_key"`
+	LayerMin      float64 `json:"layer_min"`
+	LayerPref     float64 `json:"layer_pref"`
+	LayerMax      float64 `json:"layer_max"`
+	TempMinC      float64 `json:"temp_min_c"`
+	TempPrefC     float64 `json:"temp_pref_c"`
+	TempMaxC      float64 `json:"temp_max_c"`
+	DielMask      int64   `json:"diel_mask"`
+	SeasonMask    int64   `json:"season_mask"`
+	DietJSON      string  `json:"diet_json"`
+	WeatherJSON   string  `json:"weather_json"`
+	ActionJSON    string  `json:"action_json"`
+	SubstrateJSON string  `json:"substrate_json"`
+	ColorJSON     string  `json:"color_json"`
+	CurrentPref   float64 `json:"current_pref"`
+	Activity      float64 `json:"activity"`
+	LightPref     float64 `json:"light_pref"`
+	ClarityPref   float64 `json:"clarity_pref"`
+	Aggression    float64 `json:"aggression"`
 	// 固有稀有度（0 普通 / 1 稀有 / 2 超稀有）。不来自种子 JSON，而是
 	// store.SyncFishRarityFromStatic 从静态表 species_rarity 投影进库，
 	// 这里只负责读出来给判鱼权重用。
-	RarityTier     int     `json:"-"`
-	Enabled        bool    `json:"enabled"`
-	ProfileVersion int     `json:"profile_version"`
-	Source         string  `json:"-"`
+	RarityTier     int    `json:"-"`
+	Enabled        bool   `json:"enabled"`
+	ProfileVersion int    `json:"profile_version"`
+	Source         string `json:"-"`
 }
 
 func (s *Server) ensureFishEcology(ctx context.Context) (int, error) {
@@ -207,6 +207,9 @@ func (s *Server) reloadFishEcologyLocCache(ctx context.Context) error {
 	s.fishEcologyMu.Lock()
 	s.fishEcologyLocCache = cache
 	s.fishEcologyMu.Unlock()
+	// 生态全量重载后，节奏通路的名册食性聚合必须同步作废，否则旧聚合
+	// 活过 TTL（PR #531 审查 P2-4）。
+	s.invalidatePaceDietCache()
 	return nil
 }
 
@@ -281,6 +284,7 @@ func (s *Server) invalidateFishEcologyCache() {
 	s.fishEcologyCacheLoaded = false
 	s.fishEcologyLocCache = nil
 	s.fishEcologyMu.Unlock()
+	s.invalidatePaceDietCache()
 }
 
 func boolInt(v bool) int {
