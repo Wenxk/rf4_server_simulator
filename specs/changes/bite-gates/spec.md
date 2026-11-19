@@ -22,11 +22,13 @@ Status: done
    `bite_gate_layer_floor`（默认 0.01），不剔除——深水鱼偶尔在浅水被钓起是有意保留的杂口。
    0.15 容差减少相邻水层误伤；当前生态表仍有 `LayerMax < 0.78` 的上层/中层鱼，
    底钓（0.93）时它们会按设计落到地板，不能宣称零误伤。
-3. **食性双票 G-diet**：天然饵（类别 27）按饵类型映射到 diet 键（baitType 2/6/7→worm、
+3. **食性资格 G-diet**：天然饵（类别 27）按饵类型映射到 diet 键（baitType 2/6/7→worm、
    3/4/14/15→fish、8/9/17→boilie、10/11/13→plant、12/16→crustacean、
-   1→植物/煮饵/鱼虾贝任一），
-   与攻略证据（fishing_bait_rules.txt / companion_bait_fish / loc_bait_fish）双票合成：
-   双认原权重、单认 ×`bite_gate_diet_floor`（0.05）、零票或明确禁饵剔除。
+   类别 1「杂类」按具体 id 精确归类，见 `bait-diet-only`），
+   查鱼种 `diet_json`：有对应键就放行，没有才剔除。食谱低值（0.2）表示"偶尔吃一口"，
+   难度由 `filterFishBaitSet` 的食谱强度体现，不再设额外门槛。
+   攻略 allow、companion 官服榜、本图 `loc_bait_fish` 都是人类渔获记录，与鱼开不开口无关，
+   一律不参与资格与权重（旧版的 ×0.6 记录兜底已删除）。
 4. **空候选语义**：门把候选剔空时走「本轮无符合条件的鱼」重排，并且经
    `fishRollContext.gateBlocked` 压制内置鱼池兜底——门拦下的杆不捞外图鱼。
 5. **空轮体验三件套**：空因审计（每轮空杆带落点+40m 网格+空因原因，服务端日志不推玩家）、
@@ -43,7 +45,8 @@ Status: done
 
 1. 作为玩家，我希望用亮片收线时永远不中泥鳅，以便「专业钓法钓专业的鱼」成立。
 2. 作为玩家，我希望钓层离谱时（水面钓江鳕）只有极小概率杂口，以便保留偶发惊喜但不再荒谬。
-3. 作为玩家，我希望玉米钓不到泥鳅（零票）但正常钓到鲫鱼（双票），以便饵料选择有意义。
+3. 作为玩家，我希望玉米钓不到大西洋鲑鱼（食谱里没有植物饵）但正常钓到鲫鱼，
+   以便饵料选择有意义；同一鱼种在同一饵上的表现不随钓场或攻略覆盖变化。
 4. 边界：门剔空候选 = 本轮无口重排（不是必出鱼、不从鱼池捞外图鱼）；
    GM 指定鱼（arm_next_fish）绕过全部判鱼不受影响；切回 legacy 后字节级回到旧手感。
 
@@ -53,8 +56,7 @@ Status: done
   `fishing.go` 接线（`rollFishFromDBWithRules` C1 之后、`rollFishPoolsWithRules` 权重构建后）、
   `internal/store/repos2.go`（`BiteModeSet`/`BiteModeFor`）。
 - tunables：`bite_gate_enabled`（默认 0）、`bite_gate_lure_diet_min`（0.30）、
-  `bite_gate_layer_floor`（0.01）、`bite_gate_diet_min`（0.25，高于合成基线 0.2 噪声地板）、
-  `bite_gate_diet_floor`（0.05）、`bite_empty_retry_scale`（1）、
+  `bite_gate_layer_floor`（0.01）、`bite_empty_retry_scale`（1）、
   `bite_gate_pity_rounds`（0）。本 PR 提供后端参数；管理页接线随后续区域名册 PR 完成。
 - 数据：不动表结构、不动静态库；`fishRollContext` 新增 `gateBlocked`/`emptyReason`/
   `pityEnv`/`EmptyStreak` 纯运行时字段。

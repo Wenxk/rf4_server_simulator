@@ -17,12 +17,12 @@ import (
 // 存储是独立表 fish_weight_preset（loc_fish 是只读静态视图，改不了），由 LocRoster
 // 在读取时优先取用，所以判鱼链路一行都不用改。清空表即回滚到攻略原值。
 
-// defaultFishWeightTiers 预设表被清空时给后台展示的默认值，
-// 与仓库里常见配法一致（20:8:3:1）。
-var defaultFishWeightTiers = [4]float64{100, 40, 15, 5}
+// defaultFishWeightTiers 预设表被清空时给后台展示的默认值：
+// 普通 100 / 稀有 30 / 超稀有 5，即超稀有的权重是普通鱼的 1/20。
+var defaultFishWeightTiers = [3]float64{100, 30, 5}
 
 // currentFishWeightTiers 读当前生效的档位：以预设表为准，表空时退回默认。
-func (s *Server) currentFishWeightTiers(ctx context.Context) ([4]float64, bool) {
+func (s *Server) currentFishWeightTiers(ctx context.Context) ([3]float64, bool) {
 	w, ok, err := s.db.FishWeightPresetWeights(ctx)
 	if err != nil || !ok {
 		return defaultFishWeightTiers, false
@@ -66,7 +66,6 @@ func (s *Server) handleFishWeightPresetSave(w http.ResponseWriter, r *http.Reque
 		Tier0 *float64 `json:"tier0"`
 		Tier1 *float64 `json:"tier1"`
 		Tier2 *float64 `json:"tier2"`
-		Tier3 *float64 `json:"tier3"`
 	}
 	if err := readJSON(r, &req); err != nil {
 		httpError(w, 400, "参数错误")
@@ -75,17 +74,17 @@ func (s *Server) handleFishWeightPresetSave(w http.ResponseWriter, r *http.Reque
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 	weights, _ := s.currentFishWeightTiers(ctx)
-	for i, v := range []*float64{req.Tier0, req.Tier1, req.Tier2, req.Tier3} {
+	for i, v := range []*float64{req.Tier0, req.Tier1, req.Tier2} {
 		if v == nil {
 			continue
 		}
 		if *v < 0.1 || *v > 100000 {
-			httpError(w, 400, fmt.Sprintf("%s 档权重超出范围（0.1~100000）", store.FishWeightTierLabel(i)))
+			httpError(w, 400, fmt.Sprintf("%s 档权重超出范围（0.1~100000）", store.FishRarityLabel(i)))
 			return
 		}
 		weights[i] = *v
 	}
-	// 四档全相同等于取消稀有度分层，多半是手误：提前拦一下。
+	// 三档全相同等于取消稀有度分层，多半是手误：提前拦一下。
 	same := true
 	for i := 1; i < len(weights); i++ {
 		if weights[i] != weights[0] {
@@ -94,7 +93,7 @@ func (s *Server) handleFishWeightPresetSave(w http.ResponseWriter, r *http.Reque
 		}
 	}
 	if same {
-		httpError(w, 400, "四档权重不能完全相同：那样稀有度就没有区别了")
+		httpError(w, 400, "三档权重不能完全相同：那样稀有度就没有区别了")
 		return
 	}
 

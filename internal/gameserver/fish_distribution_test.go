@@ -227,8 +227,4 @@ func TestBsSalmonHasStaticDistributionAndBaitEvidence(t *testing.T) {
 	if catches != wantWeight {
 		t.Fatalf("bs_salmon 名册权重=%v，期望第 %d 档预设 %v", catches, wantTier, wantWeight)
 	}
-	evidence := srv.loadLocalBaitEvidence(ctx, loc, "AngryWalker S8-001", "AngryWalker S8-001")
-	if !evidence["bs_salmon"] {
-		t.Fatal("AngryWalker S8-001 未命中 bs_salmon 的本地饵证据")
-	}
 }

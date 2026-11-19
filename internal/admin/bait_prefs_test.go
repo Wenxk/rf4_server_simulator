@@ -108,7 +108,7 @@ func TestBaitPrefsAPI(t *testing.T) {
 		t.Fatalf("c.roach tier3 应为 1，实得 %v", roach["tier3"])
 	}
 	if roach["in_strict"] != true {
-		t.Fatal("有规则的鱼严格模式应可咬")
+		t.Fatal("有规则的鱼应标记为有资料")
 	}
 
 	cod := find("atl_cod")
@@ -119,7 +119,7 @@ func TestBaitPrefsAPI(t *testing.T) {
 		t.Fatalf("atl_cod tier3 应为 1，实得 %v", cod["tier3"])
 	}
 	if cod["in_strict"] != true {
-		t.Fatal("无规则但有 tier 证据的鱼，严格模式仍应可咬")
+		t.Fatal("无规则但有 tier 证据的鱼也应标记为有资料")
 	}
 
 	// 搜索过滤

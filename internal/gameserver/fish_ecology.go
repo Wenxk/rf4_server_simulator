@@ -14,7 +14,11 @@ import (
 
 // 5：昼夜口径归并——删除分布层的写死活性表后，档案里的 diel_mask 成为
 // 唯一昼夜依据，梅花鲈补上傍晚（11 → 13，原先漏暮、误含昼）。版本号抬高
-// 触发 ensureFishEcology 重灌（启动后用 RecalcFishRarity 校正档位）。
+// 触发 ensureFishEcology 重灌。
+//
+// 稀有度不在这里：rarity_tier 现在是鱼种固有属性（species_rarity：0 普通 /
+// 1 稀有 / 2 超稀有），由启动时的 SyncFishRarityFromStatic 写入，种子 JSON
+// 里不再带这个字段——少一个会随文件漂移的档位来源。
 const fishEcologyProfileVersion = 5
 
 //go:embed assets/fish_ecology_defs.json
@@ -47,7 +51,10 @@ type fishEcologyProfile struct {
 	LightPref      float64 `json:"light_pref"`
 	ClarityPref    float64 `json:"clarity_pref"`
 	Aggression     float64 `json:"aggression"`
-	RarityTier     int     `json:"rarity_tier"`
+	// 固有稀有度（0 普通 / 1 稀有 / 2 超稀有）。不来自种子 JSON，而是
+	// store.SyncFishRarityFromStatic 从静态表 species_rarity 投影进库，
+	// 这里只负责读出来给判鱼权重用。
+	RarityTier     int     `json:"-"`
 	Enabled        bool    `json:"enabled"`
 	ProfileVersion int     `json:"profile_version"`
 	Source         string  `json:"-"`
@@ -83,8 +90,8 @@ func (s *Server) ensureFishEcology(ctx context.Context) (int, error) {
 				temp_min_c, temp_pref_c, temp_max_c, diel_mask,
 				season_mask, diet_json, weather_json, action_json, substrate_json,
 				color_json, current_pref, activity, light_pref, clarity_pref,
-				aggression, rarity_tier, enabled, profile_version, source, updated_ts
-			) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+				aggression, enabled, profile_version, source, updated_ts
+			) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 			ON CONFLICT(fish_key) DO UPDATE SET
 				layer_min=excluded.layer_min, layer_pref=excluded.layer_pref,
 				layer_max=excluded.layer_max, temp_min_c=excluded.temp_min_c,
@@ -95,7 +102,6 @@ func (s *Server) ensureFishEcology(ctx context.Context) (int, error) {
 				color_json=excluded.color_json, current_pref=excluded.current_pref,
 				activity=excluded.activity, light_pref=excluded.light_pref,
 				clarity_pref=excluded.clarity_pref, aggression=excluded.aggression,
-				rarity_tier=excluded.rarity_tier,
 				profile_version=excluded.profile_version, source=excluded.source,
 				updated_ts=excluded.updated_ts
 			WHERE fish_ecology.profile_version < excluded.profile_version`,
@@ -103,7 +109,7 @@ func (s *Server) ensureFishEcology(ctx context.Context) (int, error) {
 			p.TempMinC, p.TempPrefC, p.TempMaxC, p.DielMask,
 			p.SeasonMask, p.DietJSON, p.WeatherJSON, p.ActionJSON, p.SubstrateJSON,
 			p.ColorJSON, p.CurrentPref, p.Activity, p.LightPref, p.ClarityPref,
-			p.Aggression, p.RarityTier, boolInt(p.Enabled), p.ProfileVersion, p.Source, now)
+			p.Aggression, boolInt(p.Enabled), p.ProfileVersion, p.Source, now)
 		if ierr != nil {
 			return inserted, ierr
 		}
@@ -304,11 +310,15 @@ func defaultFishEcology(key string) fishEcologyProfile {
 	return fishEcologyProfile{
 		FishKey: key, LayerPref: .55, LayerMax: 1,
 		TempMinC: 5, TempPrefC: 17, TempMaxC: 27, DielMask: 0b1111,
-		SeasonMask: 0b1111, DietJSON: `{"worm":1,"plant":1,"fish":1}`,
+		SeasonMask: 0b1111,
+		// 没有档案的鱼不放默认食谱：判鱼层用 len(diet)==0 识别"无食性资料"，
+		// 退回旧的证据判定，而不是拿一份假食谱（worm/plant/fish 全 1）把
+		// 玉米判成所有未知鱼都能吃。
+		DietJSON:    `{}`,
 		WeatherJSON: `{"clear":1,"cloudy":1,"rain":1}`,
 		ActionJSON:  `{"steady":1,"sinking":1}`, SubstrateJSON: `{"sand":1,"mud":1}`,
 		ColorJSON: `{"silver":1,"natural":1}`, CurrentPref: .5, Activity: 1,
-		LightPref: .5, ClarityPref: .5, Aggression: 1, RarityTier: 1, Enabled: true,
+		LightPref: .5, ClarityPref: .5, Aggression: 1, Enabled: true,
 		ProfileVersion: fishEcologyProfileVersion, Source: "local-sim:fallback",
 	}
 }
@@ -434,12 +444,9 @@ func (s *Server) fishBiteEnvironmentWeight(ctx context.Context, key string, c fi
 	diel := fishDielWeight(p, hour,
 		s.tunableF("fish_diel_active_boost", 2.0),
 		s.tunableF("fish_diel_inactive_penalty", 0.3))
-	// 钓法倾向：钓法族 × 鱼种水层档的显式乘子（后台可配）。它与生态总开关解耦，
-	// 因为"底钓更该上底层鱼"和"水温/水层/天气"是两件事，关掉生态不该把它一起关掉。
-	affinity := s.rigAffinityWeight(ctx, key, c)
 	if !ecologyOn {
 		// 只开昼夜层时直接返回该系数：不牵连水层、水温、天气、清澈度。
-		return clampFloat(diel*affinity, .02, 4)
+		return clampFloat(diel, .02, 4)
 	}
 	type weightedFactor struct {
 		value     float64
@@ -495,12 +502,7 @@ func (s *Server) fishBiteEnvironmentWeight(ctx context.Context, key string, c fi
 		}
 		factor *= math.Pow(clampFloat(value, floor, 2.0), exponent)
 	}
-	// 钓法倾向放在幂压缩与原有夹取之后原样相乘：它是玩家/运维直接设定的"倍率"，
-	// 若也走 .35 次幂，填 1.6 实际只放大 1.18，后台就没法对着数字调了。
-	// 原有 .08~2.5 的夹取保持不变（affinity=1 时行为与改动前逐位一致），
-	// 只在乘完之后放宽到 .02~4，避免单条鱼因多层叠乘把整图鱼口抽干。
-	factor = clampFloat(factor, .08, 2.5) * affinity
-	return clampFloat(factor, .02, 4)
+	return clampFloat(factor, .08, 2.5)
 }
 
 // fishActivityForHour 把游戏小时映射到昼夜掩码的**位序**（不是时段编号）：

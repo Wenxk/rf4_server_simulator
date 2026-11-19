@@ -106,14 +106,7 @@ func NewServer(cfg config.Admin, db *store.DB, log logger, webFS fs.FS) *Server 
 	mux.HandleFunc("GET /api/fish/weights/preset", auth(s.handleFishWeightPresetGet))
 	mux.HandleFunc("POST /api/fish/weights/preset", auth(s.handleFishWeightPresetSave))
 	mux.HandleFunc("POST /api/fish/weights/restore", auth(s.handleFishWeightRestore))
-	// 稀有度分档口径：按全服渔获数绝对阈值重算 rarity_tier，并可连带重设基础权重。
-	mux.HandleFunc("GET /api/fish/rarity", auth(s.handleFishRarityGet))
-	mux.HandleFunc("POST /api/fish/rarity", auth(s.handleFishRaritySave))
-	mux.HandleFunc("POST /api/fish/rarity/restore", auth(s.handleFishRarityRestore))
 	// 钓法倾向：钓法族 × 鱼种水层档的判鱼乘子（浮钓/底钓/路亚/海钓/飞钓）。
-	mux.HandleFunc("GET /api/fish/rig_affinity", auth(s.handleRigAffinityGet))
-	mux.HandleFunc("POST /api/fish/rig_affinity", auth(s.handleRigAffinitySave))
-	mux.HandleFunc("POST /api/fish/rig_affinity/restore", auth(s.handleRigAffinityRestore))
 	mux.HandleFunc("GET /api/fish/pool", auth(s.handleFishPool))
 	mux.HandleFunc("GET /api/fish/spawn_mode", auth(s.handleSpawnModeGet))
 	mux.HandleFunc("POST /api/fish/spawn_mode", auth(s.handleSpawnModeSet))
@@ -462,7 +455,7 @@ func (s *Server) handleTunableSet(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 400, "参数错误")
 		return
 	}
-	if (req.Key == "fish_ecology_enabled" || req.Key == "fish_bait_rules_enabled" || req.Key == "fish_distribution_enabled" || req.Key == "fish_weather_enabled" || req.Key == "happy_hour_enabled" || req.Key == "grade_ratio_enabled" || req.Key == "fish_hunt_enabled" || req.Key == "two_stage_hunt_enabled" || req.Key == "hook_nibble_enabled" || req.Key == "event_anniversary_enabled" || req.Key == "event_newyear_enabled" || req.Key == "condition_health_enabled" || req.Key == "condition_fishing_pause_enabled" || req.Key == "fish_roll_trace_enabled" || req.Key == "fish_diel_weight_enabled" || req.Key == "rig_affinity_enabled") && req.Value != "0" && req.Value != "1" {
+	if (req.Key == "fish_ecology_enabled" || req.Key == "fish_bait_rules_enabled" || req.Key == "fish_distribution_enabled" || req.Key == "fish_weather_enabled" || req.Key == "happy_hour_enabled" || req.Key == "grade_ratio_enabled" || req.Key == "fish_hunt_enabled" || req.Key == "two_stage_hunt_enabled" || req.Key == "hook_nibble_enabled" || req.Key == "event_anniversary_enabled" || req.Key == "event_newyear_enabled" || req.Key == "condition_health_enabled" || req.Key == "condition_fishing_pause_enabled" || req.Key == "fish_roll_trace_enabled" || req.Key == "fish_diel_weight_enabled") && req.Value != "0" && req.Value != "1" {
 		httpError(w, 400, "开关只能为 0 或 1")
 		return
 	}

@@ -2,7 +2,7 @@ package gameserver
 
 import (
 	"context"
-	"math"
+	"strings"
 )
 
 // 硬性鱼口资格门（tunable bite_gate_enabled，默认关）。
@@ -22,11 +22,11 @@ import (
 //     有意保留的极小杂口。0.15 容差用于减少底层杆在相邻水层间的误伤；当前
 //     生态表仍有上层/中层鱼 LayerMax < 0.78，底钓（目标 0.93）时它们会按设计
 //     落到地板。104 种底层鱼（鳗/七鳃鳗/鲟/庸鲽）会被水面拟饵（0.06+0.15）地板。
-//   - G-diet 天然饵双票（默认随门开启）：生态食性表 diet_json 首次参与咬口，
-//     与攻略证据（fishing_bait_rules.txt / companion_bait_fish / loc_bait_fish）
-//     合成双票，口径沿用窝料已验证的「双票打折」语义——
-//     攻略认且生态认 → 原权重；明确禁饵或双不认 → 剔除；单边认 →
-//     ×bite_gate_diet_floor 保留小口。
+//   - G-diet 天然饵食性资格（默认随门开启）：生态食性表 diet_json 参与咬口，
+//     只看"这条鱼的食物谱里有没有这类东西"（鱼种级事实，与钓场/纪录无关）。
+//     食谱里有 → 正常；食谱里没有但攻略/companion/本图纪录说吃过 → ×0.6 兜底；
+//     两头都没有 → 剔除。旧版的"双票打折"（只有食性认就压到 0.05）等于拿记录
+//     当门槛，已废弃——那会让"本图攻略没写过的饵"永远钓不到。
 //
 // 门层不动延迟链、概率掷骰、档位采样、嘬饵/保持率；GM 指定鱼（st.Armed）
 // 在更早的分支已绕过全部判鱼。候选被剔空时返回空切片 + gateBlocked 置位，
@@ -36,8 +36,6 @@ type biteGateConfig struct {
 	enabled     bool
 	lureDietMin float64
 	layerFloor  float64
-	dietMin     float64
-	dietFloor   float64
 }
 
 // biteGateLayerTol 水层容差。与生态层 fishLayerWeightProfile 的拟饵向上追击
@@ -53,8 +51,6 @@ func (s *Server) biteGateConfig() biteGateConfig {
 		enabled:     true,
 		lureDietMin: s.tunableF("bite_gate_lure_diet_min", 0.30),
 		layerFloor:  s.tunableF("bite_gate_layer_floor", 0.01),
-		dietMin:     s.tunableF("bite_gate_diet_min", 0.25),
-		dietFloor:   s.tunableF("bite_gate_diet_floor", 0.05),
 	}
 	if cfg.lureDietMin < 0 {
 		cfg.lureDietMin = 0
@@ -64,15 +60,6 @@ func (s *Server) biteGateConfig() biteGateConfig {
 	}
 	if cfg.layerFloor > 1 {
 		cfg.layerFloor = 1
-	}
-	if cfg.dietMin < 0 {
-		cfg.dietMin = 0
-	}
-	if cfg.dietFloor < 0 {
-		cfg.dietFloor = 0
-	}
-	if cfg.dietFloor > 1 {
-		cfg.dietFloor = 1
 	}
 	return cfg
 }
@@ -110,8 +97,7 @@ func (s *Server) biteGateBaitSet(ctx context.Context, c fishRollContext) biteGat
 }
 
 // biteGateDietKeys 把天然饵映射到 diet_json 的食性键。
-// 类别 1 是杂类（香煮成饵/玉米/虾仁/贻贝肉混装），按任一命中放行生态票。
-// 未知类型返回 nil：生态票按不认处理，只看攻略证据票。
+// 未知类型返回 nil：这类饵"判不出吃什么"，交给调用方保持中性，不硬判不吃。
 func biteGateDietKeys(b ruleBait) []string {
 	switch b.baitType {
 	case 2, 6, 7: // 幼虫/蚯蚓水蛭/昆虫成虫
@@ -124,8 +110,39 @@ func biteGateDietKeys(b ruleBait) []string {
 		return []string{"plant"}
 	case 12, 16: // 钩虾/海虫贝类
 		return []string{"crustacean"}
-	case 1: // 杂类：植物/煮饵/鱼虾贝任一
-		return []string{"plant", "boilie", "crustacean", "fish"}
+	case 1:
+		return miscDietKeys(b)
+	}
+	return nil
+}
+
+// miscDietKeys 类别 1「杂类」其实是混装货架：藻类/面包/玉米/豌豆/马铃薯是植物饵，
+// 香煮成饵是煮饵，贻贝/珠蚌/虾仁/蟹肉是甲壳类，鱼块/鱼子/鱼肉类。
+// 必须按 id 与名称精确归类——旧版一律返回「植物/煮饵/甲壳/鱼 任一命中」，
+// 结果是河斑马纹贻贝肉在拉多加湖能钓到 38/38 个鱼种，等于没有食性约束。
+func miscDietKeys(b ruleBait) []string {
+	if strings.HasPrefix(b.id, "boil_") {
+		return []string{"boilie"}
+	}
+	switch b.id {
+	case "bait_dreissena", "unio_crassus", "crawfish_meat", "crab_meat":
+		return []string{"crustacean"}
+	case "fish_pieces", "caviar":
+		return []string{"fish"}
+	case "watergrass", "cheese_cube", "wheat_grain", "sunflower_cake", "bread", "corn", "cabbage", "peas", "potato":
+		return []string{"plant"}
+	}
+	n := ruleName(b.name)
+	switch {
+	case strings.Contains(n, "贻贝") || strings.Contains(n, "珠蚌") || strings.Contains(n, "虾") || strings.Contains(n, "蟹"):
+		return []string{"crustacean"}
+	case strings.Contains(n, "鱼"):
+		return []string{"fish"}
+	case strings.Contains(n, "煮"):
+		return []string{"boilie"}
+	case strings.Contains(n, "玉米") || strings.Contains(n, "面包") || strings.Contains(n, "藻") ||
+		strings.Contains(n, "豌豆") || strings.Contains(n, "马铃薯") || strings.Contains(n, "菜叶"):
+		return []string{"plant"}
 	}
 	return nil
 }
@@ -133,31 +150,15 @@ func biteGateDietKeys(b ruleBait) []string {
 // applyBiteGates 过滤候选鱼种：G1 剔除食性不符的，G-diet 按双票打折，
 // G2 给水层超界的乘地板。权重 ≤0 的候选直接跳过（与 filterFishBaitSet 同口径）。
 // statLoc 是统计名册 loc（本地饵证据 loc_bait_fish 按它查），兜底鱼池路径没有时传空。
-func (s *Server) applyBiteGates(ctx context.Context, keys []string, wts []float64, c fishRollContext, cfg biteGateConfig, statLoc string) ([]string, []float64) {
+func (s *Server) applyBiteGates(ctx context.Context, keys []string, wts []float64, c fishRollContext, cfg biteGateConfig) ([]string, []float64) {
 	if len(keys) == 0 {
 		return keys, wts
 	}
 	baits := s.biteGateBaitSet(ctx, c)
 	target := s.rigWaterLayer(c)
 
-	// 天然饵双票的攻略侧材料：鱼名→规则、companion 档位、本地实证。
-	// 任一读取失败就跳过 G-diet（保持中性），G1/G2 照常。
+	// G-diet 只看鱼种食性：饵定义读不到时整层跳过（保持中性），G1/G2 照常。
 	dietReady := baits.defsOK && len(baits.natural) > 0
-	var names map[string]string
-	var companion []map[string]int64
-	var local []map[string]bool
-	if dietReady {
-		var ok bool
-		if names, ok = s.cachedFishNames(ctx, c); !ok {
-			dietReady = false
-		}
-	}
-	if dietReady {
-		for _, b := range baits.natural {
-			companion = append(companion, s.cachedBaitTiers(ctx, c, b.id))
-			local = append(local, s.cachedLocalBaitEvidence(ctx, c, statLoc, b.id, b.name))
-		}
-	}
 
 	outKeys := make([]string, 0, len(keys))
 	outWts := make([]float64, 0, len(wts))
@@ -171,11 +172,9 @@ func (s *Server) applyBiteGates(ctx context.Context, keys []string, wts []float6
 			continue
 		}
 		if dietReady {
-			score := s.biteGateDietScore(ctx, key, diet, baits.natural, names, companion, local, c, cfg)
-			if score <= 0 {
+			if biteGateDietScore(diet, baits.natural) <= 0 {
 				continue
 			}
-			wts[i] *= score
 		}
 		w := wts[i]
 		if target < p.LayerMin-biteGateLayerTol || target > p.LayerMax+biteGateLayerTol {
@@ -193,47 +192,18 @@ func (s *Server) applyBiteGates(ctx context.Context, keys []string, wts []float6
 	return outKeys, outWts
 }
 
-// biteGateDietScore 天然饵双票：返回 0（剔除）/ dietFloor（单票）/ 1（双票）。
-// 多饵/多钩取最好的一票；任一饵命中明确禁饵直接剔除（与 strict 通道同语义）。
-func (s *Server) biteGateDietScore(ctx context.Context, key string, diet map[string]float64,
-	baits []ruleBait, names map[string]string, companion []map[string]int64, local []map[string]bool, c fishRollContext, cfg biteGateConfig) float64 {
-	r, _ := s.resolveBaitRule(ctx, names[key])
-	best := 0.0
-	for j, b := range baits {
-		if bottomRigTypes[c.rigType] && len(r.bottomOnly) > 0 && !b.matchesAny(r.bottomOnly) {
-			return 0
-		}
-		denied := false
-		for _, term := range r.deny {
-			if b.matches(term) {
-				denied = true
-				break
-			}
-		}
-		if denied {
-			return 0
-		}
-		allowed := false
-		for _, term := range r.allow {
-			if b.matches(term) {
-				allowed = true
-				break
-			}
-		}
-		evidence := allowed || companion[j][key] > 0 || local[j][key]
-		ecology := false
-		for _, dk := range biteGateDietKeys(b) {
-			if diet[dk] >= cfg.dietMin {
-				ecology = true
-				break
-			}
-		}
-		switch {
-		case evidence && ecology:
+// biteGateDietScore 天然饵食性资格：只看这条鱼的食物谱里有没有这类东西。
+// 任一饵在食谱里就放行（多钩可以挂别的饵）；一个都不在才是这条鱼不吃。
+// 攻略、官服榜、本图渔获都不参与——它们记录的是"谁钓到过"，不是"鱼吃不吃"。
+// 食谱为空表示没有档案数据，按中性放行，不因缺数据判不吃。
+func biteGateDietScore(diet map[string]float64, baits []ruleBait) float64 {
+	if len(diet) == 0 {
+		return 1
+	}
+	for _, b := range baits {
+		if _, edible := baitDietStrength(diet, b); edible {
 			return 1
-		case evidence || ecology:
-			best = math.Max(best, cfg.dietFloor)
 		}
 	}
-	return best
+	return 0
 }

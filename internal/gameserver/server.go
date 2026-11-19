@@ -9,7 +9,6 @@ import (
 	"net"
 	"sort"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -76,24 +75,10 @@ type Server struct {
 	marineFishMu   sync.RWMutex
 	marineFishKeys map[string]bool
 
-	// rf4records 饵占比缓存（食性分级提案 bait-evidence-threshold 的占比判据）。
-	// 键 fish_key -> bait_id -> 占比百分比（0~100）；异步预热，TTL 30 分钟。
-	rf4ShareMu      sync.RWMutex
-	rf4ShareCache   map[string]map[string]float64
-	rf4ShareAt      time.Time
-	rf4ShareLoaded  bool
-	rf4ShareLoading atomic.Bool
-
 	// 区域固定鱼种名册缓存（后台可写，TTL 30 秒对齐 tunables 热更节奏）
 	fishZoneMu    sync.RWMutex
 	fishZoneCache map[string][]store.FishZone
 	fishZoneAt    time.Time
-
-	// 钓法倾向矩阵缓存（后台可写，TTL 30 秒；键 "钓法族/水层档"）。
-	// 判鱼热路径每杆每候选都要查，必须缓存；后台保存后最多 30 秒生效。
-	rigAffMu    sync.RWMutex
-	rigAffCache map[string]float64
-	rigAffAt    time.Time
 
 	// 运行参数缓存
 	tunMu    sync.Mutex

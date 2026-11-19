@@ -62,8 +62,8 @@ func TestPityLayerFloorButNotLureGate(t *testing.T) {
 	normal := fishRollContext{baits: []string{"rule_worm"}, now: time.Now(), rigType: 1, depthCM: 50}
 	pity := normal
 	pity.pityEnv = true
-	kn, wn := s.applyBiteGates(s.dbCtx(), []string{"frog"}, []float64{100}, normal, cfg, "rules-test")
-	kp, wp := s.applyBiteGates(s.dbCtx(), []string{"frog"}, []float64{100}, pity, cfg, "rules-test")
+	kn, wn := s.applyBiteGates(s.dbCtx(), []string{"frog"}, []float64{100}, normal, cfg)
+	kp, wp := s.applyBiteGates(s.dbCtx(), []string{"frog"}, []float64{100}, pity, cfg)
 	if len(kn) != 1 || len(kp) != 1 {
 		t.Fatalf("frog 应在两种模式下都幸存: normal=%v pity=%v", kn, kp)
 	}
@@ -77,10 +77,10 @@ func TestPityLayerFloorButNotLureGate(t *testing.T) {
 	lureCtx := fishRollContext{baits: []string{"rule_lure"}, now: time.Now()}
 	lurePity := lureCtx
 	lurePity.pityEnv = true
-	if k, _ := s.applyBiteGates(s.dbCtx(), []string{"frog"}, []float64{100}, lureCtx, cfg, "rules-test"); len(k) != 0 {
+	if k, _ := s.applyBiteGates(s.dbCtx(), []string{"frog"}, []float64{100}, lureCtx, cfg); len(k) != 0 {
 		t.Fatal("G1 拟饵硬门应剔除 frog")
 	}
-	if k, _ := s.applyBiteGates(s.dbCtx(), []string{"frog"}, []float64{100}, lurePity, cfg, "rules-test"); len(k) != 0 {
+	if k, _ := s.applyBiteGates(s.dbCtx(), []string{"frog"}, []float64{100}, lurePity, cfg); len(k) != 0 {
 		t.Fatal("pityEnv 不得放宽 G1 拟饵硬门")
 	}
 }

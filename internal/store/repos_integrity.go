@@ -43,10 +43,7 @@ var RuntimeTables = []string{
 	// 生态档案的水域覆盖（后台可写）与判鱼决策追踪（诊断环切表）：
 	// 两者都是运营数据，既不随存档回滚，也不属于静态资料镜像。
 	"fish_ecology_loc", "fish_roll_trace", "fish_weight_preset",
-	// 稀有度重算阈值：后台可改的三个绝对下限（catches ≥ 该值即进对应档）。
-	"fish_rarity_threshold",
 	// 钓法倾向矩阵：钓法族 × 鱼种水层档的判鱼乘子（后台可改，20 行）。
-	"rig_affinity_weight",
 	// rf4records 官方周纪录捕获表：tools/fetch_rf4records.py（外部证据管道）写入，
 	// 运营数据，非静态资料也非玩家存档。
 	"rf4records_catch",

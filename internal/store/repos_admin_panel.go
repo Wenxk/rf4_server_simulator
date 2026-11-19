@@ -99,15 +99,10 @@ type FishConfigRow struct {
 	DielFactor      float64 `json:"diel_factor"`
 	EffectiveWeight float64 `json:"effective_weight"`
 
-	// 稀有度依据（只读展示）：档位来自全服渔获四分位，Loc* 是本图攻略渔获的
-	// 名次与份额。GlobalCatches=0 表示 species_grade 里没有这条鱼。
-	LocCatches    int     `json:"loc_catches"`
-	LocRank       int     `json:"loc_rank"`
-	LocSpecies    int     `json:"loc_species"`
-	LocTotal      int     `json:"loc_total"`
-	GlobalCatches int     `json:"global_catches"`
-	RarityLabel   string  `json:"rarity_label"`
-	TierWeight    float64 `json:"tier_weight"` // 该档位当前预设权重，手工调时用来对齐
+	// 稀有度：RarityLabel 是鱼种固有稀有度（普通/稀有/超稀有，来自静态表
+	// species_rarity），TierWeight 是该档当前预设权重，手工填覆盖权重时用来对齐。
+	RarityLabel string  `json:"rarity_label"`
+	TierWeight  float64 `json:"tier_weight"`
 
 	// 鱼饵规则覆盖带来的轮换信息（来自 fish_bait_override）。
 	// 钓场鱼口页需要看出"这个鱼种配了轮换、当前生效哪一组"，
@@ -153,10 +148,6 @@ type AdminFishConfig struct {
 	DielPeakBoost     float64 `json:"diel_peak_boost"`
 	DielPenalty       float64 `json:"diel_penalty"`
 
-	// 稀有度分档口径：三个绝对下限（常规/少见/罕见），同样由 admin 层填充。
-	// 前端用它把表头说明写准，避免文案和库里实际阈值脱节。
-	RarityCuts   []int64 `json:"rarity_cuts"`
-	RarityActive bool    `json:"rarity_active"`
 }
 
 type FishConfigSave struct {
@@ -642,9 +633,9 @@ func (d *DB) GetAdminFishConfig(ctx context.Context, loc string) (*AdminFishConf
 		}
 		_ = rows.Close()
 	}
-	// 昼夜掩码与稀有度：鱼口页要显示「这条鱼什么时候活跃」，以及按当前时刻算出的
-	// 生效权重。掩码走水域覆盖优先（与判鱼侧 fishEcologyFor 的合并口径一致），
-	// 否则在生态弹窗里改过昼夜的鱼，后台仍显示全局值，看起来像是没生效。
+	// 昼夜掩码与固有稀有度：鱼口页要显示「这条鱼什么时候活跃」，以及按当前时刻
+	// 算出的生效权重。掩码走水域覆盖优先（与判鱼侧 fishEcologyFor 的合并口径
+	// 一致），否则在生态弹窗里改过昼夜的鱼，后台仍显示全局值，看起来像是没生效。
 	diel := map[string]int64{}
 	rarity := map[string]int{}
 	if drows, derr := d.SQL.QueryContext(ctx, `
@@ -661,52 +652,6 @@ func (d *DB) GetAdminFishConfig(ctx context.Context, loc string) (*AdminFishConf
 		}
 		_ = drows.Close()
 	}
-	// 稀有度依据：档位是按全服渔获数（species_grade.catches）四分位切的，
-	// 但玩家判断「这条鱼在本地稀不稀」看的是图内名次。两者经常打架——
-	// 锦鲤变种全服登记少被判极罕见，在本图却排前六。这里把两头都摆出来，
-	// 让人一眼看出档位该不该手工覆盖。
-	locCatches := map[string]int{}
-	locTotal := 0
-	if crows, cerr := d.SQL.QueryContext(ctx, `SELECT fish_key, catches FROM loc_fish WHERE loc=?`, loc); cerr == nil {
-		for crows.Next() {
-			var key string
-			var c int
-			if crows.Scan(&key, &c) == nil && c > 0 {
-				locCatches[key] = c
-				locTotal += c
-			}
-		}
-		_ = crows.Close()
-	}
-	globalCatches := map[string]int{}
-	if grows, gerr := d.SQL.QueryContext(ctx, `SELECT fish_key, catches FROM species_grade`); gerr == nil {
-		for grows.Next() {
-			var key string
-			var c int
-			if grows.Scan(&key, &c) == nil {
-				globalCatches[key] = c
-			}
-		}
-		_ = grows.Close()
-	}
-	// 图内名次：并列按并列处理（值相同的鱼拿同一个名次），避免「第 5/26」因排序抖动而变化。
-	locRank := map[string]int{}
-	{
-		vals := make([]int, 0, len(locCatches))
-		for _, c := range locCatches {
-			vals = append(vals, c)
-		}
-		for key, c := range locCatches {
-			rank := 1
-			for _, v := range vals {
-				if v > c {
-					rank++
-				}
-			}
-			locRank[key] = rank
-		}
-	}
-
 	cfg := &AdminFishConfig{Area: loc, Setting: *setting, Fish: make([]FishConfigRow, 0, len(roster))}
 	cfg.FishPool = make([]string, 0, len(roster))
 	// 档位权重：手工覆盖时要有参照，否则「这条鱼该填多少」只能翻预设弹窗。
@@ -719,20 +664,15 @@ func (d *DB) GetAdminFishConfig(ctx context.Context, loc string) (*AdminFishConf
 			name = r.FishKey
 		}
 		tier := rarity[r.FishKey]
-		if tier < 0 || tier > 3 {
+		if tier < 0 || tier > FishRaritySuperRare {
 			tier = 0
 		}
 		row := FishConfigRow{
 			FishKey: r.FishKey, NameZh: name, BaseWeight: r.Catches, Weight: r.Catches, Enabled: true,
 			RarityTier: tier, DielMask: diel[r.FishKey],
-			DielLabels:    worldclock.MaskLabels(diel[r.FishKey]),
-			LocCatches:    locCatches[r.FishKey],
-			LocRank:       locRank[r.FishKey],
-			LocSpecies:    len(roster),
-			LocTotal:      locTotal,
-			GlobalCatches: globalCatches[r.FishKey],
-			RarityLabel:   FishWeightTierLabel(tier),
-			TierWeight:    tierWeights[tier],
+			DielLabels:  worldclock.MaskLabels(diel[r.FishKey]),
+			RarityLabel: FishRarityLabel(tier),
+			TierWeight:  tierWeights[tier],
 		}
 		if ov, ok := ovs[r.FishKey]; ok {
 			row.Weight, row.Enabled, row.HasOverride = ov.Weight, ov.Enabled, true
@@ -750,21 +690,16 @@ func (d *DB) GetAdminFishConfig(ctx context.Context, loc string) (*AdminFishConf
 			name = key
 		}
 		tier := rarity[key]
-		if tier < 0 || tier > 3 {
+		if tier < 0 || tier > FishRaritySuperRare {
 			tier = 0
 		}
 		row := FishConfigRow{
 			FishKey: key, NameZh: name, BaseWeight: 0, Weight: ov.Weight,
 			Enabled: ov.Enabled, HasOverride: true,
 			RarityTier: tier, DielMask: diel[key],
-			DielLabels:    worldclock.MaskLabels(diel[key]),
-			LocCatches:    locCatches[key],
-			LocRank:       locRank[key],
-			LocSpecies:    len(roster),
-			LocTotal:      locTotal,
-			GlobalCatches: globalCatches[key],
-			RarityLabel:   FishWeightTierLabel(tier),
-			TierWeight:    tierWeights[tier],
+			DielLabels:  worldclock.MaskLabels(diel[key]),
+			RarityLabel: FishRarityLabel(tier),
+			TierWeight:  tierWeights[tier],
 		}
 		applyBaitRotation(&row, baitOvs[name])
 		cfg.Fish = append(cfg.Fish, row)

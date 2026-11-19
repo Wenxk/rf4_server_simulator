@@ -60,7 +60,12 @@ func openDatabase(path, staticPath string) (*DB, error) {
 	if err := ensureDatabaseDir(path); err != nil {
 		return nil, err
 	}
-	dsn := fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=busy_timeout(10000)&_pragma=synchronous(NORMAL)&_pragma=foreign_keys(OFF)", path)
+	// temp_store(MEMORY)：排序/分组用的临时 B 树一律放内存，不落临时文件。
+	// 默认（FILE）会在排序量超过页缓存时去开系统临时库，一旦进程的 TEMP 目录
+	// 不可用就报 "unable to open database file (14)"——后台选鱼饵那种带
+	// GROUP BY + ORDER BY 的几千行结果集正是这种情况（2026-11-18 实机踩到）。
+	// 本地库量级（万级行）放内存完全够，顺带省掉临时文件 I/O。
+	dsn := fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=busy_timeout(10000)&_pragma=synchronous(NORMAL)&_pragma=foreign_keys(OFF)&_pragma=temp_store(MEMORY)", path)
 	base, err := sqlite.NewConnector(dsn)
 	if err != nil {
 		return nil, fmt.Errorf("创建 SQLite 连接器 %s: %w", path, err)

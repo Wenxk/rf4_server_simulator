@@ -6,28 +6,14 @@ import (
 	"time"
 )
 
-// 基础权重档位化：按 fish_ecology.rarity_tier 给所有水域一套统一的权重基准。
+// 基础权重档位化：按 fish_ecology.rarity_tier（= species_rarity 的固有稀有度，
+// 普通/稀有/超稀有）给所有水域一套统一的权重基准。
 //
 // 为什么不写 loc_fish.catches：loc_fish 属于 StaticTables，运行时被建成指向只读
 // 静态库的 TEMP VIEW，并有 authorizer 拦写。攻略原值必须原样保留，所以预设放在
 // 独立的运行时表 fish_weight_preset，由 LocRoster 优先读取。
 //
 // 清空该表即回滚到攻略原值；后台手工覆盖（fish_weight_override）仍是最外层，优先于它。
-
-// FishWeightTierLabel 稀有度档位的中文名，与后台展示口径一致。
-func FishWeightTierLabel(tier int) string {
-	switch tier {
-	case 0:
-		return "常规"
-	case 1:
-		return "少见"
-	case 2:
-		return "罕见"
-	case 3:
-		return "极罕见"
-	}
-	return "未知"
-}
 
 // FishWeightTierStat 一档稀有度的现状与预设值，用于后台确认弹窗。
 type FishWeightTierStat struct {
@@ -45,10 +31,10 @@ type FishWeightPresetResult struct {
 	Tiers   []FishWeightTierStat `json:"tiers"`
 }
 
-// FishWeightPresetWeights 读当前预设的 4 档权重；表为空或某档缺失时该档为 0。
-// 返回的切片下标即 rarity_tier。
-func (db *DB) FishWeightPresetWeights(ctx context.Context) ([4]float64, bool, error) {
-	var out [4]float64
+// FishWeightPresetWeights 读当前预设的 3 档权重；表为空或某档缺失时该档为 0。
+// 返回的切片下标即 rarity_tier（0 普通 / 1 稀有 / 2 超稀有）。
+func (db *DB) FishWeightPresetWeights(ctx context.Context) ([FishRarityTiers]float64, bool, error) {
+	var out [FishRarityTiers]float64
 	var any bool
 	if db == nil || db.SQL == nil {
 		return out, false, nil
@@ -73,7 +59,7 @@ func (db *DB) FishWeightPresetWeights(ctx context.Context) ([4]float64, bool, er
 }
 
 // FishWeightPresetStats 只读预览：每档多少鱼、影响多少行、攻略原值均值多少。
-func (db *DB) FishWeightPresetStats(ctx context.Context, weights [4]float64) ([]FishWeightTierStat, error) {
+func (db *DB) FishWeightPresetStats(ctx context.Context, weights [FishRarityTiers]float64) ([]FishWeightTierStat, error) {
 	if db == nil || db.SQL == nil {
 		return nil, nil
 	}
@@ -96,7 +82,7 @@ func (db *DB) FishWeightPresetStats(ctx context.Context, weights [4]float64) ([]
 		if err := rows.Scan(&s.Tier, &s.Species, &s.Rows, &s.AvgBase); err != nil {
 			return nil, err
 		}
-		s.Label = FishWeightTierLabel(s.Tier)
+		s.Label = FishRarityLabel(s.Tier)
 		if s.Tier >= 0 && s.Tier < len(weights) {
 			s.Weight = weights[s.Tier]
 		}
@@ -105,10 +91,10 @@ func (db *DB) FishWeightPresetStats(ctx context.Context, weights [4]float64) ([]
 	return out, rows.Err()
 }
 
-// PresetFishBaseWeights 写入 4 档预设权重（同档覆盖）。weights 下标即 rarity_tier。
+// PresetFishBaseWeights 写入 3 档预设权重（同档覆盖）。weights 下标即 rarity_tier。
 // 值 <=0 的档位会被跳过（保留原值），避免把某档鱼直接抹成不出现——
 // 要封掉某档鱼应该用手工覆盖或生态覆盖的 enabled=0。
-func (db *DB) PresetFishBaseWeights(ctx context.Context, weights [4]float64) (FishWeightPresetResult, error) {
+func (db *DB) PresetFishBaseWeights(ctx context.Context, weights [FishRarityTiers]float64) (FishWeightPresetResult, error) {
 	var res FishWeightPresetResult
 	if db == nil || db.SQL == nil {
 		return res, nil
@@ -133,7 +119,7 @@ func (db *DB) PresetFishBaseWeights(ctx context.Context, weights [4]float64) (Fi
 			INSERT INTO fish_weight_preset(rarity_tier, weight, updated_ts) VALUES(?,?,?)
 			ON CONFLICT(rarity_tier) DO UPDATE SET weight=excluded.weight, updated_ts=excluded.updated_ts`,
 			tier, w, now); err != nil {
-			return res, fmt.Errorf("写入 %s 档权重: %w", FishWeightTierLabel(tier), err)
+			return res, fmt.Errorf("写入 %s 档权重: %w", FishRarityLabel(tier), err)
 		}
 		res.Updated++
 	}

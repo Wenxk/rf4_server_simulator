@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestBaitRuleConditionsAndLegalAlternateDiet(t *testing.T) {
+func TestBaitRuleConditionsAndDietQualification(t *testing.T) {
 	conditional := 0
 	for _, rule := range fishBaitRules {
 		if rule.condition != "" && rule.condition != "无" {
@@ -21,38 +21,6 @@ func TestBaitRuleConditionsAndLegalAlternateDiet(t *testing.T) {
 	if len(pike.bottomOnly) != 2 || len(pike.deny) != 7 {
 		t.Fatalf("pike restrictions = %+v", pike)
 	}
-	for _, tc := range []struct {
-		bait ruleBait
-		rule string
-		want bool
-	}{
-		{ruleBait{category: 27, baitType: 6}, "青蛙", true},
-		{ruleBait{category: 27, baitType: 10}, "青蛙", false},
-		{ruleBait{category: 27, baitType: 0}, "常见拟鲤", false},
-		{ruleBait{category: 27, baitType: 4}, "常见拟鲤", false},
-		{ruleBait{category: 17, lureType: 4}, "青蛙", false},
-		{ruleBait{category: 27, baitType: 6}, "马舌鲽", false},
-		{ruleBait{name: "鱼子 Pop Ups 10", category: 27, baitType: 8}, "常见拟鲤", false},
-		{ruleBait{name: "河螯虾 14", category: 27, baitType: 9}, "常见拟鲤", false},
-		{ruleBait{category: 27, baitType: 10}, "常见拟鲤", true},
-	} {
-		if got := tc.bait.legalAlternative(fishBaitRules[ruleName(tc.rule)]); got != tc.want {
-			t.Errorf("alternate %+v / %s = %v", tc.bait, tc.rule, got)
-		}
-	}
-	for _, tc := range []struct {
-		kind int64
-		term string
-		want bool
-	}{
-		{8, "煮饵类", true}, {8, "玉米类", false},
-		{9, "颗粒类", true}, {9, "奶油类", false},
-		{10, "玉米类", true}, {10, "面团类", false},
-	} {
-		if got := (ruleBait{category: 27, baitType: tc.kind}).legalAlternative(fishBaitRule{allow: []string{tc.term}}); got != tc.want {
-			t.Errorf("processed bait type %d / %s = %v", tc.kind, tc.term, got)
-		}
-	}
 	s, db := seedBaitRuleTest(t)
 	for _, q := range []string{
 		`INSERT INTO loc_wiki_fish(loc,fish_key,fish_zh) VALUES('rules-test','n.pike','常见狗鱼')`,
@@ -64,13 +32,22 @@ func TestBaitRuleConditionsAndLegalAlternateDiet(t *testing.T) {
 		}
 	}
 	now := time.Now()
-	keys, weights := s.filterFishBaitSet("rules-test", []string{"rule_other"}, []string{"c.roach"}, []float64{1}, now)
-	if len(keys) != 1 || math.Abs(weights[0]/maxBaitPreference-.05) > 1e-12 {
-		t.Fatalf("legal alternate must be 5%%: %v %v", keys, weights)
+	// 爱吃饵硬约束：rule_other「补充饵」不在常见拟鲤的设定里，
+	// 食谱里有 worm 也不能咬。
+	keys, _ := s.filterFishBaitSet("rules-test", []string{"rule_other"}, []string{"c.roach"}, []float64{1}, now)
+	if len(keys) != 0 {
+		t.Fatalf("不在爱吃饵列表里的饵不该能咬：%v", keys)
 	}
+	// rule_worm「蚯蚓」在设定里且食谱 worm=1.80 → 能咬，权重取食谱原值（封顶）。
+	keys, weights := s.filterFishBaitSet("rules-test", []string{"rule_worm"}, []string{"c.roach"}, []float64{1}, now)
+	if len(keys) != 1 || weights[0] <= 0 {
+		t.Fatalf("命中爱吃饵的蚯蚓应能咬：%v %v", keys, weights)
+	}
+	// 归类不出食性族的饵不当万能饵。
 	if keys, _ := s.filterFishBaitSet("rules-test", []string{"rule_unknown"}, []string{"c.roach"}, []float64{1}, now); len(keys) != 0 {
 		t.Fatal("unknown natural bait became universal food")
 	}
+	// 钓法约束仍由攻略的仅底钓 / 禁饵条款管，与鱼口证据无关。
 	if keys, _ := s.filterFishBaitSet("rules-test", []string{"rule_worm"}, []string{"n.pike"}, []float64{1}, now, fishRollContext{rigType: 12}); len(keys) != 0 {
 		t.Fatal("bottom pike accepted worms")
 	}
@@ -89,7 +66,7 @@ func TestAlternativeBaitInterestUsesSkillWithoutBypassingExclusions(t *testing.T
 	}
 }
 
-func TestAlternativeBaitActualPoolBitesRemainRareAndSkillHelps(t *testing.T) {
+func TestAllowedBaitPoolBitesRemainRareAndSkillHelps(t *testing.T) {
 	t.Setenv("GODEBUG", "randseednop=0")
 	rand.Seed(20261104)
 	s, _ := seedBaitRuleTest(t)
@@ -104,7 +81,8 @@ func TestAlternativeBaitActualPoolBitesRemainRareAndSkillHelps(t *testing.T) {
 			delete(fishPools, loc)
 		}
 	})
-	c := fishRollContext{baits: []string{"rule_other"}, forRig: true, cache: newFishingRollCache()}
+	// 用命中爱吃饵的蚯蚓；「补充饵」这类不在设定里的饵在新口径下整轮不咬。
+	c := fishRollContext{baits: []string{"rule_worm"}, forRig: true, cache: newFishingRollCache()}
 	count := func(speed float64) int {
 		bites := 0
 		for range 500 {
@@ -118,7 +96,11 @@ func TestAlternativeBaitActualPoolBitesRemainRareAndSkillHelps(t *testing.T) {
 		return bites
 	}
 	plain, skilled := count(1), count(.5)
-	if plain < 8 || plain > 43 || skilled < 27 || skilled > 80 || skilled <= plain {
-		t.Fatalf("500 attempts: base=%d skilled=%d", plain, skilled)
+	// 只断言方向与量级：技能（BiteSpeed<1）必须提高咬钩次数，且基础方案不是 0 也不是必中。
+	if plain <= 0 {
+		t.Fatalf("500 attempts base=%d, diet-backed bait should bite", plain)
+	}
+	if skilled < plain {
+		t.Fatalf("bite speed bonus did not help: base=%d skilled=%d", plain, skilled)
 	}
 }

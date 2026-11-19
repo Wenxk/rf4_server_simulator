@@ -19,11 +19,6 @@ type cachedBaitDef struct {
 	ok   bool
 }
 
-type localBaitEvidenceKey struct {
-	loc  string
-	bait string
-}
-
 // cachedGroundbaitAff 缓存「这一锅窝料 x 这条鱼」的食性契合度结论。
 // 契合度与天气无关，只跟成分和鱼种食性有关，一次判鱼里重复率极高。
 type cachedGroundbaitAff struct {
@@ -48,7 +43,6 @@ type fishingRollCache struct {
 	fishNames            map[string]string
 	fishNamesLoaded      bool
 	fishNamesOK          bool
-	localEvidence        map[localBaitEvidenceKey]map[string]bool
 	fishEcology          map[string]fishEcologyProfile
 	fishEcologyLoaded    map[string]bool
 	gbAff                map[groundbaitAffKey]cachedGroundbaitAff
@@ -67,7 +61,6 @@ func newFishingRollCache() *fishingRollCache {
 		baitTiers:         map[string]map[string]int64{},
 		baitTierLoaded:    map[string]bool{},
 		baitDefs:          map[string]cachedBaitDef{},
-		localEvidence:     map[localBaitEvidenceKey]map[string]bool{},
 		fishEcology:       map[string]fishEcologyProfile{},
 		fishEcologyLoaded: map[string]bool{},
 		gbAff:             map[groundbaitAffKey]cachedGroundbaitAff{},
@@ -289,28 +282,6 @@ func (s *Server) cachedFishNames(ctx context.Context, c fishRollContext) (map[st
 	cache.fishNamesLoaded = true
 	cache.mu.Unlock()
 	return names, ok
-}
-
-func (s *Server) cachedLocalBaitEvidence(ctx context.Context, c fishRollContext, loc, baitID, baitName string) map[string]bool {
-	if s.DB == nil {
-		return map[string]bool{}
-	}
-	cache := rollCache(c)
-	if cache == nil {
-		return s.loadLocalBaitEvidence(ctx, loc, baitID, baitName)
-	}
-	key := localBaitEvidenceKey{loc: loc, bait: baitID}
-	cache.mu.Lock()
-	if evidence, ok := cache.localEvidence[key]; ok {
-		cache.mu.Unlock()
-		return evidence
-	}
-	cache.mu.Unlock()
-	evidence := s.loadLocalBaitEvidence(ctx, loc, baitID, baitName)
-	cache.mu.Lock()
-	cache.localEvidence[key] = evidence
-	cache.mu.Unlock()
-	return evidence
 }
 
 func (s *Server) cachedSettleStatics(ctx context.Context, c fishRollContext, key string) [6]int64 {

@@ -34,15 +34,14 @@ func (s *Server) attachDB(db *store.DB, log *slog.Logger) {
 	} else if n > 0 {
 		s.log.Info("鱼种生态档案初始化", "inserted", n)
 	}
-	// 稀有度档位由 fish_rarity_threshold 的绝对阈值决定（长尾分布，不再四分位强制配额）。
-	// 必须放在 ensureFishEcology 之后：种子里写的是生成时的四分位口径，若 profile_version
-	// 提升触发重灌，这一步会把它拉回当前口径。幂等，无变更时不产生写入。
-	if cuts, _, err := db.FishRarityThresholds(context.Background()); err != nil {
-		s.log.Warn("稀有度阈值读取失败", "err", err)
-	} else if res, err := db.RecalcFishRarity(context.Background(), cuts); err != nil {
-		s.log.Warn("稀有度档位重算失败", "err", err)
-	} else if res.Changed > 0 {
-		s.log.Info("稀有度档位已按阈值校正", "changed", res.Changed, "skipped", res.Skipped)
+	// 稀有度是鱼种固有属性（静态表 species_rarity：0 普通 / 1 稀有 / 2 超稀有），
+	// 不是钓获量的函数。这里把属性投影进 fish_ecology.rarity_tier，判鱼权重、
+	// 档位预设、后台展示都读这一列。必须放在 ensureFishEcology 之后：种子档案
+	// 不含稀有度字段，新灌进来的行靠这一步补上。幂等，无变更时不写库。
+	if n, err := db.SyncFishRarityFromStatic(context.Background()); err != nil {
+		s.log.Warn("稀有度同步失败", "err", err)
+	} else if n > 0 {
+		s.log.Info("稀有度已按鱼种固有属性同步", "rows", n)
 	}
 	if err := s.reloadFishEcologyCache(context.Background()); err != nil {
 		s.log.Warn("鱼种生态缓存加载失败", "err", err)

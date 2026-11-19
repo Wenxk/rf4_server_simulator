@@ -21,21 +21,26 @@ func TestBiteGateDietKeyMapping(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
 		baitType int64
+		id       string
 		want     []string
 	}{
-		{"mixed", 1, []string{"plant", "boilie", "crustacean", "fish"}},
-		{"worm", 6, []string{"worm"}},
-		{"live-fish", 4, []string{"fish"}},
-		{"popup", 8, []string{"boilie"}},
-		{"pellet", 9, []string{"boilie"}},
-		{"corn", 10, []string{"plant"}},
-		{"shellfish", 16, []string{"crustacean"}},
-		{"zig", 17, []string{"boilie"}},
-		{"unknown", 99, nil},
+		// 类别 1「杂类」按具体 id 归类，不再一律返回四个键（那等于贻贝肉通杀）。
+		{"mixed-mussel", 1, "bait_dreissena", []string{"crustacean"}},
+		{"mixed-corn", 1, "corn", []string{"plant"}},
+		{"mixed-boilie", 1, "boil_red", []string{"boilie"}},
+		{"mixed-unknown", 1, "unknown_misc", nil},
+		{"worm", 6, "", []string{"worm"}},
+		{"live-fish", 4, "", []string{"fish"}},
+		{"popup", 8, "", []string{"boilie"}},
+		{"pellet", 9, "", []string{"boilie"}},
+		{"corn", 10, "", []string{"plant"}},
+		{"shellfish", 16, "", []string{"crustacean"}},
+		{"zig", 17, "", []string{"boilie"}},
+		{"unknown", 99, "", nil},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := biteGateDietKeys(ruleBait{baitType: tc.baitType}); !slices.Equal(got, tc.want) {
-				t.Fatalf("baitType %d keys=%v, want %v", tc.baitType, got, tc.want)
+			if got := biteGateDietKeys(ruleBait{id: tc.id, baitType: tc.baitType}); !slices.Equal(got, tc.want) {
+				t.Fatalf("baitType %d id=%s keys=%v, want %v", tc.baitType, tc.id, got, tc.want)
 			}
 		})
 	}
@@ -83,7 +88,7 @@ func TestBiteGateLayerFloor(t *testing.T) {
 		t.Fatal("test expects gate enabled by tunable below")
 	}
 	run := func(c fishRollContext, key string) float64 {
-		keys, wts := s.applyBiteGates(s.dbCtx(), []string{key, "perch"}, []float64{1, 1}, c, cfg, "")
+		keys, wts := s.applyBiteGates(s.dbCtx(), []string{key, "perch"}, []float64{1, 1}, c, cfg)
 		for i, k := range keys {
 			if k == key {
 				return wts[i]
@@ -148,7 +153,7 @@ func TestBiteGateConfigDefaultsAndClamps(t *testing.T) {
 		t.Fatal("gate must default off")
 	}
 	setBiteGateSwitch(t, s, "1")
-	if cfg := s.biteGateConfig(); !cfg.enabled || cfg.lureDietMin != 0.30 || cfg.layerFloor != 0.01 || cfg.dietMin != 0.25 || cfg.dietFloor != 0.05 {
+	if cfg := s.biteGateConfig(); !cfg.enabled || cfg.lureDietMin != 0.30 || cfg.layerFloor != 0.01 {
 		t.Fatalf("defaults: %+v", cfg)
 	}
 	if err := s.DB.TunableSet(context.Background(), "bite_gate_layer_floor", "-1", "test"); err != nil {
@@ -162,9 +167,11 @@ func TestBiteGateConfigDefaultsAndClamps(t *testing.T) {
 	}
 }
 
-// G-diet 天然饵双票：攻略证据与生态食性合成——双票原权重、单票小口、
-// 零票（玉米钓泥鳅）与明确禁饵（饵鱼钓银鲫）剔除。
-func TestBiteGateDietDualTicket(t *testing.T) {
+// G-diet 天然饵资格：只看鱼种食谱里有没有这类食物。
+// 食谱里有就放行（低值只是偶尔吃），食谱里没有才是"不吃"；
+// 门层不看攻略 allow / 官服榜 / 本图渔获。爱吃饵 allow 是紧随其后的
+// 饵料层资格（filterFishBaitSet），官服榜与本图渔获始终不参与。
+func TestBiteGateDietQualification(t *testing.T) {
 	s, db := seedBaitRuleTest(t)
 	for _, q := range []string{
 		`INSERT INTO loc_alias(alias,loc) VALUES('level_902_diet','gates-diet')`,
@@ -178,7 +185,7 @@ func TestBiteGateDietDualTicket(t *testing.T) {
 		}
 	}
 	setBiteGateSwitch(t, s, "1")
-	// 蚯蚓：泥鳅（allow 蚯蚓 + worm 1.87）与银鲫（allow 蚯蚓 + worm 1.73）都是双票。
+	// 蚯蚓：泥鳅 worm=1.87、银鲫 worm=1.73，两边都在食谱里。
 	seen := map[string]bool{}
 	for range 64 {
 		if f := s.rollFish("level_902_diet", "rule_worm"); f != nil {
@@ -188,12 +195,20 @@ func TestBiteGateDietDualTicket(t *testing.T) {
 	if !seen["vjun"] || !seen["crucian"] {
 		t.Fatalf("worm must roll both loach and crucian, saw %v", seen)
 	}
-	// 玉米粥：银鲫（allow 玉米粥 + plant 2.02）双票；泥鳅（攻略不认 + plant 0.2
-	// 在噪声地板以下）零票剔除。
-	for range 64 {
-		if f := s.rollFish("level_902_diet", "rule_corn"); f != nil && f.Species == "vjun" {
-			t.Fatal("loach must never take corn porridge")
-		}
+	// 玉米粥：银鲫爱吃且 plant=2.02 是主食 → 放行；泥鳅的设定里没有玉米粥
+	// （食谱 plant=0.2 只是偶尔吃）→ 被爱吃饵硬约束挡在门外。
+	cache := newFishingRollCache()
+	now := time.Now()
+	_, vw := s.filterFishBaitSet("gates-diet", []string{"rule_corn"}, []string{"vjun"}, []float64{1}, now, fishRollContext{cache: cache})
+	_, cw := s.filterFishBaitSet("gates-diet", []string{"rule_corn"}, []string{"crucian"}, []float64{1}, now, fishRollContext{cache: cache})
+	if len(vw) != 0 || len(cw) != 1 {
+		t.Fatalf("corn porridge: loach should be rejected, crucian kept: loach=%v crucian=%v", vw, cw)
+	}
+	// 门层 G-diet 本身仍只看"食谱里有没有这个键"：低值不该被门层剔除。
+	gk, gw := s.applyBiteGates(s.dbCtx(), []string{"vjun", "crucian"}, []float64{1, 1},
+		fishRollContext{baits: []string{"rule_corn"}, cache: cache}, s.biteGateConfig())
+	if len(gk) != 2 || gw[0] <= 0 || gw[1] <= 0 {
+		t.Fatalf("G-diet should keep both low and high diet values: keys=%v w=%v", gk, gw)
 	}
 	// 死饵鱼：银鲫明确禁饵类（不吃拟饵/饵鱼类）——deny 直接剔除。
 	for range 16 {

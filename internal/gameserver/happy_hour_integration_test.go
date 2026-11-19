@@ -29,21 +29,21 @@ func TestCombinedSkillBaitWeatherAndHappyHourUseOneAcceptanceGate(t *testing.T) 
 	}
 	setBaitRuleSwitch(t, s, "1")
 	setWeatherTestTunable(t, s, "fish_weather_enabled", "1")
-	c := fishRollContext{baits: []string{"rule_other"}, now: weatherTimeAt(12),
+	c := fishRollContext{baits: []string{"rule_worm"}, now: weatherTimeAt(12),
 		weather: weatherActivitySample(fishingWeatherThunderstorm, 22), happyBite: .1}
 	keys, weights := s.filterFishBaitSet("rules-test", c.baits, []string{"c.roach"}, []float64{1}, c.now, c)
 	if len(keys) != 1 {
-		t.Fatal("legal alternative bait was excluded")
+		t.Fatal("bait listed in the allow list was excluded")
 	}
 	interest := fishingBaitInterest(weights[0]/maxBaitPreference, bonus)
 	activity := s.weatherFishActivity("c.roach", c)
-	if interest <= .05 || interest >= .1 || activity >= 1 {
+	if interest <= .1 || interest >= 1 || activity >= 1 {
 		t.Fatalf("fixture did not combine skill, low interest and weather: %v %v", interest, activity)
 	}
 	chance := happyHourBiteChance(interest, c.happyBite) * activity
 	roll := func(draw float64) *RolledFish {
 		c.biteRoll = func() float64 { return draw }
-		return s.rollFishForRig(ctx, uid, "", "level_900_rules", "rule_other", bonus, c)
+		return s.rollFishForRig(ctx, uid, "", "level_900_rules", "rule_worm", bonus, c)
 	}
 	// 天气降低吃口后，这个随机值需要欢乐时光加成才能命中。
 	draw := (interest*activity + chance) / 2

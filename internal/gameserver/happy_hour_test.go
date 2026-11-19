@@ -95,20 +95,20 @@ func TestHappyHourLowBaitInterestAtDefaultWaterProbability(t *testing.T) {
 	if got := s.biteProbabilityForLoc("level_900_rules"); got != 1 {
 		t.Fatalf("default water probability=%v", got)
 	}
-	keys, weights := s.filterFishBaitSet("rules-test", []string{"rule_other"}, []string{"c.roach"}, []float64{1}, now)
+	keys, weights := s.filterFishBaitSet("rules-test", []string{"rule_worm"}, []string{"c.roach"}, []float64{1}, now)
 	if len(keys) != 1 {
-		t.Fatal("low-interest bait unexpectedly excluded")
+		t.Fatal("allowed low-interest bait unexpectedly excluded")
 	}
 	interest := weights[0] / maxBaitPreference
-	if interest <= 0 || interest >= .1 {
-		t.Fatalf("expected low interest, got %v", interest)
+	if interest <= .1 || interest >= 1 {
+		t.Fatalf("expected partial interest from diet value, got %v", interest)
 	}
-	c := fishRollContext{baits: []string{"rule_other"}, now: now, biteRoll: func() float64 { return interest * 1.05 }}
-	if fish := s.rollFishForRig(ctx, 1000001, "", "level_900_rules", "rule_other", neutralFishingSkillBonus(), c); fish != nil {
+	c := fishRollContext{baits: []string{"rule_worm"}, now: now, biteRoll: func() float64 { return interest * 1.05 }}
+	if fish := s.rollFishForRig(ctx, 1000001, "", "level_900_rules", "rule_worm", neutralFishingSkillBonus(), c); fish != nil {
 		t.Fatal("inactive hour accepted the injected low-interest roll")
 	}
 	c.happyBite = .1
-	if fish := s.rollFishForRig(ctx, 1000001, "", "level_900_rules", "rule_other", neutralFishingSkillBonus(), c); fish == nil || fish.Species != "c.roach" {
+	if fish := s.rollFishForRig(ctx, 1000001, "", "level_900_rules", "rule_worm", neutralFishingSkillBonus(), c); fish == nil || fish.Species != "c.roach" {
 		t.Fatalf("active hour did not reach final bait gate: %+v", fish)
 	}
 	c.baits = []string{"rule_lure"}

@@ -1345,7 +1345,7 @@ func (s *Server) rollFishFromDBWithRules(loc, bait string, gearCapKg float64, bo
 		}
 	}
 	if gate := s.biteGateConfig(); gate.enabled {
-		keys, wts = s.applyBiteGates(cctx, keys, wts, c, gate, statLoc)
+		keys, wts = s.applyBiteGates(cctx, keys, wts, c, gate)
 		c.trace.step(rollStageGate, keys, wts)
 		if len(keys) == 0 {
 			markEmpty("食性/水层硬门")
@@ -1900,7 +1900,7 @@ func (s *Server) rollFishPoolsWithRules(loc string, gearCapKg float64, bonus fis
 	}
 	c.trace.step(rollStagePool, keys, wts)
 	if gate := s.biteGateConfig(); gate.enabled {
-		keys, wts = s.applyBiteGates(s.dbCtx(), keys, wts, c, gate, "")
+		keys, wts = s.applyBiteGates(s.dbCtx(), keys, wts, c, gate)
 		c.trace.step(rollStageGate, keys, wts)
 		if len(keys) == 0 {
 			return nil

@@ -65,14 +65,10 @@ func TestDielWeightAppliesWithoutEcology(t *testing.T) {
 	p := srv.cachedFishEcology(ctx, c, "t.nightfish")
 	_, hour := worldDayAndHour(c.now.Unix())
 	want := fishDielWeight(p, hour, 1.25, 0.35)
-	// 生态关掉后只剩昼夜层，但「钓法倾向」是独立的一层：这一杆是浮钓（rigType=1）
-	// 打 layer_pref=0.5（中下层）的鱼，按出厂矩阵要乘 0.8。它不是生态的一部分，
-	// 所以不与生态开关联动（详见 rig_affinity.go 的说明）。
-	want *= srv.rigAffinityWeight(ctx, "t.nightfish", c)
 
 	got := srv.fishBiteEnvironmentWeight(ctx, "t.nightfish", c)
 	if got != want {
-		t.Fatalf("生态关闭时权重应为昼夜系数×钓法倾向 %v，实得 %v", want, got)
+		t.Fatalf("生态关闭时权重应等于昼夜系数 %v（不再有钓法乘子），实得 %v", want, got)
 	}
 	if got == 1 {
 		t.Fatal("昼夜层默认开启时不应返回中性 1，否则夜行鱼在夜里不会变多")

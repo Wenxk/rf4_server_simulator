@@ -153,8 +153,11 @@ item_id 自动命中 36%（拟饵类高、天然饵与组合饵待手工补表�
 ## 门禁记录
 
 - 实现：filterFishBaitSet 分级（fishing_bait_rules.go）+ rf4BaitShare 占比缓存（异步预热 TTL 30 分钟，判鱼零阻塞；表空/未迁移时 -1 退 companion 兜底）
-- 单测 TestBaitEvidenceThresholdGrading：占比 95.6%/3.8%/0.6% 三档落位、tier3 满分 / tier2 中档兜底、无证据排除、开关置 0 回旧行为
-- seedBaitRuleTest 默认关分级（旧测试验证规则匹配/替代路径），分级路径由新测试显式开启
+- 单测 TestBaitEvidenceThresholdGrading：占比 95.6%/3.8%/0.6% 三档落位、tier3 满分 / tier2 中档兜底、开关置 0 回旧行为
+- 2026-11-18 后续：**本分级机制已从判鱼链路移除**（见 `bait-diet-only`）。
+  占比、companion tier、本图渔获都是人类渔获记录，与鱼开不开口无关；
+  判鱼资格改由鱼种食性单独决定，`rf4BaitShare` 占比缓存与
+  `bait_share_strong/medium/tail` 三个阈值一并失效。本文档仅作变更存档。
 - 全量回归与 vet/doccheck 输出随 PR 提交
 
 ## 风险与开放问题

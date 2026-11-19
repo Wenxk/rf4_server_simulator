@@ -37,6 +37,11 @@ var fishBaitRules = parseFishBaitRules(fishBaitRuleText)
 
 const maxBaitPreference = 1.5 * 1.15
 
+// baitPreferenceCap 单条饵的偏好上限。食谱原值可以到 2.0（2.0 = 食谱里的主食），
+// 但判鱼权重的满分尺度是 1.5：再高会把饵兴趣顶到 100%，正口饵变成杆杆必咬。
+// 1.5 以上统一按"主食"处理，差异交给食谱低值那端体现。
+const baitPreferenceCap = 1.5
+
 func ruleName(s string) string {
 	return strings.Map(func(r rune) rune {
 		switch r {
@@ -206,7 +211,8 @@ func (b ruleBait) matches(term string) bool {
 	return false
 }
 
-// filterFishBaits 对喜好饵和其他饵分别加权，明确禁饵仍然排除。
+// filterFishBaits 按「爱吃饵」资格过滤候选，命中后用食性强度加权，
+// 明确禁饵仍然排除（见 filterFishBaitSet）。
 func (s *Server) filterFishBaits(loc, bait string, keys []string, weights []float64) ([]string, []float64) {
 	return s.filterFishBaitSet(loc, []string{bait}, keys, weights, time.Now())
 }
@@ -258,22 +264,6 @@ func (s *Server) loadFishNames(ctx context.Context) (map[string]string, bool) {
 	return names, true
 }
 
-func (s *Server) loadLocalBaitEvidence(ctx context.Context, loc, baitID, baitName string) map[string]bool {
-	evidence := map[string]bool{}
-	rows, err := s.DB.SQL.QueryContext(ctx, `SELECT fish_key FROM loc_bait_fish WHERE loc=? AND bait IN (?,?) AND catches>0`, loc, baitID, baitName)
-	if err != nil {
-		return evidence
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var key string
-		if rows.Scan(&key) == nil {
-			evidence[key] = true
-		}
-	}
-	return evidence
-}
-
 func (s *Server) filterFishBaitSet(loc string, ids []string, keys []string, weights []float64, now time.Time, contexts ...fishRollContext) ([]string, []float64) {
 	if s.DB == nil {
 		return nil, nil
@@ -307,21 +297,9 @@ func (s *Server) filterFishBaitSet(loc string, ids []string, keys []string, weig
 	if !namesOK {
 		return nil, nil
 	}
-	evidence := make([]map[string]int64, len(baits))
-	localEvidence := make([]map[string]bool, len(baits))
-	for i, b := range baits {
-		evidence[i] = s.cachedBaitTiers(ctx, c, b.id)
-		localEvidence[i] = s.cachedLocalBaitEvidence(ctx, c, loc, b.id, b.name)
-	}
 	outKeys := make([]string, 0, len(keys))
 	outWeights := make([]float64, 0, len(keys))
 	period := (now.Unix() - worldDayEpochUnix) / (4 * realSecPerGameHour)
-	// 阈值与总开关按一次判鱼读取，循环内不再重复取 tunable。
-	// bait_share_strong/medium/tail 任一 <=0 时回到旧行为（>0 即满分）。
-	strong := s.tunableF("bait_share_strong", 5)
-	medium := s.tunableF("bait_share_medium", 1)
-	tail := s.tunableF("bait_share_tail", 0.2)
-	grading := strong > 0 && medium > 0 && tail > 0
 	for i, key := range keys {
 		if weights[i] <= 0 {
 			continue
@@ -333,10 +311,19 @@ func (s *Server) filterFishBaitSet(loc string, ids []string, keys []string, weig
 		if !ruleConditionAllows(r, c) {
 			continue
 		}
+		// 爱吃饵硬约束（用户 2026-11-19 口径）：规则表写了「吃 X」的鱼，钩上的饵
+		// 必须命中 allow 才进候选；当前轮换组主推的饵视同命中。规则表未收录的鱼
+		// 不套此约束，仍只由 diet_json 食性门裁定，避免攻略没覆盖的鱼种整图绝迹。
+		// 渔获记录（companion 榜 / 本图渔获 / rf4 占比）一律不参与：它们只说明
+		// 谁钓到过，不说明鱼吃不吃；改动这些记录不应改变任何一条鱼的鱼口。
+		hasRule := len(r.allow) > 0
+		// 鱼种食性：这条鱼的食物谱，只按鱼种取——同一个鱼种在哪个钓场都吃同样的东西。
+		// 档案缺失（diet 为空）时本鱼不套食性判定，绝不因为读不到数据就判"不吃"。
+		diet := fishEcologyJSONMap(s.cachedFishEcology(ctx, c, key).DietJSON)
 		denied := false
 		best := 0.0
 		preferred := 0
-		for j, b := range baits {
+		for _, b := range baits {
 			if !rotationKeepsBait(activeGroup, strictRotation, b) {
 				continue // strict 轮换：组外的饵本轮不咬
 			}
@@ -353,51 +340,33 @@ func (s *Server) filterFishBaitSet(loc string, ids []string, keys []string, weig
 			if denied {
 				break
 			}
-			allowed := false
-			for _, term := range r.allow {
-				if b.matches(term) {
-					allowed = true
-					break
+			// 资格一：爱吃饵设定。allow 里没有这款饵就整饵跳过；轮换组主推饵例外。
+			// 饵定义缺中文名时无法与攻略文案比对，按中性放行——与"读不到饵定义
+			// 整体放行""食谱为空不判不吃"同口径，绝不因数据缺失把整图封死。
+			if hasRule && b.name != "" && !b.matchesAny(r.allow) &&
+				!(activeGroup != nil && b.matchesAny(activeGroup)) {
+				continue
+			}
+			// 资格二：鱼种食性。食谱里有这类食物才咬，没有就是这条鱼不吃这个饵。
+			// 官服榜、本图渔获都不参与——它们记录的是"谁钓到过"，不是"鱼吃不吃"。
+			score := 1.0
+			if len(diet) > 0 {
+				strength, edible := baitDietStrength(diet, b)
+				if !edible {
+					continue
 				}
+				score = strength
 			}
-			// 当前轮换组的饵视为本轮主推，即使不在静态允许列表里。
-			if activeGroup != nil && b.matchesAny(activeGroup) {
-				allowed = true
-			}
-			// 食性证据分级（specs/changes/bait-evidence-threshold）：rf4records 实测占比
-			// 优先，companion tier/evidence 兜底；四档放行。
-			share := -1.0
-			if grading {
-				share = s.rf4BaitShare(ctx, key, b.id)
-			}
-			score := 0.0
-			variation := fishVariation(fmt.Sprintf("%s/%s/%s/%d", loc, key, b.id, period))
-			// evidence[j] 实为 companion tier map（1=在榜 2=热门 3=top 档），非计数。
-			comp := evidence[j][key]
-			// 中档兜底必须落在该鱼的食性族内：companion 的"在列"只说明官服有人
-			// 用这个饵钓到过它，不说明这饵在它的食谱里。普通鲤鱼（allow 全是植物饵、
-			// 生态 diet 里没有 fish 项）× 鱼块 就是 tier1/evidence=11 的孤例，
-			// 之前被直接抬到中档 0.35，于是"鲤鱼咬鱼肉"。
-			// 判不出食性族的饵（拟饵、baitType=1 杂类的煮饵/贻贝肉）照旧放行。
-			midFallback := comp >= 1 && b.baitDietCompatible(r)
-			full := allowed || comp > 0 || localEvidence[j][key]
-			if grading {
-				// rf4 占比优先；占比缺失（表空/未映射）退回 companion/local 兜底。
-				full = allowed || share >= strong || comp >= 3 ||
-					(share < 0 && comp <= 0 && localEvidence[j][key])
-			}
-			if full {
-				preferred++
-				score = 1.0 + 0.5*variation
-			} else if grading && (share >= medium || (share < 0 && midFallback) || localEvidence[j][key]) {
-				score = maxBaitPreference * 0.35
-			} else if grading && share >= tail {
-				score = maxBaitPreference * 0.18
-			} else if b.legalAlternative(r) {
-				score = maxBaitPreference * 0.05
-			}
+			// 同一鱼种×饵按 4 游戏小时桶做口味抖动，避免每次判鱼权重完全一致。
+			// 抖动量不含钓场：同一鱼种吃同一饵的口味不该因为换了片水就变，
+			// 否则"这条鱼在哪个湖都吃同样的东西"就没法验证了。
+			score *= 1 + 0.5*fishVariation(fmt.Sprintf("%s/%s/%d", key, b.id, period))
 			if activeGroup != nil {
 				score *= rotationScoreMultiplier(activeGroup, b)
+			}
+			score = clampFloat(score, 0, baitPreferenceCap)
+			if score >= 1.0 {
+				preferred++
 			}
 			best = math.Max(best, score)
 		}
@@ -504,88 +473,44 @@ func (b ruleBait) matchesAny(terms []string) bool {
 	return false
 }
 
-// dietFamily 该饵能归到哪个食性大类；第二个返回值表示"能否判定"。
-// 判不出来的一律不拦（见 baitDietCompatible）：category 17 是拟饵，没有食性族；
-// baitType=1「杂类」是一锅杂烩（香煮成饵 / 贻贝肉 / 鱼块 / 河斑马纹贻贝肉），
-// 只能靠鱼块这类具体 id 单独归一，不能按大类一概而论。
-func (b ruleBait) dietFamily() (string, bool) {
-	if b.category != 27 {
-		return "", false
+// baitDietStrength 该饵在这条鱼食谱里的强度（生态表 diet_json 原值，0.2~2.0），
+// ok=false 表示食谱里压根没有这类东西——这是唯一允许判「不吃」的依据。
+// 判据只看鱼种食性，与钓场/攻略/纪录无关：同一鱼种在哪个湖都吃同样的东西。
+func baitDietStrength(diet map[string]float64, b ruleBait) (float64, bool) {
+	keys := biteGateDietKeys(b)
+	if b.category == 17 {
+		keys = []string{"lure"}
 	}
-	var diet string
-	switch b.baitType {
-	case 2, 6, 7:
-		diet = "虫"
-	case 8:
-		diet = "煮饵"
-	case 9:
-		diet = "颗粒"
-	case 10:
-		diet = "玉米"
-	case 11, 13:
-		diet = "植物"
-	case 4, 15:
-		diet = "饵鱼"
-	case 14:
-		diet = "鱼肉"
+	if len(keys) == 0 {
+		return 0, false
 	}
-	if b.id == "fish_flesh" || b.id == "fish_pieces" {
-		diet = "鱼肉"
-	}
-	return diet, diet != ""
-}
-
-// dietFamilyAllowed 该鱼攻略 allow 里是否出现过这个食性大类的关键词。
-func dietFamilyAllowed(diet string, r fishBaitRule) bool {
-	terms := strings.Join(r.allow, "/")
-	switch diet {
-	case "虫":
-		for _, term := range []string{"蠕虫", "蚯蚓", "红虫", "苍蝇", "蛆虫", "毛翅", "树皮甲虫", "昆虫", "地龙", "土蚕", "水蛭", "蜉蝣", "襀翅", "牛虻", "草蜢", "蟋蟀", "蜣螂", "金龟", "龙虱", "蝼蛄"} {
-			if strings.Contains(terms, term) {
-				return true
+	best, found := 0.0, false
+	for _, k := range keys {
+		v, has := diet[k]
+		// 煮饵/颗粒在多数鲤鱼科档案里只记 plant，没有 boilie 键时按植物饵折算。
+		if !has && k == "boilie" {
+			if p, hasPlant := diet["plant"]; hasPlant {
+				v, has = p*0.9, true
 			}
 		}
-	case "植物":
-		for _, term := range []string{"面包", "面团", "粥", "玉米", "豌豆", "坚果", "奶酪", "水果", "蜂蜜", "奶油", "椰子", "中立", "自然风味"} {
-			if strings.Contains(terms, term) {
-				return true
-			}
+		if !has {
+			continue
 		}
-	case "煮饵":
-		return strings.Contains(terms, "煮饵") || strings.Contains(terms, "煮成饵") || strings.Contains(strings.ToLower(terms), "boilie") || strings.Contains(strings.ToLower(terms), "popup") || strings.Contains(strings.ToLower(terms), "pop up")
-	case "颗粒":
-		return strings.Contains(terms, "颗粒") || strings.Contains(strings.ToLower(terms), "pellet")
-	case "玉米":
-		return strings.Contains(terms, "玉米")
-	case "饵鱼":
-		return strings.Contains(terms, "饵鱼") || strings.Contains(terms, "活饵")
-	case "鱼肉":
-		return strings.Contains(terms, "鱼肉") || strings.Contains(terms, "鱼片")
+		found = true
+		if v > best {
+			best = v
+		}
 	}
-	return false
-}
-
-// baitDietCompatible 该饵有没有可能在这条鱼的食谱里：食性族可判定时要求 allow
-// 出现同类关键词；判不出来时放行（保守）。与 legalAlternative 的区别是后者还要
-// 求"不是偏好"的降权语义，这里只回答"能不能进食谱"。
-func (b ruleBait) baitDietCompatible(r fishBaitRule) bool {
-	diet, ok := b.dietFamily()
-	if !ok {
-		return true
+	if found {
+		return best, true
 	}
-	return dietFamilyAllowed(diet, r)
-}
-
-// 非偏好只在已识别食性族内保留杂口，不把所有天然饵视为通用食物。
-func (b ruleBait) legalAlternative(r fishBaitRule) bool {
-	if b.category != 27 {
-		return false
+	// 拟饵键缺失（老档案/兜底档案）时按掠食性折算，避免一挂路亚整图空竿。
+	if b.category == 17 {
+		if v, has := diet["fish"]; has {
+			return v, true
+		}
 	}
-	diet, ok := b.dietFamily()
-	if !ok {
-		return false
-	}
-	return dietFamilyAllowed(diet, r)
+	return 0, false
 }
 
 // 技能只提高已有的正兴趣，不能放行禁饵或不适用的拟饵。
@@ -602,75 +527,4 @@ func fishingBaitInterest(interest float64, bonus fishingSkillBonus) float64 {
 		limit = .1
 	}
 	return math.Min(limit, interest*multiplier)
-}
-
-// rf4BaitShare 返回饵在 rf4records_catch 里对某鱼的实测渔获占比（百分比 0~100）。
-// 无数据（表空/该鱼无纪录/未映射）返回 -1。缓存异步预热 TTL 30 分钟，
-// 判鱼路径零阻塞；表未迁移或查询失败时保持 -1，分级退回 companion 兜底。
-func (s *Server) rf4BaitShare(ctx context.Context, fishKey, baitID string) float64 {
-	if s.DB == nil || fishKey == "" || baitID == "" {
-		return -1
-	}
-	now := time.Now()
-	s.rf4ShareMu.RLock()
-	ready := s.rf4ShareLoaded && now.Sub(s.rf4ShareAt) <= 30*time.Minute
-	m := s.rf4ShareCache[fishKey]
-	s.rf4ShareMu.RUnlock()
-	// 只在未就绪时触发加载；ready 但 m==nil 表示该鱼确实没有 rf4 纪录，
-	// 不能每次判鱼都重新聚合 47.9 万行（评审 P1）。
-	if !ready {
-		if s.rf4ShareLoading.CompareAndSwap(false, true) {
-			go s.loadRf4Share()
-		}
-		return -1
-	}
-	if m == nil {
-		return -1
-	}
-	if v, ok := m[baitID]; ok {
-		return v
-	}
-	return -1
-}
-
-func (s *Server) loadRf4Share() {
-	defer s.rf4ShareLoading.Store(false)
-	rows, err := s.DB.SQL.QueryContext(s.dbCtx(), `
-		SELECT fish_key, bait_id, 100.0*cnt/tot FROM (
-			SELECT fish_key, bait_id, count(*) AS cnt, sum(count(*)) OVER (PARTITION BY fish_key) AS tot
-			FROM rf4records_catch WHERE fish_key<>'' AND bait_id<>'' GROUP BY fish_key, bait_id)`)
-	if err != nil {
-		s.rf4ShareMu.Lock()
-		// 首次查询失败也置 loaded，避免每次判鱼都重试全表聚合；
-		// TTL 到期后会再试（表未迁移/暂时读不到时退回 companion 兜底）。
-		if !s.rf4ShareLoaded {
-			s.rf4ShareCache = map[string]map[string]float64{}
-			s.rf4ShareLoaded = true
-		}
-		s.rf4ShareAt = time.Now()
-		s.rf4ShareMu.Unlock()
-		return
-	}
-	cache := map[string]map[string]float64{}
-	for rows.Next() {
-		var fk, bid string
-		var v float64
-		if rows.Scan(&fk, &bid, &v) == nil {
-			if cache[fk] == nil {
-				cache[fk] = map[string]float64{}
-			}
-			cache[fk][bid] = v
-		}
-	}
-	err = rows.Err()
-	_ = rows.Close()
-	s.rf4ShareMu.Lock()
-	defer s.rf4ShareMu.Unlock()
-	if err != nil {
-		s.rf4ShareAt = time.Now()
-		return
-	}
-	s.rf4ShareCache = cache
-	s.rf4ShareLoaded = true
-	s.rf4ShareAt = time.Now()
 }

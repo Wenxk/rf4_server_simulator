@@ -69,15 +69,21 @@
 
 ## 7. 硬性鱼口门与空候选语义（bite_gate_enabled，默认关）
 
-- ✅ 门层（G1 拟饵食性硬剔 / G2 水层地板 / G-diet 双票）插在水域鱼种覆盖之后、
+- ✅ 门层（G1 拟饵食性硬剔 / G2 水层地板 / G-diet 食性资格）插在水域鱼种覆盖之后、
   饵料规则之前；剔空候选时必须置 `fishRollContext.gateBlocked`，让
   `rollFishWithRules` 跳过内置鱼池兜底——门拦下的杆就该空竿重排，不能从
   鱼池捞出不属于本图的鱼。
   - ❌ 只 return nil 不置位 → 静默落到 defaultFishPool，外图鱼（拟鲤/河鲈）漏进本图。
+  - ❌ 用「本图有没有钓到过这个饵」的纪录当资格 → 攻略没覆盖的钓场整图空杆。
+  - ✅ 攻略「吃 X」的 `allow` 列表是鱼口设定，在饵料层作硬资格（用户 2026-11-19
+    口径，见 `bait-allow-restored`）：有规则条目的鱼只咬命中 allow 的饵，命中后权重
+    仍取食谱强度；无规则鱼、饵名缺失按中性放行，不因数据缺失封鱼。
+  - ❌ 拿 companion 榜 / `loc_bait_fish` / rf4 占比给鱼口加权或放行 → 记录只是
+    「谁钓到过」，与鱼开不开口无关。
 - ✅ 饵类别判定用 `cachedBaitDefinition` 读 item_def 类别（17 拟饵/27 天然饵），
   读不到时门保持中性放行，不因数据缺失封鱼（与 `filterFishBaitSet` 同口径）。
-- ✅ 生态食性表 `diet_json` 的阈值必须高于合成基线 0.2 噪声地板
-  （`bite_gate_diet_min` 默认 0.25、拟饵门槛 0.30），否则噪声值会放行荒谬组合。
+- ✅ 生态食性表 `diet_json` 只看「键存不存在」：有键就能吃（低值只是难钓），
+  没键才剔除。拟饵另有 `bite_gate_lure_diet_min`（默认 0.30）过滤不攻拟饵的鱼种。
 - ✅ GM 指定鱼（`arm_next_fish`）在更早分支绕过全部判鱼，门不拦截。
 
 ## 8. 区域固定鱼种名册（fish_zone / fish_zone_fish）

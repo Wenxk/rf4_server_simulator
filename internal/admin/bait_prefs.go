@@ -26,7 +26,7 @@ type baitPrefRow struct {
 	Total    int                `json:"total"`     // 有证据的饵总数
 	Baits    []baitPrefEvidence `json:"baits"`     // 证据最强的若干条
 	Locs     []string           `json:"locs"`      // 出现水域（截断）
-	InStrict bool               `json:"in_strict"` // 严格模式下是否还能咬（规则命中或 tier>0）
+	InStrict bool               `json:"in_strict"` // 资料完整度（仅展示）：有规则条目或有实证记录
 
 	// 鱼口画像（fish_ecology，与判鱼 G 层同表同源）：按类食性权重 + 水层 + 档位体重线。
 	Diet   map[string]float64 `json:"diet,omitempty"` // worm/fish/boilie/plant/crustacean/lure
@@ -220,7 +220,8 @@ func (s *Server) handleBaitPrefs(w http.ResponseWriter, r *http.Request) {
 			row.Tier3, row.Tier2, row.Total = a.tier3, a.tier2, a.total
 			row.Baits = a.baits
 		}
-		// 严格模式判定：命中规则（有允许列表）或该鱼在证据表里有 >=1 条记录才会被放行。
+		// 资料完整度（仅展示，不参与判鱼）：规则表有条目或有实证记录。
+		// 严格模式下真正的资格是「饵命中 allow」；无规则鱼按食谱放行，与 tier 无关。
 		row.InStrict = row.HasRule || row.Total > 0
 		out = append(out, row)
 	}
