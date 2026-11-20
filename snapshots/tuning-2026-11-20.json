@@ -1,0 +1,5266 @@
+{
+  "generated_at": "2026-11-20T11:31:21+08:00",
+  "git_commit": "4c7da11",
+  "db": "rf4server.db",
+  "schema_version": 77,
+  "counts": {
+    "tunables": 71,
+    "fish_weight_preset": 3,
+    "fish_weight_override": 57,
+    "fish_bite_setting": 1,
+    "fish_bait_override": 201,
+    "fish_bait_auto_rotation": 253,
+    "fish_ecology_loc": 0,
+    "fish_zone": 0,
+    "fish_zone_fish": 0
+  },
+  "tunables": {
+    "bait_evidence_low_scale": "0.1",
+    "bait_pref_scale": "1",
+    "bait_pref_weight_shift": "1",
+    "bait_rotation_auto_enabled": "1",
+    "bait_rotation_auto_round": "2",
+    "bait_rotation_auto_sec": "1800",
+    "bite_delay_fixed": "0",
+    "bite_delay_lure_max": "6",
+    "bite_delay_max": "20",
+    "bite_delay_scale": "1",
+    "bite_gate_enabled": "1",
+    "bite_probability": "1",
+    "card_drop_blue": "0.8",
+    "card_drop_normal": "0.001",
+    "card_drop_rare_scale": "0.25",
+    "card_drop_star": "0.5",
+    "condition_health_enabled": "0",
+    "electric_locked_multiplier": "3",
+    "electric_motor_kg_per_power": "1",
+    "event_newyear_enabled": "0",
+    "fight_power_scale": "1",
+    "fish_bait_rules_enabled": "1",
+    "fish_diel_active_boost": "2",
+    "fish_diel_inactive_penalty": "0.3",
+    "fish_diel_weight_enabled": "1",
+    "fish_distribution_enabled": "1",
+    "fish_ecology_enabled": "1",
+    "fish_escape_taunt": "0",
+    "fish_hunt_enabled": "1",
+    "fish_roll_trace_enabled": "1",
+    "fish_weather_enabled": "1",
+    "fish_weight_cap": "0",
+    "fish_weight_scale": "1",
+    "grade_pct_below": "3",
+    "grade_pct_qualified": "87.5",
+    "grade_pct_super": "0.5",
+    "grade_pct_trophy": "9",
+    "grade_ratio_enabled": "0",
+    "groundbait_enabled": "1",
+    "happy_hour_enabled": "1",
+    "hook_nibble_enabled": "0",
+    "hook_spawn_match_strength": "1",
+    "loot_box_chance": "0.05",
+    "loot_box_enabled": "0",
+    "loot_box_trophy_guarantee": "1",
+    "reel_burn_calibration_drag_kg": "7.7",
+    "reel_cast_base_factor_lure": "0.25",
+    "reel_load_max_tick_seconds": "5",
+    "reel_load_tick_seconds": "1.9",
+    "reel_locked_burn_base_s": "10",
+    "reel_locked_burn_curve": "1.5",
+    "reel_slip_calibration_seconds": "41.7",
+    "reel_slip_deadband_ratio": "1.05",
+    "reel_slip_wear": "0.0001",
+    "reel_slip_wear_low": "0.000001",
+    "reel_slip_wear_max": "0.0001",
+    "reel_slip_wear_s25": "0.000025",
+    "reel_slip_wear_s26": "0.00005",
+    "reel_slip_wear_s27": "0.000075",
+    "reel_slip_wear_s28": "0.000095",
+    "release_xp_ratio": "0.5",
+    "two_stage_baited_below": "0.83",
+    "two_stage_baited_qualified": "76.03",
+    "two_stage_baited_super": "8.1",
+    "two_stage_baited_trophy": "15.04",
+    "two_stage_daily_below": "5.16",
+    "two_stage_daily_qualified": "79.56",
+    "two_stage_daily_super": "5.26",
+    "two_stage_daily_trophy": "10.02",
+    "two_stage_hunt_enabled": "0",
+    "xp_gain": "1"
+  },
+  "sections": {
+    "tunables": {
+      "desc": "后台「游戏参数」全部键值（唯一真源，缺省值在代码里）",
+      "columns": [
+        "key",
+        "value",
+        "updated_by",
+        "updated_ts"
+      ],
+      "rows": [
+        {
+          "key": "bait_evidence_low_scale",
+          "value": "0.1",
+          "updated_by": "admin",
+          "updated_ts": 1795095494.0
+        },
+        {
+          "key": "bait_pref_scale",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1794401927.0
+        },
+        {
+          "key": "bait_pref_weight_shift",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1794398864.0
+        },
+        {
+          "key": "bait_rotation_auto_enabled",
+          "value": "1",
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "key": "bait_rotation_auto_round",
+          "value": "2",
+          "updated_by": "admin",
+          "updated_ts": 1795106621.0
+        },
+        {
+          "key": "bait_rotation_auto_sec",
+          "value": "1800",
+          "updated_by": "admin",
+          "updated_ts": 1795100287.0
+        },
+        {
+          "key": "bite_delay_fixed",
+          "value": "0",
+          "updated_by": "admin",
+          "updated_ts": 1794398845.0
+        },
+        {
+          "key": "bite_delay_lure_max",
+          "value": "6",
+          "updated_by": "admin",
+          "updated_ts": 1794398862.0
+        },
+        {
+          "key": "bite_delay_max",
+          "value": "20",
+          "updated_by": "admin",
+          "updated_ts": 1794576318.0
+        },
+        {
+          "key": "bite_delay_scale",
+          "value": "1",
+          "updated_by": "system",
+          "updated_ts": 1794935240.0
+        },
+        {
+          "key": "bite_gate_enabled",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1794927017.0
+        },
+        {
+          "key": "bite_probability",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1794145226.0
+        },
+        {
+          "key": "card_drop_blue",
+          "value": "0.8",
+          "updated_by": "admin",
+          "updated_ts": 1794398965.0
+        },
+        {
+          "key": "card_drop_normal",
+          "value": "0.001",
+          "updated_by": "admin",
+          "updated_ts": 1794398964.0
+        },
+        {
+          "key": "card_drop_rare_scale",
+          "value": "0.25",
+          "updated_by": "admin",
+          "updated_ts": 1794398994.0
+        },
+        {
+          "key": "card_drop_star",
+          "value": "0.5",
+          "updated_by": "admin",
+          "updated_ts": 1794143687.0
+        },
+        {
+          "key": "condition_health_enabled",
+          "value": "0",
+          "updated_by": "admin",
+          "updated_ts": 1794927189.0
+        },
+        {
+          "key": "electric_locked_multiplier",
+          "value": "3",
+          "updated_by": "admin",
+          "updated_ts": 1794576300.0
+        },
+        {
+          "key": "electric_motor_kg_per_power",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1794576283.0
+        },
+        {
+          "key": "event_newyear_enabled",
+          "value": "0",
+          "updated_by": "admin",
+          "updated_ts": 1794399149.0
+        },
+        {
+          "key": "fight_power_scale",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1794398903.0
+        },
+        {
+          "key": "fish_bait_rules_enabled",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1794927017.0
+        },
+        {
+          "key": "fish_diel_active_boost",
+          "value": "2",
+          "updated_by": "admin",
+          "updated_ts": 1795095522.0
+        },
+        {
+          "key": "fish_diel_inactive_penalty",
+          "value": "0.3",
+          "updated_by": "admin",
+          "updated_ts": 1795095528.0
+        },
+        {
+          "key": "fish_diel_weight_enabled",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1795095519.0
+        },
+        {
+          "key": "fish_distribution_enabled",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1794927017.0
+        },
+        {
+          "key": "fish_ecology_enabled",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1794927163.0
+        },
+        {
+          "key": "fish_escape_taunt",
+          "value": "0",
+          "updated_by": "admin",
+          "updated_ts": 1795091443.0
+        },
+        {
+          "key": "fish_hunt_enabled",
+          "value": "1",
+          "updated_by": "system",
+          "updated_ts": 1794935732.0
+        },
+        {
+          "key": "fish_roll_trace_enabled",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1795022799.0
+        },
+        {
+          "key": "fish_weather_enabled",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1794927017.0
+        },
+        {
+          "key": "fish_weight_cap",
+          "value": "0",
+          "updated_by": "admin",
+          "updated_ts": 1794398899.0
+        },
+        {
+          "key": "fish_weight_scale",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1794147099.0
+        },
+        {
+          "key": "grade_pct_below",
+          "value": "3",
+          "updated_by": "system",
+          "updated_ts": 1794935240.0
+        },
+        {
+          "key": "grade_pct_qualified",
+          "value": "87.5",
+          "updated_by": "system",
+          "updated_ts": 1794935240.0
+        },
+        {
+          "key": "grade_pct_super",
+          "value": "0.5",
+          "updated_by": "system",
+          "updated_ts": 1794935240.0
+        },
+        {
+          "key": "grade_pct_trophy",
+          "value": "9",
+          "updated_by": "system",
+          "updated_ts": 1794935240.0
+        },
+        {
+          "key": "grade_ratio_enabled",
+          "value": "0",
+          "updated_by": "system",
+          "updated_ts": 1794935732.0
+        },
+        {
+          "key": "groundbait_enabled",
+          "value": "1",
+          "updated_by": "system",
+          "updated_ts": 1794935240.0
+        },
+        {
+          "key": "happy_hour_enabled",
+          "value": "1",
+          "updated_by": "",
+          "updated_ts": 0.0
+        },
+        {
+          "key": "hook_nibble_enabled",
+          "value": "0",
+          "updated_by": "admin",
+          "updated_ts": 1795091369.0
+        },
+        {
+          "key": "hook_spawn_match_strength",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1795014105.0
+        },
+        {
+          "key": "loot_box_chance",
+          "value": "0.05",
+          "updated_by": "system",
+          "updated_ts": 1794935240.0
+        },
+        {
+          "key": "loot_box_enabled",
+          "value": "0",
+          "updated_by": "system",
+          "updated_ts": 1794935240.0
+        },
+        {
+          "key": "loot_box_trophy_guarantee",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1794398969.0
+        },
+        {
+          "key": "reel_burn_calibration_drag_kg",
+          "value": "7.7",
+          "updated_by": "admin",
+          "updated_ts": 1794398947.0
+        },
+        {
+          "key": "reel_cast_base_factor_lure",
+          "value": "0.25",
+          "updated_by": "admin",
+          "updated_ts": 1794398951.0
+        },
+        {
+          "key": "reel_load_max_tick_seconds",
+          "value": "5",
+          "updated_by": "admin",
+          "updated_ts": 1794398953.0
+        },
+        {
+          "key": "reel_load_tick_seconds",
+          "value": "1.9",
+          "updated_by": "admin",
+          "updated_ts": 1794398951.0
+        },
+        {
+          "key": "reel_locked_burn_base_s",
+          "value": "10",
+          "updated_by": "admin",
+          "updated_ts": 1794398954.0
+        },
+        {
+          "key": "reel_locked_burn_curve",
+          "value": "1.5",
+          "updated_by": "admin",
+          "updated_ts": 1794398948.0
+        },
+        {
+          "key": "reel_slip_calibration_seconds",
+          "value": "41.7",
+          "updated_by": "admin",
+          "updated_ts": 1794576282.0
+        },
+        {
+          "key": "reel_slip_deadband_ratio",
+          "value": "1.05",
+          "updated_by": "admin",
+          "updated_ts": 1794576301.0
+        },
+        {
+          "key": "reel_slip_wear",
+          "value": "0.0001",
+          "updated_by": "admin",
+          "updated_ts": 1794576299.0
+        },
+        {
+          "key": "reel_slip_wear_low",
+          "value": "0.000001",
+          "updated_by": "admin",
+          "updated_ts": 1794398944.0
+        },
+        {
+          "key": "reel_slip_wear_max",
+          "value": "0.0001",
+          "updated_by": "admin",
+          "updated_ts": 1794398956.0
+        },
+        {
+          "key": "reel_slip_wear_s25",
+          "value": "0.000025",
+          "updated_by": "admin",
+          "updated_ts": 1794398957.0
+        },
+        {
+          "key": "reel_slip_wear_s26",
+          "value": "0.00005",
+          "updated_by": "admin",
+          "updated_ts": 1794398946.0
+        },
+        {
+          "key": "reel_slip_wear_s27",
+          "value": "0.000075",
+          "updated_by": "admin",
+          "updated_ts": 1794398956.0
+        },
+        {
+          "key": "reel_slip_wear_s28",
+          "value": "0.000095",
+          "updated_by": "admin",
+          "updated_ts": 1794398946.0
+        },
+        {
+          "key": "release_xp_ratio",
+          "value": "0.5",
+          "updated_by": "admin",
+          "updated_ts": 1794398990.0
+        },
+        {
+          "key": "two_stage_baited_below",
+          "value": "0.83",
+          "updated_by": "admin",
+          "updated_ts": 1794399141.0
+        },
+        {
+          "key": "two_stage_baited_qualified",
+          "value": "76.03",
+          "updated_by": "admin",
+          "updated_ts": 1794399141.0
+        },
+        {
+          "key": "two_stage_baited_super",
+          "value": "8.1",
+          "updated_by": "admin",
+          "updated_ts": 1794399141.0
+        },
+        {
+          "key": "two_stage_baited_trophy",
+          "value": "15.04",
+          "updated_by": "admin",
+          "updated_ts": 1794399141.0
+        },
+        {
+          "key": "two_stage_daily_below",
+          "value": "5.16",
+          "updated_by": "admin",
+          "updated_ts": 1794399085.0
+        },
+        {
+          "key": "two_stage_daily_qualified",
+          "value": "79.56",
+          "updated_by": "admin",
+          "updated_ts": 1794399085.0
+        },
+        {
+          "key": "two_stage_daily_super",
+          "value": "5.26",
+          "updated_by": "admin",
+          "updated_ts": 1794399085.0
+        },
+        {
+          "key": "two_stage_daily_trophy",
+          "value": "10.02",
+          "updated_by": "admin",
+          "updated_ts": 1794399085.0
+        },
+        {
+          "key": "two_stage_hunt_enabled",
+          "value": "0",
+          "updated_by": "system",
+          "updated_ts": 1794935732.0
+        },
+        {
+          "key": "xp_gain",
+          "value": "1",
+          "updated_by": "admin",
+          "updated_ts": 1794398963.0
+        }
+      ]
+    },
+    "fish_weight_preset": {
+      "desc": "稀有度档位权重预设（普通/稀有/超稀有）",
+      "columns": [
+        "rarity_tier",
+        "weight",
+        "updated_ts"
+      ],
+      "rows": [
+        {
+          "rarity_tier": 0,
+          "weight": 100.0,
+          "updated_ts": 0.0
+        },
+        {
+          "rarity_tier": 1,
+          "weight": 30.0,
+          "updated_ts": 0.0
+        },
+        {
+          "rarity_tier": 2,
+          "weight": 5.0,
+          "updated_ts": 0.0
+        }
+      ]
+    },
+    "fish_weight_override": {
+      "desc": "按水域 × 鱼种的人工覆盖权重",
+      "columns": [
+        "loc",
+        "fish_key",
+        "weight",
+        "enabled",
+        "updated_ts",
+        "updated_by"
+      ],
+      "rows": [
+        {
+          "loc": "挪威海",
+          "fish_key": "alfonsino",
+          "weight": 17.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "ambl_h",
+          "weight": 29.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "ambl_r",
+          "weight": 28.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "atl_cod",
+          "weight": 33.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "atl_herring",
+          "weight": 31.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "b_scabbardfish",
+          "weight": 4.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "c_anguineus",
+          "weight": 7.0,
+          "enabled": 1,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "c_squid",
+          "weight": 30.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "centroloph_n",
+          "weight": 23.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "cetorhinus_m",
+          "weight": 27.0,
+          "enabled": 1,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "chimaera",
+          "weight": 16.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "chlamys_isl",
+          "weight": 22.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "coalfish",
+          "weight": 50.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "conger",
+          "weight": 20.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "d_zubatka",
+          "weight": 36.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "ed_crab",
+          "weight": 28.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "halibut_b",
+          "weight": 26.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "halibut_w",
+          "weight": 25.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "himant_g",
+          "weight": 6.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "hippoglos_p",
+          "weight": 31.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "katran",
+          "weight": 25.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "lamna_n",
+          "weight": 24.0,
+          "enabled": 1,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "lampris_g",
+          "weight": 33.0,
+          "enabled": 1,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "lh_kambala",
+          "weight": 44.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "lophius_p",
+          "weight": 4.0,
+          "enabled": 1,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "lycodes_e",
+          "weight": 16.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "lycodes_s",
+          "weight": 20.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "m_molva",
+          "weight": 19.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "m_scorpius",
+          "weight": 33.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "m_zubatka",
+          "weight": 33.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "macrourus_b",
+          "weight": 25.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "makrel",
+          "weight": 29.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "meagre",
+          "weight": 29.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "menek",
+          "weight": 39.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "merlang",
+          "weight": 36.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "merluza",
+          "weight": 32.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "molva",
+          "weight": 22.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "mytilus_ed",
+          "weight": 22.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "ostrea_ed",
+          "weight": 16.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "p_zubatka",
+          "weight": 24.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "piksha",
+          "weight": 33.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "pinagor",
+          "weight": 27.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "pollachius",
+          "weight": 38.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "polyprion",
+          "weight": 16.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "poutassou",
+          "weight": 25.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "red_fish",
+          "weight": 24.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "rk_crab",
+          "weight": 26.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "s_saurus",
+          "weight": 46.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "sardina_p",
+          "weight": 30.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "sea_kambala",
+          "weight": 44.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "sebastes_m",
+          "weight": 32.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "sebastes_n",
+          "weight": 22.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "somniosus_m",
+          "weight": 20.0,
+          "enabled": 1,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "thynnus_t",
+          "weight": 26.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "turbot",
+          "weight": 37.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "x_gladius",
+          "weight": 18.0,
+          "enabled": 1,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        },
+        {
+          "loc": "挪威海",
+          "fish_key": "zoarces_v",
+          "weight": 25.0,
+          "enabled": 0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        }
+      ]
+    },
+    "fish_bite_setting": {
+      "desc": "按水域的咬口参数覆盖",
+      "columns": [
+        "loc",
+        "bite_probability",
+        "bite_delay_fixed",
+        "bite_delay_scale",
+        "bite_delay_max",
+        "bite_delay_lure_max",
+        "updated_ts",
+        "updated_by"
+      ],
+      "rows": [
+        {
+          "loc": "挪威海",
+          "bite_probability": 1.0,
+          "bite_delay_fixed": 0.0,
+          "bite_delay_scale": 0.5,
+          "bite_delay_max": 10.0,
+          "bite_delay_lure_max": 6.0,
+          "updated_ts": 1794402823.9919543,
+          "updated_by": "admin"
+        }
+      ]
+    },
+    "fish_bait_override": {
+      "desc": "按鱼种的饵料规则覆盖（轮换组/自动抽取）",
+      "columns": [
+        "fish_zh",
+        "allow_json",
+        "deny_json",
+        "bottom_json",
+        "condition",
+        "groups_json",
+        "rotate_sec",
+        "rotate_mode",
+        "enabled",
+        "updated_by",
+        "updated_ts"
+      ],
+      "rows": [
+        {
+          "fish_zh": "丁克斯带形鲤",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"黑加仑 PopUp 15\", \"螃蟹和贻贝 可溶 15\", \"螃蟹和贻贝 可溶 20\", \"黑加仑 15\", \"大西洋贻贝 15\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "丁克斯无鳞鲤",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"黑加仑 PopUp 15\", \"螃蟹和贻贝 可溶 15\", \"大西洋贻贝 15\", \"螃蟹和贻贝 可溶 20\", \"辣椒 15\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "丁克斯镜鲤",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"黑加仑 PopUp 15\", \"黑加仑 15\", \"螃蟹和贻贝 可溶 20\", \"辣椒 15\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "丁鱥",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"黑加仑 PopUp 15\", \"红虫\", \"蚯蚓\", \"红蚯蚓\", \"甜奶油 PopUp 16\", \"蛆虫\", \"大麦粥\", \"地龙\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "三花鲤鱼",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"香料\", \"黑加仑 PopUp 15\", \"玉米粥\", \"新鲜蔓越莓 26\", \"马铃薯块\", \"红虫\", \"河螯虾14\", \"螃蟹和贻贝 可溶 15\", \"蚯蚓\", \"螃蟹和鱼 14\", \"HQS Finesse Jig 1/8 oz 007\", \"犀角金龟幼虫\", \"大蒜面团\", \"蛆虫\", \"红蚯蚓\", \"大麦粥\", \"地龙\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "上口欧鳊",
+          "allow_json": "[\"一束藻类\", \"红蚯蚓\", \"奶酪块\", \"伏尔霍夫斯基粪蚯蚓\", \"龙虱甲虫\", \"毛翅目\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "东方欧鳊",
+          "allow_json": "[\"奶渣面团\", \"大蒜面团\", \"地龙\", \"大麦粥\", \"螃蟹和贻贝 可溶 15\", \"豌豆粥\", \"红虫\", \"河螯虾14\", \"King Stick 2.5-02\", \"蚯蚓\", \"Active W-Stick 2.5-02\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "东西伯利亚茴鱼",
+          "allow_json": "[\"蠕虫类\", \"昆虫幼虫\", \"昆虫\", \"亮片类\", \"Orig Popper 4-F006\", \"苍蝇\", \"UL Popper-005\", \"Orig Popper 4-F005\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "东西伯利亚鲟",
+          "allow_json": "[\"蝼蛄\", \"犀角金龟幼虫\", \"土蚕\", \"河鲈饵\", \"珠蚌肉\", \"蚯蚓\", \"Stinky Stick 6.5-001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "乌克兰七鳃鳗",
+          "allow_json": "[\"一束藻类\", \"Maggot 4-006\", \"Maggot 4-005\", \"Quicker 7-007\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "九棘刺",
+          "allow_json": "[\"毛翅目幼虫\", \"蚯蚓\", \"苍蝇\", \"树皮甲虫幼虫\", \"红虫\", \"一束藻类\", \"King Stick 2.5-02\", \"Active W-Stick 2.5-04\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "亚口鱼",
+          "allow_json": "[\"蠕虫类\", \"昆虫幼虫\", \"昆虫\", \"亮片类\", \"蜉蝣幼虫\", \"King Stick 2.5-02\", \"蜣螂\", \"Active W-Stick 2.5-04\", \"毛翅目\", \"襀翅幼虫\", \"五月金龟子\", \"地龙\", \"七鳃鳗\", \"King Stick 2.5-04\", \"King Stick 2.5-05\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "亚洲胡瓜鱼",
+          "allow_json": "[\"蠕虫类\", \"昆虫幼虫\", \"昆虫\", \"亮片类\", \"毛翅目\", \"蜉蝣幼虫\", \"苍蝇\", \"Orig Popper 4-F006\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "伊氏狼绵鳚",
+          "allow_json": "[\"Jiggmeister DC 1000\", \"Hunter 1000系列饵\", \"巨大的绿青鳕鱼片\", \"Natural Squid - 23系列饵\", \"鱿鱼肉\", \"Stor Fisk XL38-900 #1\", \"海沙蚕\", \"海沙蠋\", \"Natural Squid - 16 - 05\", \"RealSquid - 17 - 05\", \"Jiggmeister DC 110\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图120号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "俄罗斯梭吻鲈",
+          "allow_json": "[\"粪便蠕虫\", \"蚯蚓\", \"红虫\", \"苍蝇\", \"蛆虫蛹\", \"蛆虫\", \"地龙\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"Finesse Micro Jig 1/8 oz 002\", \"红蚯蚓\", \"Tiny Fish 4-008\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "俄罗斯鲟",
+          "allow_json": "[\"蝼蛄\", \"犀角金龟幼虫\", \"土蚕\", \"河鲈\", \"珠蚌肉\", \"金鲫\", \"螃蟹和鱼 14\", \"螃蟹和贻贝 可溶 15\", \"河螯虾14\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "内维红点鲑",
+          "allow_json": "[\"Orig Popper 4 系列饵\", \"Spiker #2 系列饵\", \"X-Walker F100 系列饵\", \"AngryWalker S8 系列饵\", \"Soturi 22g 系列饵\", \"七鳃鳗\", \"Soturi 22g-003\", \"旋转亮片#1 04\", \"King Stick 2.5-02\", \"Veikko 25g-006\", \"King Stick 2.5-04\", \"董氏须鳅\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "剑鱼",
+          "allow_json": "[\"RealSquid 26系列饵\", \"Hunter 1000系列饵\", \"Stor Fisk M25-600系列饵\", \"Colored Octopus - 21系列饵\", \"Pilker №2-800 RD\", \"RealSquid - 26 - 07\", \"Hunter 1000-5\", \"Natural Squid - 23 - 03\", \"RealSquid - 26 - 08\", \"Natural Squid - 23 - 05\", \"Natural Squid - 23 - 08\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图75或80号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "勃氏西鲱",
+          "allow_json": "[\"树皮甲虫幼虫\", \"毛翅目幼虫\", \"蜉蝣幼虫\", \"红虫\", \"苍蝇\", \"牛虻\", \"蛆虫蛹\", \"粪便蠕虫\", \"欧鲌\", \"Type 1 4g 007\", \"Balsa Crank 70F-003\", \"Type 1 4g 005\", \"襀翅幼虫\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "匈红鲤(鳞鲤)",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"七种香料 20\", \"玉米粥\", \"新鲜蔓越莓 26\", \"爆炸辣椒 18\", \"黑加仑 25\", \"香料\", \"马铃薯块\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "匈红鲤（镜鲤）",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"香料\", \"玉米粥\", \"新鲜蔓越莓 26\", \"大蒜与香草 20\", \"黑加仑 25\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "北大西洋长尾鳕",
+          "allow_json": "[\"海沙蚕\", \"海沙蠋\", \"Natural Squid - 16系列\", \"RealSquid - 17系列\", \"Pilker №2-800系列饵\", \"Stor Fisk M25-600 #8\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图120号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "北方蓝鳍金枪鱼",
+          "allow_json": "[\"RealSquid 26系列饵\", \"Hunter 1000系列饵\", \"Stor Fisk M25-600系列饵\", \"Colored Octopus - 21系列饵\", \"Pilker №2-800 RD\", \"RealSquid - 26 - 08\", \"Natural Squid - 23 - 07\", \"Natural Squid - 23 - 05\", \"Hunter 1000-5\", \"Natural Squid - 23 - 08\", \"Natural Squid - 23 - 03\", \"RealSquid - 26 - 07\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图75或80号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "北极红点鲑",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"Orig Popper 4-F006\", \"Hunter 1-006\", \"蜉蝣幼虫\", \"Veikko 25g-004\", \"七鳃鳗\", \"AngryWalker S8-006\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "北极茴鱼",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"Orig Popper 4-F006\", \"苍蝇\", \"Spiker #2 016\", \"Spiker #2 018\", \"UL Popper-005\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "北海平鲉",
+          "allow_json": "[\"Natural Squid - 23 系列\", \"Hunter 1000-1系列\", \"Super GummiMakk 系列\", \"Quicker 4.5-007\", \"Natural Squid - 23 - 03\", \"Natural Squid - 23 - 07\", \"Natural Squid - 16 - 05\", \"Stor Fisk M25-600 #8\", \"RealSquid - 17 - 05\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "半裸狼绵鳚",
+          "allow_json": "[\"海沙蚕\", \"海沙蠋\", \"Natural Squid - 16系列\", \"RealSquid - 17系列\", \"Pilker №2-800系列饵\", \"Quicker 4.5-007\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图120号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "单鳍鳕",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Hunter 1000-5\", \"Quicker 4.5-007\", \"Stor Fisk M25-600 #8\", \"Natural Squid - 23 - 05\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "叉牙楔齿七鳃鰻",
+          "allow_json": "[\"一束藻类\", \"Veikko 25g-006\", \"Veikko 25g-007\", \"Soturi 22g-009\", \"Veikko 25g-001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "哲罗鱼",
+          "allow_json": "[\"松鼠假饵\", \"老鼠假饵\", \"Orig Popper 4-F006\", \"Squirrel 60\", \"Mouse Black-Gray 50\", \"Spiker #2 016\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "四白锦鲤",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"螃蟹和贻贝 可溶 15\", \"螃蟹和贻贝 可溶 20\", \"大草莓 Pop-Up 15\", \"大草莓 Pop-Up 20\", \"鲑鱼20\", \"大西洋贻贝 15\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "图们江细鳞鲑",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"七鳃鳗\", \"Balsa walker 65F-002\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "圆点五色锦鲤",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"螃蟹和贻贝 可溶 15\", \"螃蟹和贻贝 可溶 20\", \"大草莓 Pop-Up 15\", \"大草莓 Pop-Up 20\", \"黑加仑 PopUp 15\", \"鲑鱼20\", \"大西洋贻贝 15\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "圆腹雅罗鱼",
+          "allow_json": "[\"蚯蚓\", \"蛆虫\", \"大麦粥\", \"奶酪块\", \"蛆虫蛹\", \"红虫\", \"毛翅目幼虫\", \"树皮甲虫幼虫\", \"旋转饵\", \"旋转亮片路亚\", \"蟋蟀\", \"Orig Popper 4-F006\", \"螃蟹和贻贝 可溶 15\", \"河螯虾14\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "圆鳍鱼",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Lurker 100-07\", \"Quicker 4.5-007\", \"海沙蚕\", \"海沙蠋\", \"Lurker 200-07\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "堪察加虹鳟",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"七鳃鳗\", \"Soturi 22g-003\", \"Balsa walker 65F-002\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "塞凡湖鳟",
+          "allow_json": "[\"Balsa Joined 80S系列\", \"Dodger Crank 10系列\", \"Terminator F10系列\", \"Hunter 1系列\", \"Salmon T1 Shad 12 004\", \"AngryWalker S8-006\", \"蜉蝣幼虫\", \"Orig Popper 4-F006\", \"Tiny Fish 4-006\", \"Balsa Minnow 75F-006\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "路亚钓法，使用有效船票并已上船，饵在水中运动",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "多指鞭冠𩽾𩾌",
+          "allow_json": "[\"Gummi Makk\", \"RealSquid - 17 - 05\", \"Natural Squid - 16 - 05\", \"Natural Squid - 23 - 05\", \"Super GummiMakk 8\", \"0 - 03\", \"海沙蚕\", \"Jiggmeister DC 110\", \"Stor Fisk M25-600 #8\", \"Super GummiMakk 8/0 - 03\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图215号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "大口水牛鱼",
+          "allow_json": "[\"马蝇\", \"树皮甲虫幼虫\", \"大蒜类\", \"贻贝类\", \"粪便蠕虫\", \"鲑鱼类\", \"帝王蟹类\", \"螃蟹类\", \"螃蟹和贻贝 可溶 20\", \"螃蟹和贻贝 可溶 15\", \"毛翅目\", \"蜉蝣幼虫\", \"大麦粥\", \"襀翅幼虫\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "大口黑鲈",
+          "allow_json": "[\"地龙\", \"蚯蚓\", \"蠕虫\", \"亮片类\", \"旋转饵类\", \"旋转亮片路亚\", \"软饵类\", \"蠕虫类\", \"Balsa walker 65F-005\", \"蟋蟀\", \"蛙\", \"Fat-Back F7-004\", \"Finesse Micro Jig 1/8 oz 002\", \"X-Crank F60-03\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "大菱鲆",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"海沙蚕\", \"海沙蠋\", \"Lurker 100-07\", \"Stor Fisk M25-600 #8\", \"Finesse Micro Jig 1/8 oz 002\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图30或34或41或55号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "大西洋狼鳚",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Hunter 1000-5\", \"Stor Fisk M25-600 #5\", \"Stor Fisk M25-600 #8\", \"Quicker 4.5-007\", \"Natural Squid - 23 - 03\", \"Natural Squid - 23 - 07\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "大西洋银鲛",
+          "allow_json": "[\"海沙蚕\", \"海沙蠋\", \"Natural Squid - 16系列\", \"RealSquid - 17系列\", \"Pilker №2-800系列饵\", \"Natural Squid - 16 - 05\", \"RealSquid - 17 - 05\", \"泡沫橡胶鱼004\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图120号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "大西洋鲑鱼",
+          "allow_json": "[\"Type 1 4g系列\", \"Salmon T1 Shad 12 系列\", \"Balsa Crank 70F系列\", \"X-Shad F95系列\", \"各类饵鱼\", \"Orig Crank 9-006\", \"Balsa Minnow 110F-001\", \"DeepRunner Minnow 15-S001\", \"Balsa Minnow 110F-002\", \"Balsa Minnow 90F-002\", \"Hijacker slim 7SP-003\", \"Orig Crank 9-003\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "使用拟饵时须采用路亚钓法，使用有效船票并已上船，饵在水中运动",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "大西洋鲭",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Natural Shrimp 7.5 - 02\", \"Lurker 100-07\", \"Natural Shrimp 7.5 - 01\", \"Quicker 4.5-007\", \"虾仁\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "大西洋鲱",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Natural Shrimp 7.5 - 02\", \"Natural Shrimp 7.5 - 01\", \"Lurker 100-07\", \"RealShrimp 6.5 - 03\", \"Natural Shrimp 13 - 07\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图30或34或41或55号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "大西洋鳕",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Hunter 1000-5\", \"Quicker 4.5-007\", \"Lurker 100-07\", \"Stor Fisk M25-600 #8\", \"Natural Squid - 23 - 03\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "大鳞麻哈鱼",
+          "allow_json": "[\"Orig Popper 4 系列饵\", \"Spiker #2 系列饵\", \"X-Walker F100 系列饵\", \"AngryWalker S8 系列饵\", \"Soturi 22g 系列饵\", \"Soturi 22g-003\", \"Soturi 46g-003\", \"Veikko 25g-006\", \"七鳃鳗\", \"旋转亮片#1 04\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "大麻哈鱼",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"Soturi 22g-003\", \"董氏须鳅\", \"Veikko 25g-006\", \"七鳃鳗\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "大鼻软口鱼",
+          "allow_json": "[\"粪便蠕虫\", \"蚯蚓\", \"红虫\", \"苍蝇\", \"蛆虫蛹\", \"树皮甲虫幼虫\", \"一束藻类\", \"大麦粥\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "浮漂钓法；手竿或博洛尼亚竿须浮漂立起，其他浮漂竿须出现“顺水漂流”",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "太阳鱼",
+          "allow_json": "[\"地龙\", \"蚯蚓\", \"蠕虫\", \"亮片类\", \"旋转饵类\", \"旋转亮片路亚\", \"软饵类\", \"蠕虫类\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"Brilliance Colorado 1\", \"4 oz 001\", \"Finesse Micro Jig 1/8 oz 002\", \"Brilliance Colorado 1/4 oz 001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "奥斯特罗格白鲑",
+          "allow_json": "[\"蚯蚓\", \"襀翅幼虫\", \"蜉蝣幼虫\", \"牛虻\", \"蜉蝣\", \"红蚯蚓\", \"地龙\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "仅手竿或博洛尼亚竿，浮漂立起",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "姥鲨",
+          "allow_json": "[\"RealSquid 26系列饵\", \"Hunter 1000系列饵\", \"Stor Fisk M25-600系列饵\", \"Colored Octopus - 21系列饵\", \"Pilker №2-800 RD\", \"Hunter 1000-5\", \"RealSquid - 26 - 08\", \"RealSquid - 26 - 07\", \"Natural Squid - 23 - 03\", \"Natural Squid - 23 - 08\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图75或80号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "宽鼻白鲑",
+          "allow_json": "[\"树皮甲虫幼虫\", \"毛翅目幼虫\", \"蜉蝣幼虫\", \"红虫\", \"苍蝇\", \"牛虻\", \"蛆虫蛹\", \"粪便蠕虫\", \"伏尔霍夫斯基粪蚯蚓\", \"King Stick 2.5-02\", \"襀翅幼虫\", \"Orig Popper 4-F006\", \"Nasty worm 2.5-002\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "小体鲟",
+          "allow_json": "[\"蝼蛄\", \"犀角金龟幼虫\", \"土蚕\", \"河鲈\", \"珠蚌肉\", \"螃蟹和鱼 14\", \"地龙\", \"螃蟹和贻贝 可溶 15\", \"河螯虾14\", \"蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "小冠太阳鱼",
+          "allow_json": "[\"地龙\", \"蚯蚓\", \"蠕虫\", \"亮片类\", \"旋转饵类\", \"旋转亮片路亚\", \"软饵类\", \"蠕虫类\", \"蟋蟀\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"Finesse Micro Jig 1/8 oz 002\", \"Brilliance Colorado 1/4 oz 001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "小口黑鲈",
+          "allow_json": "[\"地龙\", \"蚯蚓\", \"蠕虫\", \"亮片类\", \"旋转饵类\", \"旋转亮片路亚\", \"软饵类\", \"蠕虫类\", \"Balsa walker 65F-005\", \"蟋蟀\", \"Brilliance Colorado 1\", \"4 oz 001\", \"Brilliance Colorado 1/4 oz 001\", \"Finesse Micro Jig 1/8 oz 002\", \"X-Walker F100-07\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "小白鲑",
+          "allow_json": "[\"树皮甲虫幼虫\", \"毛翅目幼虫\", \"蜉蝣幼虫\", \"红虫\", \"苍蝇\", \"牛虻\", \"蛆虫蛹\", \"粪便蠕虫\", \"Orig Popper 4-F006\", \"Spiker #2 016\", \"襀翅幼虫\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "小齿狼鱼",
+          "allow_json": "[\"Jiggmeister DC 1000\", \"Hunter 1000系列饵\", \"巨大的绿青鳕鱼片\", \"Natural Squid - 23系列饵\", \"鱿鱼肉\", \"Stor Fisk XL38-900 #1\", \"Natural Squid - 23 - 05\", \"Hunter 1000-5\", \"Natural Squid - 23 - 07\", \"Stor Fisk M25-600 #8\", \"海沙蠋\", \"海沙蚕\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图120号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "尖吻平鲉",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Natural Squid - 23 - 05\", \"Natural Squid - 16 - 05\", \"Natural Squid - 23 - 07\", \"RealSquid - 17 - 05\", \"Stor Fisk M25-600 #8\", \"Natural Squid - 23 - 03\", \"海沙蠋\", \"Fire Gummi Eel 8/0 04\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "常见拟鲤",
+          "allow_json": "[\"湿面包\", \"甜的面团\", \"豌豆粥\", \"玉米粥\", \"粪便蠕虫\", \"蚯蚓\", \"红虫\", \"苍蝇\", \"蛆虫蛹\", \"蛆虫\", \"毛翅目幼虫\", \"树皮甲虫幼虫\", \"大麦粥\", \"奶酪块\", \"蜉蝣幼虫\", \"螃蟹和贻贝 可溶 15\", \"河螯虾14\", \"红蚯蚓\", \"地龙\"]",
+          "deny_json": "[\"拟饵\", \"饵鱼类\"]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "常见鮈鱼",
+          "allow_json": "[\"粪便蠕虫\", \"蚯蚓\", \"红虫\", \"苍蝇\", \"蛆虫蛹\", \"蛆虫\", \"大蒜面团\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "常见鲃鱼",
+          "allow_json": "[\"鱿鱼类\", \"土蚕\", \"玉米粥\", \"香料\", \"螃蟹和贻贝 可溶 15\", \"螃蟹和贻贝 可溶 20\", \"大西洋贻贝 15\", \"奶酪块\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "库图拟鲤",
+          "allow_json": "[\"马蝇\", \"树皮甲虫幼虫\", \"大蒜类\", \"贻贝类\", \"粪便蠕虫\", \"鲑鱼类\", \"帝王蟹类\", \"螃蟹类\", \"螃蟹和鱼 14\", \"螃蟹和贻贝 可溶 15\", \"河螯虾14\", \"土蚕\", \"河斑马纹贻贝肉\", \"犀角金龟幼虫\", \"珠蚌肉\", \"地龙\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "库尔斯多夫丁鱥",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"黑加仑 PopUp 15\", \"黑加仑 PopUp 10\", \"黑加仑 15\", \"水蛭\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "庸鲽",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Hunter 1000-5\", \"Stor Fisk M25-600 #5\", \"Stor Fisk M25-600 #8\", \"Natural Squid - 23 - 07\", \"Stor Fisk M25-600 #18\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图30或34或41或55号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "廓里湖白鲑",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"蜉蝣幼虫\", \"土蚕\", \"毛翅目\", \"红蚯蚓\", \"蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "廓里湖红点鲑",
+          "allow_json": "[\"Balsa Joined 80S系列\", \"Dodger Crank 10系列\", \"Terminator F10系列\", \"Hunter 1系列\", \"梅花鲈\", \"X-Shad F95-08\", \"Salmon T1 Shad 12 004\", \"Tiny Fish 4-008\", \"Balsa Minnow 75F-006\", \"Tiny Fish 4-006\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "路亚钓法，使用有效船票并已上船，饵在水中运动",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "拉多加白鲑",
+          "allow_json": "[\"水蛭\", \"龙虱甲虫\", \"Nasty worm 4.5 系列\", \"淡水磷虾\", \"襀翅幼虫\", \"蜉蝣幼虫\", \"Nasty Worm 4.5-005\", \"毛翅目\", \"Orig Crank 9-006\", \"蜉蝣\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "拉多加鲑",
+          "allow_json": "[\"Type 1 4g系列\", \"Salmon T1 Shad 12 系列\", \"Balsa Crank 70F系列\", \"X-Shad F95系列\", \"各类饵鱼\", \"Orig Crank 9-006\", \"DeepRunner Minnow 15-S001\", \"Nasty Worm 4.5-005\", \"Orig Crank 9-003\", \"Hijacker slim 7SP-003\", \"Nasty Worm 4.5-001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "使用拟饵时须采用路亚钓法，使用有效船票并已上船，饵在水中运动",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "拉多加鲟",
+          "allow_json": "[\"犀角金龟幼虫\", \"土蚕\", \"蝼蛄\", \"Balsa Minnow 110F 系列\", \"DeepRunner Minnow 15-S001\", \"Orig Crank 9-006\", \"Nasty Worm 4.5-005\", \"Orig Crank 9-003\", \"Nasty Worm 4.5-002\", \"Nasty Worm 4.5-001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "使用拟饵时须采用路亚钓法，使用有效船票并已上船，饵在水中运动",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "拟鲌",
+          "allow_json": "[\"红虫\", \"蜉蝣幼虫\", \"苍蝇\", \"树皮甲虫幼虫\", \"蛆虫蛹\", \"蜉蝣\", \"襀翅幼虫\", \"红蚯蚓\", \"Type 1 4g 007\", \"伏尔霍夫斯基粪蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "文鳊",
+          "allow_json": "[\"毛翅目幼虫\", \"蚯蚓\", \"苍蝇\", \"树皮甲虫幼虫\", \"红虫\", \"一束藻类\", \"蜉蝣幼虫\", \"奶酪块\", \"Nasty Worm 4.5-005\", \"伏尔霍夫斯基粪蚯蚓\", \"Nasty Worm 4.5-002\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "斑点叉尾鮰",
+          "allow_json": "[\"鱼块\", \"地龙\", \"青蛙\", \"拟真软饵\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"蟋蟀\", \"蚯蚓\", \"Finesse Micro Jig 1/8 oz 002\", \"Finesse Micro Jig 1/8 oz 001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "使用拟饵时须出现“jig阶梯”",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "斑点雀鳝",
+          "allow_json": "[\"亮片\", \"Balsa walker 65F-005\", \"蛙\", \"蟋蟀\", \"Fat-Back F7-004\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"Brilliance Colorado 1\", \"4 oz 001\", \"Finesse Micro Jig 1/8 oz 002\", \"Brilliance Colorado 1/4 oz 001\", \"Brilliance Colorado 1/4 oz 002\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "斑点黑鲈",
+          "allow_json": "[\"地龙\", \"蚯蚓\", \"蠕虫\", \"亮片类\", \"旋转饵类\", \"旋转亮片路亚\", \"软饵类\", \"蠕虫类\", \"Balsa walker 65F-005\", \"Brilliance Colorado 1\", \"4 oz 001\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"蟋蟀\", \"蛙\", \"Brilliance Colorado 1/4 oz 001\", \"Finesse Micro Jig 1/8 oz 002\", \"X-Walker F100-07\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "无鳞鲤",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"黑加仑 PopUp 15\", \"甜奶油 PopUp 16\", \"黑加仑 15\", \"玉米粥\", \"马铃薯块\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "无鳞鲤 （人面鲤）",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"香料\", \"玉米粥\", \"爆炸辣椒 18\", \"鲑鱼 Pop-Up 14\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "无鳞鲤（白化）",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"香料\", \"鲑鱼 Pop-Up 14\", \"爆炸辣椒 18\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "普通鲤鱼",
+          "allow_json": "[\"马铃薯块\", \"菜叶\", \"蜂蜜面团\", \"玉米粥\", \"椰子类\", \"玉米类\", \"一束藻类\", \"螃蟹和贻贝 可溶 15\", \"螃蟹和鱼 14\", \"螃蟹和贻贝 可溶 20\", \"地龙\", \"黑加仑 PopUp 15\", \"大蒜与香草 20\", \"新鲜蔓越莓 26\", \"大蒜与香草 PopUp 20\", \"新鲜蔓越莓 Pop-Ups 26\", \"什锦水果 20\", \"蜂蜜 20\", \"大麦粥\", \"犀角金龟幼虫\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "杂交条纹狼鲈",
+          "allow_json": "[\"地龙\", \"蚯蚓\", \"蠕虫\", \"亮片类\", \"旋转饵类\", \"旋转亮片路亚\", \"软饵类\", \"蠕虫类\", \"Balsa walker 65F-005\", \"蟋蟀\", \"美洲真鰶\", \"X-Crank F60-03\", \"Fat-Back F7-004\", \"Brilliance Colorado 1/4 oz 001\", \"Finesse Micro Jig 1/8 oz 002\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "条纹狼鲈",
+          "allow_json": "[\"地龙\", \"蚯蚓\", \"蠕虫\", \"亮片类\", \"旋转饵类\", \"旋转亮片路亚\", \"软饵类\", \"蠕虫类\", \"Balsa walker 65F-005\", \"美洲真鰶\", \"Fat-Back F7-004\", \"X-Crank F60-03\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "极北鳐",
+          "allow_json": "[\"Jiggmeister DC 1000\", \"Hunter 1000系列饵\", \"巨大的绿青鳕鱼片\", \"Natural Squid - 23系列饵\", \"鱿鱼肉\", \"Stor Fisk XL38-900 #1\", \"海沙蠋\", \"海沙蚕\", \"Stor Fisk M25-600 #8\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图120号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "框形镜鲤",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"玉米粥\", \"七种香料 20\", \"鲑鱼 Pop-Up 14\", \"新鲜蔓越莓 26\", \"香料\", \"奶渣面团\", \"大蒜面团\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "梅花鲈",
+          "allow_json": "[\"粪便蠕虫\", \"蚯蚓\", \"地龙\", \"树皮甲虫幼虫\", \"红虫\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "梭鲈鱼",
+          "allow_json": "[\"Balsa Minnow 系列\", \"Snatcher 系列\", \"Soturi 系列\", \"Salmon T1 Shad 系列\", \"Salmon T1 Crank 系列\", \"Balsa Crank 系列\", \"亮片系列饵\", \"Nasty Worm 4.5-005\", \"欧鲌\", \"Lynns Huge Minnow 120-005\", \"Orig Crank 9-003\", \"Nasty Worm 4.5-001\", \"Tiny Fish 4-008\", \"Orig Crank 9-006\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "棱鲱",
+          "allow_json": "[\"粪便蠕虫\", \"蚯蚓\", \"红虫\", \"苍蝇\", \"蛆虫蛹\", \"树皮甲虫幼虫\", \"蛆虫\", \"红蚯蚓\", \"一束藻类\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "浮漂钓法；手竿或博洛尼亚竿须浮漂立起，其他浮漂竿须出现“顺水漂流”",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "橙黄金锦鲤",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"螃蟹和贻贝 可溶 15\", \"大草莓 Pop-Up 15\", \"螃蟹和贻贝 可溶 20\", \"大草莓 Pop-Up 20\", \"大草莓 15\", \"大西洋贻贝 15\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "欧洲六须鲇",
+          "allow_json": "[\"蝼蛄\", \"犀角金龟幼虫\", \"土蚕\", \"河鲈\", \"珠蚌肉\", \"Lynns Huge Minnow 120-005\", \"地龙\", \"鱼块\", \"Finesse Micro Jig 1/8 oz 002\", \"蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "欧洲康吉鳗",
+          "allow_json": "[\"Jiggmeister DC 1000\", \"Hunter 1000系列饵\", \"巨大的绿青鳕鱼片\", \"Natural Squid - 23系列饵\", \"鱿鱼肉\", \"Stor Fisk XL38-900 #1\", \"Hunter 1000-5\", \"Lurker 100-07\", \"Stor Fisk M25-600 #8\", \"Lurker 200-07\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图120号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "欧洲无须鳕",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Natural Squid - 23 - 05\", \"Stor Fisk M25-600 #5\", \"Quicker 4.5-007\", \"Hunter 1000-5\", \"Stor Fisk M25-600 #8\", \"RealSquid - 17 - 05\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "欧洲鱿鱼",
+          "allow_json": "[\"Natural Squid 23\", \"Natural Squid - 23 - 05\", \"Natural Squid - 23 - 03\", \"Hunter 1000-5\", \"RealSquid - 17 - 05\", \"Stor Fisk M25-600 #8\", \"RealSquid - 26 - 07\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "欧洲鳇",
+          "allow_json": "[\"蝼蛄\", \"犀角金龟幼虫\", \"土蚕\", \"河鲈\", \"珠蚌肉\", \"金鲫\", \"银鲫\", \"河螯虾14\", \"螃蟹和贻贝 可溶 15\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "欧飘鱼",
+          "allow_json": "[\"蛆虫蛹\", \"蜉蝣\", \"树皮甲虫幼虫\", \"红虫\", \"红蚯蚓\", \"伏尔霍夫斯基粪蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "仅手竿或博洛尼亚竿，浮漂立起",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "欧鲌",
+          "allow_json": "[\"红虫\", \"蜉蝣幼虫\", \"苍蝇\", \"红蚯蚓\", \"蛆虫蛹\", \"大麦粥\", \"蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "江鳕",
+          "allow_json": "[\"鱼块\", \"地龙\", \"虾仁\", \"Nasty Worm 4.5-005\", \"蚯蚓\", \"Nasty Worm 4.5-001\", \"Nasty Worm 4.5-002\", \"七鳃鳗\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "沙丁鱼",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Natural Shrimp 7.5 - 02\", \"Natural Shrimp 7.5 - 01\", \"RealShrimp 6.5 - 01\", \"Quicker 3-007\", \"Natural Shrimp 7.5 - 07\", \"RealShrimp 6.5 - 03\", \"Natural Shrimp 7.5 - 05\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图30或34或41或55号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "波斯鲟",
+          "allow_json": "[\"蝼蛄\", \"犀角金龟幼虫\", \"土蚕\", \"河鲈\", \"珠蚌肉\", \"金鲫\", \"螃蟹和贻贝 可溶 15\", \"地龙\", \"螃蟹和鱼 14\", \"河螯虾14\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "波罗的海鲟鱼",
+          "allow_json": "[\"犀角金龟幼虫\", \"土蚕\", \"蝼蛄\", \"Balsa Minnow 110F 系列\", \"DeepRunner Minnow 15-S001\", \"Balsa Minnow 140F-003\", \"Orig Crank 9-003\", \"Orig Crank 9-006\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "使用拟饵时须采用路亚钓法，使用有效船票并已上船，饵在水中运动",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "泥鳅鱼",
+          "allow_json": "[\"毛翅目幼虫\", \"蚯蚓\", \"苍蝇\", \"树皮甲虫幼虫\", \"红虫\", \"一束藻类\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "海平鲉",
+          "allow_json": "[\"Natural Squid - 23 系列\", \"Hunter 1000-1系列\", \"Super GummiMakk 系列\", \"Super GummiMakk 8\", \"0 - 03\", \"Natural Squid - 23 - 07\", \"Quicker 4.5-007\", \"海沙蚕\", \"海沙蠋\", \"Natural Squid - 16 - 05\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "淡水石首鱼",
+          "allow_json": "[\"饵鱼\", \"软饵类\", \"活饵类\", \"蟋蟀\", \"地龙\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"Finesse Micro Jig 1/8 oz 002\", \"蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "使用拟饵时须出现“jig阶梯”",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "湖大吻鱥",
+          "allow_json": "[\"苍蝇\", \"蛆虫\", \"毛翅目\", \"蜉蝣幼虫\", \"蚯蚓\", \"红虫\", \"Orig Popper 4-F006\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "湖鱥",
+          "allow_json": "[\"毛翅目幼虫\", \"蚯蚓\", \"苍蝇\", \"树皮甲虫幼虫\", \"红虫\", \"一束藻类\", \"Orig Popper 4-F006\", \"蜉蝣幼虫\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "湖鳟鱼",
+          "allow_json": "[\"水蛭\", \"龙虱甲虫\", \"Nasty worm 4.5 系列\", \"淡水磷虾\", \"襀翅幼虫\", \"蜉蝣幼虫\", \"AngryWalker S8-006\", \"Salmon T1 Shad 12 004\", \"Nasty Worm 4.5-005\", \"Orig Popper 4-F006\", \"Balsa Minnow 75F-006\", \"Orig Crank 9-003\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "牡蛎",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Stor Fisk M25-600 #8\", \"Lurker 100-07\", \"泡沫橡胶鱼004\", \"Stor Fisk M25-600 #5\", \"Quicker 4.5-007\", \"Jiggmeister DC 110\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "犬首鮈",
+          "allow_json": "[\"毛翅目幼虫\", \"蚯蚓\", \"苍蝇\", \"树皮甲虫幼虫\", \"红虫\", \"一束藻类\", \"红蚯蚓\", \"伏尔霍夫斯基粪蚯蚓\", \"King Stick 2.5-02\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "玻璃梭鲈",
+          "allow_json": "[\"饵鱼\", \"软饵类\", \"活饵类\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"鱼块\", \"地龙\", \"蛙\", \"Finesse Micro Jig 1/8 oz 002\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "使用拟饵时须出现“jig阶梯”",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "珠星三块鱼",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"蜉蝣幼虫\", \"毛翅目\", \"Active W-Stick 2.5-04\", \"King Stick 2.5-04\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "白刺盖太阳鱼",
+          "allow_json": "[\"地龙\", \"蚯蚓\", \"蠕虫\", \"亮片类\", \"旋转饵类\", \"旋转亮片路亚\", \"软饵类\", \"蠕虫类\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"Brilliance Colorado 1\", \"4 oz 001\", \"Finesse Micro Jig 1/8 oz 002\", \"Brilliance Colorado 1/4 oz 001\", \"Brilliance Colorado 1/4 oz 002\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "白化草鱼",
+          "allow_json": "[\"马铃薯块\", \"菜叶\", \"蜂蜜面团\", \"玉米粥\", \"椰子类\", \"玉米类\", \"一束藻类\", \"黑加仑 PopUp 20\", \"甜奶油 PopUp 16\", \"黑加仑 PopUp 15\", \"黑加仑 PopUp 25\", \"香蕉 Pop-Up 20\", \"香蕉 Pop-Up 26\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "白化鲃鱼",
+          "allow_json": "[\"鱿鱼类\", \"土蚕\", \"甜奶油 PopUp 16\", \"犀角金龟幼虫\", \"甜奶油 PopUp 12\", \"螃蟹和鱼 14\", \"河螯虾14\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "白斑红点鲑",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"七鳃鳗\", \"Soturi 22g-003\", \"Balsa walker 65F-002\", \"董氏须鳅\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "白斑角鲨",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Stor Fisk M25-600 #8\", \"Natural Squid - 23 - 05\", \"Tiny Fish 7-006\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "白眼欧鳊",
+          "allow_json": "[\"毛翅目幼虫\", \"蚯蚓\", \"苍蝇\", \"树皮甲虫幼虫\", \"红虫\", \"一束藻类\", \"蛆虫蛹\", \"奶酪块\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "白鲑鱼",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"欧鲌\", \"Type 1 4g 007\", \"Balsa Crank 70F-003\", \"鮈鱼\", \"Type 1 4g 003\", \"Type 1 4g 005\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "皱鳃鲨",
+          "allow_json": "[\"Jiggmeister DC 1000\", \"Hunter 1000系列饵\", \"巨大的绿青鳕鱼片\", \"Natural Squid - 23系列饵\", \"鱿鱼肉\", \"Stor Fisk XL38-900 #1\", \"Hunter 1000-5\", \"Natural Squid - 23 - 03\", \"死鲭鱼\", \"Stor Fisk M25-600 #14\", \"Stor Fisk M25-600 #8\", \"Stor Fisk M25-600 #1\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图120号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "真柱白鲑",
+          "allow_json": "[\"蠕虫类\", \"昆虫幼虫\", \"昆虫\", \"亮片类\", \"苍蝇\", \"毛翅目\", \"Orig Popper 4-F006\", \"蜉蝣幼虫\", \"Active W-Stick 2.5-04\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "眼点丽鱼",
+          "allow_json": "[\"饵鱼\", \"软饵类\", \"活饵类\", \"Balsa walker 65F-005\", \"Fat-Back F7-004\", \"蟋蟀\", \"Finesse Micro Jig 1/8 oz 002\", \"Brilliance Colorado 1/4 oz 001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "使用拟饵时须出现“jig阶梯”",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "短头梭鲃",
+          "allow_json": "[\"马蝇\", \"树皮甲虫幼虫\", \"大蒜类\", \"贻贝类\", \"粪便蠕虫\", \"鲑鱼类\", \"帝王蟹类\", \"螃蟹类\", \"螃蟹和贻贝 可溶 15\", \"螃蟹和鱼 14\", \"地龙\", \"河螯虾14\", \"蚯蚓\", \"Stinky Stick 6.5-001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "短角大杜父鱼",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Lurker 100-07\", \"海沙蠋\", \"海沙蚕\", \"Quicker 4.5-007\", \"泡沫橡胶鱼004\", \"虾仁\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "石斑鱼",
+          "allow_json": "[\"Jiggmeister DC 1000\", \"Hunter 1000系列饵\", \"巨大的绿青鳕鱼片\", \"Natural Squid - 23系列饵\", \"鱿鱼肉\", \"Stor Fisk XL38-900 #1\", \"Stor Fisk M25-600 #8\", \"Hunter 1000-5\", \"Quicker 4.5-007\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图120号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "秋白鲑",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"蜉蝣幼虫\", \"Orig Popper 4-F006\", \"毛翅目\", \"Spiker #2 016\", \"Active W-Stick 2.5-02\", \"Nasty worm 2.5-002\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "穆松白鲑",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"蜉蝣幼虫\", \"毛翅目\", \"土蚕\", \"Orig Popper 4-F006\", \"Active W-Stick 2.5-02\", \"Nasty worm 2.5-002\", \"伏尔霍夫斯基粪蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "竹刀鱼",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Natural Shrimp 7.5 - 02\", \"Natural Shrimp 7.5 - 01\", \"Natural Shrimp 7.5 - 07\", \"RealShrimp 6.5 - 03\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"RealShrimp 6.5 - 01\", \"Quicker 3-007\", \"Finesse Micro Jig 1/8 oz 002\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图30或34或41或55号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "粉鲑",
+          "allow_json": "[\"Orig Popper 4 系列饵\", \"Spiker #2 系列饵\", \"X-Walker F100 系列饵\", \"AngryWalker S8 系列饵\", \"Soturi 22g 系列饵\", \"Orig Popper 4-F006\", \"七鳃鳗\", \"UL Popper-005\", \"董氏须鳅\", \"Spiker #2 016\", \"旋转亮片#1 04\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "红大麻哈鱼",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"七鳃鳗\", \"Soturi 22g-003\", \"Spiker #2 016\", \"Veikko 25g-006\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "红白锦鲤",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"螃蟹和贻贝 可溶 15\", \"螃蟹和贻贝 可溶 20\", \"鲑鱼20\", \"大草莓 Pop-Up 20\", \"大草莓 Pop-Up 15\", \"大西洋贻贝 15\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "红鳍鱼",
+          "allow_json": "[\"粪便蠕虫\", \"蚯蚓\", \"红虫\", \"苍蝇\", \"蛆虫蛹\", \"树皮甲虫幼虫\", \"大麦粥\", \"奶酪块\", \"蜉蝣\", \"红蚯蚓\", \"毛翅目\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "浮漂钓法；手竿或博洛尼亚竿须浮漂立起，其他浮漂竿须出现“顺水漂流”",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "细鳞鲑",
+          "allow_json": "[\"蠕虫类\", \"昆虫幼虫\", \"昆虫\", \"亮片类\", \"Orig Popper 4-F006\", \"蜣螂\", \"五月金龟子\", \"七鳃鳗\", \"UL Popper-005\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "绯写锦鲤",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"螃蟹和贻贝 可溶 15\", \"螃蟹和贻贝 可溶 20\", \"大草莓 Pop-Up 20\", \"大草莓 Pop-Up 15\", \"鲑鱼20\", \"黑加仑 PopUp 15\", \"大西洋贻贝 15\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "绵鳚",
+          "allow_json": "[\"Jiggmeister DC 1000\", \"Hunter 1000系列饵\", \"巨大的绿青鳕鱼片\", \"Natural Squid - 23系列饵\", \"鱿鱼肉\", \"Stor Fisk XL38-900 #1\", \"泡沫橡胶鱼004\", \"泡沫橡胶鱼002\", \"Lurker 100-07\", \"海沙蚕\", \"海沙蠋\", \"泡沫橡胶鱼001\", \"Natural Shrimp 7.5 - 02\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图120号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "绿青鳕",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Quicker 4.5-007\", \"Natural Squid - 23 - 03\", \"泡沫橡胶鱼004\", \"Hunter 1000-5\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "绿鲤",
+          "allow_json": "[\"马铃薯块\", \"菜叶\", \"蜂蜜面团\", \"玉米粥\", \"椰子类\", \"玉米类\", \"一束藻类\", \"什锦水果 15\", \"甜奶油 14\", \"甜奶油 18\", \"蜂蜜奶油 14\", \"地龙\", \"甜奶油 可溶 16\", \"甜玉米 14\", \"湿面包\", \"甜面团\", \"红蚯蚓\", \"蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "美洲真鰶",
+          "allow_json": "[\"地龙\", \"蚯蚓\", \"蠕虫\", \"亮片类\", \"旋转饵类\", \"旋转亮片路亚\", \"软饵类\", \"蠕虫类\", \"Spiker #2 018\", \"Brilliance Colorado 1/4 oz 001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "美洲红点鲑",
+          "allow_json": "[\"泡沫橡胶鱼\", \"Nasty worm 4.5\", \"Nasty Worm 4.5-005\", \"梅花鲈\", \"Tiny Fish 4-008\", \"Nasty Worm 4.5-001\", \"Tiny Fish 4-006\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "胡瓜鱼",
+          "allow_json": "[\"水蛭\", \"龙虱甲虫\", \"Nasty worm 4.5 系列\", \"淡水磷虾\", \"襀翅幼虫\", \"毛翅目\", \"Nasty Worm 4.5-005\", \"蜉蝣幼虫\", \"Orig Crank 9-006\", \"红虫\", \"苍蝇\", \"蜉蝣\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "花狼鱼",
+          "allow_json": "[\"Natural Squid 23\", \"Hunter 1000-5\", \"海沙蠋\", \"大块绿青鳕鱼片\", \"Natural Squid - 23 - 05\", \"Stor Fisk M25-600 #14\", \"Stor Fisk M25-600 #8\", \"Natural Squid - 23 - 06\", \"Natural Squid - 23 - 03\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "花鲶",
+          "allow_json": "[\"土蚕\", \"Lynns Minnow 80\", \"泡沫橡胶鱼\", \"Quicker 4.5\", \"Maggot 4-007\", \"地龙\", \"鱼块\", \"犀角金龟幼虫\", \"蚯蚓\", \"Orig Popper 4-F006\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "使用拟饵时须出现“jig阶梯”，或采用路亚钓法且使用有效船票并已上船，饵在水中运动",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "茴鱼",
+          "allow_json": "[\"Balsa Minnow 系列\",\"Snatcher 系列\",\"Soturi 系列\",\"Salmon T1 Shad 系列\",\"Salmon T1 Crank 系列\",\"Balsa Crank 系列\",\"亮片系列饵\",\"Spiker #2 016\",\"蜣螂\",\"Spiker #2 018\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "admin",
+          "updated_ts": 1795104813.0
+        },
+        {
+          "fish_zh": "草鱼",
+          "allow_json": "[\"马铃薯块\", \"菜叶\", \"蜂蜜面团\", \"玉米粥\", \"椰子类\", \"玉米类\", \"一束藻类\", \"螃蟹和贻贝 可溶 20\", \"黑加仑 PopUp 25\", \"黑加仑 PopUp 20\", \"甜奶油 PopUp 16\", \"香蕉 Pop-Up 20\", \"香蕉 Pop-Up 26\", \"大蒜面团\", \"红蚯蚓\", \"大麦粥\", \"蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "董氏须鳅",
+          "allow_json": "[\"毛翅目幼虫\", \"蚯蚓\", \"苍蝇\", \"树皮甲虫幼虫\", \"红虫\", \"一束藻类\", \"Orig Popper 4-F006\", \"Spiker #2 016\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "蒙古红鲌",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"蜉蝣幼虫\", \"King Stick 2.5-02\", \"Active W-Stick 2.5-04\", \"Veikko 25g-006\", \"毛翅目\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "蓝魣鳕",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Natural Squid - 23 - 05\", \"Hunter 1000-5\", \"海沙蚕\", \"Stor Fisk M25-600 #8\", \"Natural Squid - 23 - 03\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图30或34或41或55号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "蓝鳃太阳鱼",
+          "allow_json": "[\"地龙\", \"蚯蚓\", \"蠕虫\", \"亮片类\", \"旋转饵类\", \"旋转亮片路亚\", \"软饵类\", \"蠕虫类\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"Brilliance Colorado 1\", \"4 oz 001\", \"Finesse Micro Jig 1/8 oz 002\", \"Brilliance Colorado 1/4 oz 001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "虹鳟",
+          "allow_json": "[\"Balsa Joined 80S系列\", \"Dodger Crank 10系列\", \"Terminator F10系列\", \"Hunter 1系列\", \"AngryWalker S8-006\", \"Salmon T1 Shad 12 004\", \"Agressor 35-005\", \"Balsa Minnow 75F-006\", \"AngryWalker S8-008\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "路亚钓法，使用有效船票并已上船，饵在水中运动",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "裸腹鲟",
+          "allow_json": "[\"蝼蛄\", \"犀角金龟幼虫\", \"土蚕\", \"河鲈\", \"珠蚌肉\", \"螃蟹和贻贝 可溶 15\", \"螃蟹和鱼 14\", \"欧鲌\", \"河螯虾14\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "西伯利亚小体鲟",
+          "allow_json": "[\"蝼蛄\", \"犀角金龟幼虫\", \"土蚕\", \"河鲈饵\", \"珠蚌肉\", \"蚯蚓\", \"Nasty worm 2.5-007\", \"Stinky Stick 6.5-001\", \"地龙\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "西伯利亚杜父鱼",
+          "allow_json": "[\"树皮甲虫幼虫\", \"毛翅目幼虫\", \"蜉蝣幼虫\", \"红虫\", \"苍蝇\", \"牛虻\", \"蛆虫蛹\", \"粪便蠕虫\", \"Active W-Stick 2.5-02\", \"King Stick 2.5-02\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "诸子鲦",
+          "allow_json": "[\"蚯蚓\", \"蛆虫\", \"大麦粥\", \"奶酪块\", \"蛆虫蛹\", \"红虫\", \"毛翅目幼虫\", \"树皮甲虫幼虫\", \"旋转饵\", \"旋转亮片路亚\", \"蟋蟀\", \"Orig Popper 4-F006\", \"Spiker #2 016\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "贝加尔白鲑",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"蜉蝣幼虫\", \"毛翅目\", \"伏尔霍夫斯基粪蚯蚓\", \"Orig Popper 4-F006\", \"Active W-Stick 2.5-02\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "贝加尔雅罗鱼",
+          "allow_json": "[\"树皮甲虫幼虫\", \"毛翅目幼虫\", \"蜉蝣幼虫\", \"红虫\", \"苍蝇\", \"牛虻\", \"蛆虫蛹\", \"粪便蠕虫\", \"Orig Popper 4-F006\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "达氏鳇",
+          "allow_json": "[\"蝼蛄\", \"犀角金龟幼虫\", \"土蚕\", \"河鲈\", \"珠蚌肉\", \"七鳃鳗\", \"鱼块\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "里海七鳃鳗",
+          "allow_json": "[\"一束藻类\", \"Lynns Huge Minnow 120-005\", \"X-Shad F95-05\", \"Type 1 4g 007\", \"Lynns Huge Minnow 120-001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "里海拟鲤",
+          "allow_json": "[\"湿面包\", \"甜的面团\", \"豌豆粥\", \"玉米粥\", \"粪便蠕虫\", \"蚯蚓\", \"红虫\", \"苍蝇\", \"蛆虫蛹\", \"蛆虫\", \"毛翅目幼虫\", \"树皮甲虫幼虫\", \"蜉蝣幼虫\", \"Type 1 4g 007\", \"襀翅幼虫\", \"蜉蝣\"]",
+          "deny_json": "[\"拟饵\", \"饵鱼类\"]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "里海西鲱",
+          "allow_json": "[\"蛆虫蛹\", \"蜉蝣\", \"树皮甲虫幼虫\", \"土蚕\", \"欧鲌\", \"蜣螂\", \"Type 1 4g 007\", \"Balsa Crank 70F-003\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "仅手竿或博洛尼亚竿，浮漂立起",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "里海鲑鱼",
+          "allow_json": "[\"Type 1 4g系列\", \"Salmon T1 Shad 12 系列\", \"Balsa Crank 70F系列\", \"X-Shad F95系列\", \"各类饵鱼\", \"Balsa Crank 70F-003\", \"X-Shad F95-08\", \"Type 1 4g 007\", \"欧鲌\", \"Salmon T1 Shad 12 012\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "使用拟饵时须采用路亚钓法，使用有效船票并已上船，饵在水中运动",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "金丁鱥",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"甜奶油 PopUp 16\", \"红蚯蚓\", \"红虫\", \"甜奶油 PopUp 12\", \"甜奶油 14\", \"蚯蚓\", \"蛆虫\", \"地龙\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "金眼狼鲈",
+          "allow_json": "[\"地龙\", \"蚯蚓\", \"蠕虫\", \"亮片类\", \"旋转饵类\", \"旋转亮片路亚\", \"软饵类\", \"蠕虫类\", \"蟋蟀\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"Brilliance Colorado 1\", \"4 oz 001\", \"Finesse Micro Jig 1/8 oz 002\", \"Brilliance Colorado 1/4 oz 001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "金鲫",
+          "allow_json": "[\"湿面包\", \"甜的面团\", \"豌豆粥\", \"玉米粥\", \"粪便蠕虫\", \"蚯蚓\", \"红虫\", \"苍蝇\", \"蛆虫蛹\", \"蛆虫\", \"毛翅目幼虫\", \"树皮甲虫幼虫\", \"大麦粥\", \"黑加仑 PopUp 15\", \"香料\", \"红蚯蚓\", \"甜奶油 PopUp 16\"]",
+          "deny_json": "[\"拟饵\", \"饵鱼类\"]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "钓𩽾𩾌",
+          "allow_json": "[\"Jiggmeister DC 1000\", \"Hunter 1000系列饵\", \"巨大的绿青鳕鱼片\", \"Natural Squid - 23系列饵\", \"鱿鱼肉\", \"Stor Fisk XL38-900 #1\", \"Stor Fisk M25-600 #8\", \"Hunter 1000-5\", \"Stor Fisk M25-600 #5\", \"Lurker 100-07\", \"Hunter 300-5\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图120号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "钝头鳐",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"海沙蚕\", \"海沙蠋\", \"Lurker 100-07\", \"Stor Fisk M25-600 #8\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图30或34或41或55号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "铲鮰",
+          "allow_json": "[\"鱼块\", \"地龙\", \"青蛙\", \"拟真软饵\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"Finesse Micro Jig 1/8 oz 002\", \"蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "使用拟饵时须出现“jig阶梯”",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "银鲫",
+          "allow_json": "[\"湿面包\", \"甜的面团\", \"豌豆粥\", \"玉米粥\", \"粪便蠕虫\", \"蚯蚓\", \"红虫\", \"苍蝇\", \"蛆虫蛹\", \"蛆虫\", \"毛翅目幼虫\", \"树皮甲虫幼虫\", \"黑加仑 PopUp 15\", \"大麦粥\", \"香料\", \"椰子和奶油 14\", \"红蚯蚓\"]",
+          "deny_json": "[\"拟饵\", \"饵鱼类\"]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "银鲷鱼",
+          "allow_json": "[\"粪便蠕虫\", \"蚯蚓\", \"红虫\", \"苍蝇\", \"蛆虫蛹\", \"树皮甲虫幼虫\", \"奶酪块\", \"焦糖 8\", \"大麦粥\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "浮漂钓法；手竿或博洛尼亚竿须浮漂立起，其他浮漂竿须出现“顺水漂流”",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "银鳟鱼",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"七鳃鳗\", \"Soturi 22g-003\", \"Veikko 25g-006\", \"董氏须鳅\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "镜鲤",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"黑加仑 PopUp 15\", \"香料\", \"玉米粥\", \"新鲜蔓越莓 26\", \"大蒜与香草 20\", \"大蒜与香草 PopUp 20\", \"新鲜蔓越莓 Pop-Ups 26\", \"红虫\", \"甜面团\", \"蛆虫蛹\", \"红蚯蚓\", \"马铃薯块\", \"地龙\", \"蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "镜鲤（人面鲤）",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"香料\", \"鲑鱼 Pop-Up 14\", \"新鲜蔓越莓 26\", \"玉米粥\", \"大蒜与香草 PopUp 20\", \"新鲜蔓越莓 Pop-Ups 26\", \"大蒜与香草 20\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "镜鲤（白化）",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"鲑鱼 Pop-Up 14\", \"香料\", \"新鲜蔓越莓 26\", \"大蒜与香草 PopUp 20\", \"新鲜蔓越莓 Pop-Ups 26\", \"大蒜与香草 20\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "长体西鲱",
+          "allow_json": "[\"粪便蠕虫\", \"蚯蚓\", \"红虫\", \"苍蝇\", \"蛆虫蛹\", \"树皮甲虫幼虫\", \"蜉蝣\", \"Balsa Crank 70F-003\", \"Type 1 4g 007\", \"欧鲌\", \"土蚕\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "浮漂钓法；手竿或博洛尼亚竿须浮漂立起，其他浮漂竿须出现“顺水漂流”",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "长吻梅花鲈",
+          "allow_json": "[\"粪便蠕虫\", \"蚯蚓\", \"地龙\", \"树皮甲虫幼虫\", \"红虫\", \"红蚯蚓\", \"土蚕\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "长拟庸鲽",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"海沙蚕\", \"海沙蠋\", \"Lurker 100-07\", \"Quicker 4.5-007\", \"Jiggmeister DC 110\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图30或34或41或55号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "闪光鲟",
+          "allow_json": "[\"蝼蛄\", \"犀角金龟幼虫\", \"土蚕\", \"河鲈\", \"珠蚌肉\", \"螃蟹和贻贝 可溶 15\", \"螃蟹和鱼 14\", \"河螯虾14\", \"河斑马纹贻贝肉\", \"欧鲌\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "雅罗鱼",
+          "allow_json": "[\"蛆虫蛹\", \"蜉蝣\", \"树皮甲虫幼虫\", \"红蚯蚓\", \"苍蝇\", \"红虫\", \"伏尔霍夫斯基粪蚯蚓\", \"蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "仅手竿或博洛尼亚竿，浮漂立起",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "雷氏七鳃鳗",
+          "allow_json": "[\"一束藻类\", \"Veikko 25g-006\", \"Veikko 25g-010\", \"Soturi 22g-008\", \"Soturi 22g-003\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "青蛙",
+          "allow_json": "[\"苍蝇\", \"红虫\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "青鳕",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Lurker 100-07\", \"Hunter 1000-5\", \"泡沫橡胶鱼001\", \"Natural Shrimp 7.5 - 02\", \"Natural Squid - 23 - 03\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "食用蟹",
+          "allow_json": "[\"泡沫橡胶鱼系列\", \"Lurker 100系列\", \"Quicker 4.5系列\", \"Maggot 4系列\", \"Lurker 100-07\", \"Lurker 200-07\", \"泡沫橡胶鱼004\", \"Jiggmeister DC 110\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图，区域不限",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "马苏鱼",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"Soturi 22g-003\", \"七鳃鳗\", \"Veikko 25g-006\", \"董氏须鳅\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "驼背太阳鱼",
+          "allow_json": "[\"粪便蠕虫\", \"蚯蚓\", \"红虫\", \"苍蝇\", \"蛆虫蛹\", \"树皮甲虫幼虫\", \"水蛭\", \"HQS Finesse Jig 1/8 oz 007\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "浮漂钓法；手竿或博洛尼亚竿须浮漂立起，其他浮漂竿须出现“顺水漂流”",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "驼背白鲑",
+          "allow_json": "[\"Spiker系列\", \"旋转饵\", \"Hornet系列\", \"Soturi系列\", \"梭鲈饵\", \"草蜢\", \"蜣螂\", \"五月金龟子\", \"襀翅幼虫\", \"龙虱甲虫\", \"Balsa Minnow 系列\", \"Snatcher 系列\", \"Hunter  系列\", \"Spiker 系列\", \"Orig Popper 系列\", \"Soturi 系列\", \"Spiker #2 016\", \"Spiker #2 018\", \"毛翅目\", \"蜉蝣幼虫\", \"红蚯蚓\", \"蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "高白鲑",
+          "allow_json": "[\"毛翅目幼虫\", \"蚯蚓\", \"苍蝇\", \"树皮甲虫幼虫\", \"红虫\", \"一束藻类\", \"蜉蝣幼虫\", \"Orig Popper 4-F006\", \"Spiker #2 016\", \"襀翅幼虫\", \"Nasty worm 2.5-002\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "魣鳕",
+          "allow_json": "[\"Jiggmeister DC 1000\", \"Hunter 1000系列饵\", \"巨大的绿青鳕鱼片\", \"Natural Squid - 23系列饵\", \"鱿鱼肉\", \"Stor Fisk XL38-900 #1\", \"Hunter 1000-5\", \"Natural Squid - 23 - 05\", \"海沙蚕\", \"Stor Fisk M25-600 #14\", \"Stor Fisk M25-600 #5\", \"Stor Fisk M25-600 #8\", \"Natural Squid - 23 - 03\", \"Stor Fisk M25-600 #1\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图120号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "鲈鱼",
+          "allow_json": "[\"蚯蚓\", \"蛆虫\", \"大麦粥\", \"奶酪块\", \"蛆虫蛹\", \"红虫\", \"毛翅目幼虫\", \"树皮甲虫幼虫\", \"旋转饵\", \"旋转亮片路亚\", \"地龙\", \"红蚯蚓\", \"Tiny Fish 4-006\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "鲢鱼",
+          "allow_json": "[\"贻贝类\", \"河鳌虾类\", \"螃蟹和鱼类\", \"一束藻类\", \"Zig Bait Green 14\", \"蜉蝣幼虫\", \"Zig Bait Green 18\", \"春草 20\", \"Zig Bait Lime 18\", \"Zig Bait Yellow 18\", \"龙虱甲虫\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "鲤鲫",
+          "allow_json": "[\"香料类\", \"黑加仑类\", \"玉米类\", \"奶渣面团\", \"菠萝类\", \"水果类\", \"草莓类\", \"中性\", \"椰子奶油类\", \"黑加仑 PopUp 15\", \"七种香料 12\", \"红蚯蚓\", \"水蛭\", \"蜂蜜面团\", \"莫斯科培育蚯蚓\", \"伏尔霍夫斯基粪蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "鳄雀鳝",
+          "allow_json": "[\"亮片\", \"Balsa walker 65F-005\", \"蛙\", \"蟋蟀\", \"Finesse Micro Jig 1/8 oz 002\", \"Brilliance Colorado 1/4 oz 001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "鳗鱼",
+          "allow_json": "[\"鱼块\", \"地龙\", \"虾仁\", \"Quicker 3-001\", \"蚯蚓\", \"Quicker 4.5-001\", \"Quicker 3-004\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "鳙鱼",
+          "allow_json": "[\"贻贝类\", \"河鳌虾类\", \"螃蟹和鱼类\", \"螃蟹和贻贝 可溶 20\", \"螃蟹和贻贝 可溶 15\", \"螃蟹和鱼 14\", \"蜉蝣幼虫\", \"大蒜似的贻贝 Pop Ups 16\", \"春草 20\", \"大蒜似的贻贝 Pop Ups 20\", \"襀翅幼虫\", \"犀角金龟幼虫\", \"地龙\", \"龙虱甲虫\", \"一束藻类\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "鳞鲤(人面鲤)",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"七种香料 20\", \"鲑鱼 Pop-Up 14\", \"新鲜蔓越莓 26\", \"玉米粥\", \"大蒜与香草 20\", \"大蒜与香草 PopUp 20\", \"新鲜蔓越莓 Pop-Ups 26\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "鳞鲤(白化)",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"鲑鱼 Pop-Up 14\", \"新鲜蔓越莓 26\", \"香料\", \"玉米粥\", \"菠萝 20\", \"大蒜与香草 20\", \"大蒜与香草 PopUp 20\", \"新鲜蔓越莓 Pop-Ups 26\", \"黑加仑 25\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "鸣海浅黄锦鲤",
+          "allow_json": "[\"椰子和奶油类\", \"什锦水果类\", \"中性\", \"玉米类\", \"蜂蜜类\", \"奶油类\", \"自然风味\", \"螃蟹和贻贝 可溶 15\", \"螃蟹和贻贝 可溶 20\", \"鲑鱼20\", \"大草莓 Pop-Up 15\", \"大草莓 Pop-Up 20\", \"黑加仑 PopUp 15\", \"大西洋贻贝 15\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "黄斑红点鲑",
+          "allow_json": "[\"Veikko 25g系列\", \"Hunter 1系列\", \"Hunter 1-006\", \"Veikko 25g-004\", \"七鳃鳗\", \"Type 1 4g 003\", \"Type 1 4g 002\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "黑尾叉牙七鳃鳗",
+          "allow_json": "[\"一束藻类\", \"Nasty Worm 4.5-009\", \"Quicker 4.5-003\", \"Veikko 25g-002\", \"Hunter 1-002\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "黑斑刺盖太阳鱼",
+          "allow_json": "[\"地龙\", \"蚯蚓\", \"蠕虫\", \"亮片类\", \"旋转饵类\", \"旋转亮片路亚\", \"软饵类\", \"蠕虫类\", \"Finesse Micro Jig 1\", \"8 oz 002\", \"Brilliance Colorado 1\", \"4 oz 001\", \"蟋蟀\", \"Finesse Micro Jig 1/8 oz 002\", \"Brilliance Colorado 1/4 oz 001\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "黑海欧白鱼",
+          "allow_json": "[\"粪便蠕虫\", \"蚯蚓\", \"红虫\", \"苍蝇\", \"蛆虫蛹\", \"树皮甲虫幼虫\", \"蜉蝣\", \"红蚯蚓\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "浮漂钓法；手竿或博洛尼亚竿须浮漂立起，其他浮漂竿须出现“顺水漂流”",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "黑牛胭脂鱼",
+          "allow_json": "[\"马蝇\", \"树皮甲虫幼虫\", \"大蒜类\", \"贻贝类\", \"粪便蠕虫\", \"鲑鱼类\", \"帝王蟹类\", \"螃蟹类\", \"螃蟹和贻贝 可溶 20\", \"螃蟹和贻贝 可溶 15\", \"螃蟹和鱼 18\", \"河螯虾14\", \"香蕉 14\", \"毛翅目\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "黑等鳍叉尾带鱼",
+          "allow_json": "[\"Gummi Makk\", \"海沙蠋\", \"海沙蚕\", \"Super GummiMakk 8\", \"0 - 03\", \"Jiggmeister DC 110\", \"Stor Fisk M25-600 #8\", \"Super GummiMakk 8/0 - 03\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图215号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "黑背西鲱",
+          "allow_json": "[\"树皮甲虫幼虫\",\"毛翅目幼虫\",\"蜉蝣幼虫\",\"红虫\",\"苍蝇\",\"牛虻\",\"蛆虫蛹\",\"粪便蠕虫\",\"Balsa Crank 70F-003\",\"Type 1 4g 007\",\"Type 1 4g 005\",\"蜉蝣\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "admin",
+          "updated_ts": 1795144726.0
+        },
+        {
+          "fish_zh": "黑鲩",
+          "allow_json": "[\"马铃薯块\", \"菜叶\", \"蜂蜜面团\", \"玉米粥\", \"椰子类\", \"玉米类\", \"一束藻类\", \"黑加仑 PopUp 20\", \"黑加仑 PopUp 25\", \"甜奶油 PopUp 16\", \"香蕉 Pop-Up 20\", \"红蚯蚓\", \"地龙\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "无",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        },
+        {
+          "fish_zh": "鼠鲨",
+          "allow_json": "[\"Natural Squid 23 系列饵\", \"Hunter 1000-5\", \"Stor Fisk M25-600 #5\", \"Natural Squid - 23 - 03\", \"RealSquid - 26 - 07\", \"Stor Fisk M25-600 #8\", \"RealSquid - 26 - 08\"]",
+          "deny_json": "[]",
+          "bottom_json": "[]",
+          "condition": "海图55或75或120号区域",
+          "groups_json": "[]",
+          "rotate_sec": 0,
+          "rotate_mode": "soft",
+          "enabled": 1,
+          "updated_by": "bulk-A+B",
+          "updated_ts": 1795079154.0
+        }
+      ]
+    },
+    "fish_bait_auto_rotation": {
+      "desc": "逐鱼「自动抽取」开关",
+      "columns": [
+        "fish_key",
+        "enabled",
+        "updated_by",
+        "updated_ts"
+      ],
+      "rows": [
+        {
+          "fish_key": "a.sleeper",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "a_catfish",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "a_char",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "a_grayling",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "a_omul",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "a_salmon",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "a_smelt",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "agar",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "alb_barbel",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "alfonsino",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "ambl_h",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "ambl_r",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "asp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "atl_cod",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "atl_herring",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "b_bream",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "b_carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "b_gill",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "b_herring",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "b_omul",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "b_scabbardfish",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "barb_toni",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "barsch",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "beluga",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "bh_carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "bl_buffalo",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "black_crappie",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "bp_bass",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "bream",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "bs_salmon",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "buffalo",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "bullhead_syb",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "burbot",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "c.carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "c.roach",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "c_anguineus",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "c_barbel",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "c_bleak",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "c_herring",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "c_lamprey",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "c_nase",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "c_squid",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "carp_albino",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "carp_ghost",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "carp_red",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "centroloph_n",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "cetorhinus_m",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "ch_beluga",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "ch_catfish",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "cha_herring",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "chan_m",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "chartus_kuoriius",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "chavycha",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "chimaera",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "chir",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "chlamys_isl",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "chukuchan",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "coalfish",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "common_carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "conger",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "crawfish",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "crucian",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "d_zubatka",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "dace",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "din_l_carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "din_m_carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "din_n_carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "dr_char",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "dreissena",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "e.chub",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "e.pikeperch",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "e_bream",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "e_smelt",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "ed_crab",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "eel",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "fe_lamprey",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "fhcatfish",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "freshwater_mussel",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "frog",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "fwdrum",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "g_carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "g_carp_albino",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "g_shad",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "g_tench",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "gc_smelt",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "golets_lev",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "golyan",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "gorbusha",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "gudgeon",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "halibut_b",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "halibut_w",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "hi_utsri",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "himant_g",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "hippoglos_p",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "hs_bass",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "k_herring",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "k_salmon",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "kaluga",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "karasekarp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "katran",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "keta",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "kijuch",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "kohaku",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "kunja",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "kutum",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "kw_tench",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "l_carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "l_carp_albino",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "l_carp_ghost",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "l_minnow",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "l_salmon",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "l_sturgeon",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "lamna_n",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "lampris_g",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "lenok_o",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "lenok_t",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "lh_kambala",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "lm_b_bass",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "lophius_p",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "lycodes_e",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "lycodes_s",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "m_carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "m_carp_albino",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "m_carp_ghost",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "m_carp_red",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "m_goshiki",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "m_molva",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "m_scorpius",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "m_zubatka",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "macrourus_b",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "makrel",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "malma",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "meagre",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "menek",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "merlang",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "merluza",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "midori_g",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "mikija",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "molva",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "muksun",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "mytilus_ed",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "n.pike",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "n_asagi",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "n_carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "n_carp_albino",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "n_carp_ghost",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "neiva",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "nelma",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "nerka",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "o_ogon",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "onkor_m",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "onkor_mg",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "os_grayling",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "osetr_balt",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "osetr_ship",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "ostrea_ed",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "p_sturgeon",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "p_zubatka",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "palia_kr",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "palia_lud",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "peled",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "perch",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "piksha",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "pinagor",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "pollachius",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "polyprion",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "poutassou",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "pumps_sunfish",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "r_carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "r_carp_albino",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "r_carp_ghost",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "r_sturgeon",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "red_fish",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "resfish",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "ripus",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "riv_brown_trout",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "riv_rb_trout",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "rk_crab",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "roach",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "rudd",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "ruffe",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "ruffe_n",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "s.bream",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "s.orfe",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "s_bass",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "s_carp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "s_freaks",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "s_lamprey",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "s_saurus",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sabrefish",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "salvel_l",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sardina_p",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sea_kambala",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sebastes_m",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sebastes_n",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sevan_trout",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sgar",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sh_barbel",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "shemaya",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "shemaya_cha",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sig",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sig_black",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sig_kuor",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sig_ludoga",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sig_o_l",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sig_ostr",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sig_p",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sig_valaam",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sig_vouksa",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sm_bass",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "somniosus_m",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sp_bass",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "st_sturgeon",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sterlet",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "stickleback_ninesp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "stickleback_ss",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "stickleback_threesp",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "sv_sig",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "syb_elets",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "syb_gudgeon",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "syb_roach",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "syb_sterlet",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "syb_vendace",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "taimen",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "taran",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "tench",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "thynnus_t",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "tiulka",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "trib_h",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "trid_lamprey",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "tugun",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "turbot",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "u_lamprey",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "v_bream",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "valyok",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "vendace",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "vjun",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "vobla",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "vyrezub",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "w_catfish",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "w_catfish_a",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "wa_bream",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "walleye",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "warm",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "wfish",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "wh_bass",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "white_crappie",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "x_gladius",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "yotsushiro",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "zoarces_v",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "zs_grayling",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        },
+        {
+          "fish_key": "zs_sturgeon",
+          "enabled": 1,
+          "updated_by": "bulk-all",
+          "updated_ts": 1795096914.0
+        }
+      ]
+    },
+    "fish_ecology_loc": {
+      "desc": "按水域的生态覆盖（水层/温度/昼夜曲线等）",
+      "columns": [
+        "stat_loc",
+        "fish_key",
+        "layer_min",
+        "layer_pref",
+        "layer_max",
+        "temp_min_c",
+        "temp_pref_c",
+        "temp_max_c",
+        "diel_mask",
+        "season_mask",
+        "diet_json",
+        "weather_json",
+        "activity",
+        "enabled",
+        "updated_by",
+        "updated_ts"
+      ],
+      "rows": []
+    },
+    "fish_zone": {
+      "desc": "区域固定鱼种配置",
+      "columns": [
+        "id",
+        "loc",
+        "name",
+        "kind",
+        "sea_zone",
+        "gx0",
+        "gz0",
+        "gx1",
+        "gz1",
+        "mode",
+        "boost",
+        "keep_others",
+        "enabled",
+        "updated_by",
+        "updated_ts",
+        "cells_json",
+        "cx",
+        "cz",
+        "radius",
+        "sea_zones_json"
+      ],
+      "rows": []
+    },
+    "fish_zone_fish": {
+      "desc": "区域 × 鱼种明细",
+      "columns": [
+        "zone_id",
+        "fish_key",
+        "weight",
+        "enabled"
+      ],
+      "rows": []
+    }
+  }
+}
