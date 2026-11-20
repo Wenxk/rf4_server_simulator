@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"rf4server/internal/gameserver"
 	"rf4server/internal/store"
 )
 
@@ -54,6 +53,7 @@ func (s *Server) handleBaitRuleSave(w http.ResponseWriter, r *http.Request) {
 		mode = "soft"
 	}
 	if mode != "soft" && mode != "strict" {
+		// 自动抽取在表格里是独立开关（/api/bait/auto-rotation），不再是轮换模式。
 		httpError(w, 400, "轮换模式只能是 soft 或 strict")
 		return
 	}
@@ -312,9 +312,113 @@ func (s *Server) baitRulesEnabled(ctx context.Context) bool {
 	return strings.TrimSpace(v) == "1"
 }
 
-// rotationView 是后台展示用的轮换状态，与判鱼共用同一套时间桶算法。
-func rotationView(o store.FishBaitOverride, now time.Time) gameserver.RotationState {
-	return gameserver.ExportedRotationState(o.Groups, o.RotateSec, o.RotateMode, now)
+// handleBaitAutoRotation 切换某鱼种的自动轮换开关。
+// 参数是 fish_key（不是中文名）：开关表以 fish_key 为主键，不受「泥鳅 / 泥鳅鱼」
+// 这类按水域改名以及 BOM 脏字符影响。开关只存「要不要轮换」，不改规则内容。
+func (s *Server) handleBaitAutoRotation(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		FishKey string `json:"fish_key"`
+		Enabled bool   `json:"enabled"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		httpError(w, 400, "参数错误")
+		return
+	}
+	key := strings.TrimSpace(req.FishKey)
+	if key == "" {
+		httpError(w, 400, "缺少 fish_key")
+		return
+	}
+	if len([]rune(key)) > 64 {
+		httpError(w, 400, "fish_key 过长")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	if err := s.db.SetFishBaitAuto(ctx, key, req.Enabled, adminOf(r)); err != nil {
+		httpError(w, 500, err.Error())
+		return
+	}
+	action := "bait_auto_off"
+	if req.Enabled {
+		action = "bait_auto_on"
+	}
+	_ = s.db.AuditLogWrite(ctx, adminOf(r), action, key, "")
+	// 主动通知判鱼侧清缓存；没收到也会在 15 秒 TTL 内自然生效。
+	_ = s.db.QueuePush(ctx, mustJSON(map[string]any{"op": "reload_bait_auto"}))
+	writeJSON(w, map[string]any{"ok": true, "fish_key": key, "enabled": req.Enabled})
+}
+
+// autoRotationGlobalOn 读自动轮换总开关（tunables）。
+func (s *Server) autoRotationGlobalOn(ctx context.Context) bool {
+	var v string
+	if err := s.db.SQL.QueryRowContext(ctx,
+		`SELECT value FROM tunables WHERE key='bait_rotation_auto_enabled'`).Scan(&v); err != nil {
+		return false
+	}
+	f, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
+	return err == nil && f > 0
+}
+
+// autoRotationSec 读自动轮换的全局周期（秒）。
+func (s *Server) autoRotationSec(ctx context.Context) int64 {
+	var v string
+	if err := s.db.SQL.QueryRowContext(ctx, `SELECT value FROM tunables WHERE key='bait_rotation_auto_sec'`).Scan(&v); err != nil {
+		return 7200
+	}
+	f, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
+	if err != nil {
+		return 7200
+	}
+	sec := int64(f)
+	if sec < 60 {
+		sec = 60
+	}
+	return sec
+}
+
+// baitAutoRoundTunable 是「立即重抽」累计的轮次偏移（判鱼侧同一键）。
+const baitAutoRoundTunable = "bait_rotation_auto_round"
+
+// autoRotationRound 读人工重抽偏移；缺省/坏值按 0 处理（等于没点过重抽）。
+func (s *Server) autoRotationRound(ctx context.Context) int64 {
+	v, ok, err := s.db.TunableGet(ctx, baitAutoRoundTunable)
+	if err != nil || !ok {
+		return 0
+	}
+	n, err := strconv.ParseInt(strings.TrimSpace(v), 10, 64)
+	if err != nil || n < 0 {
+		return 0
+	}
+	return n
+}
+
+// handleBaitAutoReroll 立即重抽一轮：把轮次偏移 +1。
+// 抽签是 hash(fish_key, floor(now/周期))，改不了 now，所以用偏移让时间桶整体后移；
+// 切换时刻仍按自然网格，周期长度不变，重启也不会退回上一轮。
+func (s *Server) handleBaitAutoReroll(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	next := s.autoRotationRound(ctx) + 1
+	if err := s.db.TunableSet(ctx, baitAutoRoundTunable, strconv.FormatInt(next, 10), adminOf(r)); err != nil {
+		httpError(w, 500, err.Error())
+		return
+	}
+	_ = s.db.AuditLogWrite(ctx, adminOf(r), "bait_auto_reroll", baitAutoRoundTunable, strconv.FormatInt(next, 10))
+	// 判鱼侧的 run 参数有 30 秒缓存，主动推一条让它立刻重读。
+	_ = s.db.QueuePush(ctx, mustJSON(map[string]any{"op": "reload_tunables"}))
+	writeJSON(w, map[string]any{"ok": true, "round": next})
+}
+
+// fishRarity 取鱼种固有稀有度（0 普通 / 1 稀有 / 2 超稀有）。
+// fish_ecology 以 fish_key 为主键（水域覆盖在 fish_ecology_loc），一行即可。
+func (s *Server) fishRarity(ctx context.Context, fishKey string) int {
+	var v int
+	if err := s.db.SQL.QueryRowContext(ctx,
+		`SELECT rarity_tier FROM fish_ecology WHERE fish_key=?`, fishKey).Scan(&v); err != nil {
+		return 0
+	}
+	return v
 }
 
 func cleanTerms(in []string) []string {

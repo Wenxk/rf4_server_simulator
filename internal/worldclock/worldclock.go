@@ -21,16 +21,20 @@ func DayAndHour(nowUnix int64) (day, hour int64) {
 	return secs / 3600, (secs / RealSecPerGameHour) % 24
 }
 
-// 昼夜段位序，与 `1 晨 / 2 昼 / 4 暮 / 8 夜` 的掩码定义一一对应（bit = 0/1/2/3）。
+// 昼夜段位序，与 `1 夜 / 2 晨 / 4 昼 / 8 昏` 的掩码定义一一对应（bit = 0/1/2/3）。
+//
+// 位序与上游 `fishActivityForHour` 一致（夜=0/晨=1/昼=2/昏=3）：生态资产里的
+// diel_mask 与 diel_curve（`[夜,晨,昼,昏]` 四段权重）都按这个顺序编码，
+// 本地若另立一套（曾经是 晨=0）会让上游资产整份失效、曲线也整体错位一格。
 const (
-	SegmentDawn  = 0 // 05:00-08:59
-	SegmentDay   = 1 // 09:00-15:59
-	SegmentDusk  = 2 // 16:00-19:59
-	SegmentNight = 3 // 20:00-04:59
+	SegmentNight = 0 // 20:00-04:59
+	SegmentDawn  = 1 // 05:00-08:59
+	SegmentDay   = 2 // 09:00-15:59
+	SegmentDusk  = 3 // 16:00-19:59
 )
 
 // segmentNames 供后台展示，顺序即位序。
-var segmentNames = [4]string{"晨", "昼", "暮", "夜"}
+var segmentNames = [4]string{"夜", "晨", "昼", "昏"}
 
 // SegmentOf 把游戏小时映射到昼夜段位序。这里返回的是**位序**而不是时段编号，
 // 调用方直接 `1<<SegmentOf(hour)` 得到掩码位。
@@ -48,7 +52,7 @@ func SegmentOf(hour int64) int {
 	}
 }
 
-// SegmentName 返回段名（晨/昼/暮/夜）。
+// SegmentName 返回段名（夜/晨/昼/昏）。
 func SegmentName(segment int) string {
 	if segment < 0 || segment >= len(segmentNames) {
 		return ""
@@ -56,16 +60,7 @@ func SegmentName(segment int) string {
 	return segmentNames[segment]
 }
 
-// MaskSegments 返回掩码里包含的段数（popcount）。
-func MaskSegments(mask int64) int {
-	n := 0
-	for m := mask; m != 0; m &= m - 1 {
-		n++
-	}
-	return n
-}
-
-// MaskLabels 把掩码翻译成「晨/暮/夜」这样的中文串；0 返回「无」。
+// MaskLabels 把掩码翻译成「夜/晨/昼/昏」这样的中文串；0 返回「无」。
 func MaskLabels(mask int64) string {
 	out := ""
 	for i := 0; i < len(segmentNames); i++ {
@@ -81,27 +76,4 @@ func MaskLabels(mask int64) string {
 		return "无"
 	}
 	return out
-}
-
-// ActiveBoost 把「峰值加成」按活跃段数折算成实际倍率。
-//
-// 段数越少、越是只在特定时段出没的鱼，那个时段就该越集中：
-//
-//	1 段（专性，如纯夜行）→ peak
-//	2 段                   → 1+2(peak-1)/3
-//	3 段                   → 1+(peak-1)/3
-//	4 段（全天活跃）       → 1.0，没有时段红利
-//
-// 放在 worldclock 是因为它和段划分是同一件事的两面：判鱼（gameserver）和后台展示
-// （admin）必须算出同一个数，否则后台写着「夜间 ×2」、判鱼实际乘 1.3 就说不清了。
-func ActiveBoost(mask int64, peak float64) float64 {
-	// peak<=1 一律中性：活跃时段反而压低权重是反直觉的，后台就算填了 0.5 也不采用。
-	if peak <= 1 {
-		return 1
-	}
-	seg := MaskSegments(mask)
-	if seg <= 0 || seg >= 4 {
-		return 1
-	}
-	return 1 + (peak-1)*float64(4-seg)/3
 }

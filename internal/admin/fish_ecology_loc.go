@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -55,6 +56,7 @@ type ecoGlobalView struct {
 	TempPrefC  *float64 `json:"temp_pref_c"`
 	TempMaxC   *float64 `json:"temp_max_c"`
 	DielMask   *int64   `json:"diel_mask"`
+	DielCurve  *string  `json:"diel_curve"`
 	SeasonMask *int64   `json:"season_mask"`
 	Activity   *float64 `json:"activity"`
 	Enabled    *int64   `json:"enabled"`
@@ -65,13 +67,14 @@ type ecoGlobalView struct {
 func (s *Server) globalFishEcology(ctx context.Context, fishKey string) (*ecoGlobalView, error) {
 	var (
 		lm, lp, lmax, tmin, tpref, tmax, act sql.NullFloat64
-		diel, season, enabled               sql.NullInt64
+		diel, season, enabled                sql.NullInt64
+		dielCurve                            sql.NullString
 	)
 	err := s.db.SQL.QueryRowContext(ctx, `
 		SELECT layer_min, layer_pref, layer_max, temp_min_c, temp_pref_c, temp_max_c,
-		       diel_mask, season_mask, activity, enabled
+		       diel_mask, diel_curve, season_mask, activity, enabled
 		FROM fish_ecology WHERE fish_key=?`, fishKey).Scan(
-		&lm, &lp, &lmax, &tmin, &tpref, &tmax, &diel, &season, &act, &enabled)
+		&lm, &lp, &lmax, &tmin, &tpref, &tmax, &diel, &dielCurve, &season, &act, &enabled)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -92,10 +95,18 @@ func (s *Server) globalFishEcology(ctx context.Context, fishKey string) (*ecoGlo
 		v := n.Int64
 		return &v
 	}
+	sp := func(n sql.NullString) *string {
+		if !n.Valid {
+			return nil
+		}
+		v := n.String
+		return &v
+	}
 	return &ecoGlobalView{
 		LayerMin: fp(lm), LayerPref: fp(lp), LayerMax: fp(lmax),
 		TempMinC: fp(tmin), TempPrefC: fp(tpref), TempMaxC: fp(tmax),
-		DielMask: ip(diel), SeasonMask: ip(season), Activity: fp(act), Enabled: ip(enabled),
+		DielMask: ip(diel), DielCurve: sp(dielCurve), SeasonMask: ip(season),
+		Activity: fp(act), Enabled: ip(enabled),
 	}, nil
 }
 
@@ -228,6 +239,22 @@ func validateFishEcologyLoc(o store.FishEcologyLoc) string {
 			return f.name + " 必须是 JSON 对象"
 		}
 	}
+	// 昼夜曲线：空串 = 该水域该鱼种回退到位图判断；否则必须是四段 0~1 的数组，
+	// 顺序固定 [夜,晨,昼,昏]，与判鱼侧 dielCurveWeights 同口径。
+	if o.DielCurve != nil {
+		raw := strings.TrimSpace(*o.DielCurve)
+		if raw != "" {
+			var w []float64
+			if err := json.Unmarshal([]byte(raw), &w); err != nil || len(w) != 4 {
+				return `昼夜曲线必须是四个数字的 JSON 数组，如 [1,0.3,0.2,0.5]（顺序 夜,晨,昼,昏）`
+			}
+			for _, v := range w {
+				if math.IsNaN(v) || math.IsInf(v, 0) || v < 0 || v > 1 {
+					return "昼夜曲线的每个值都必须在 0~1 之间"
+				}
+			}
+		}
+	}
 	return ""
 }
 
@@ -242,6 +269,7 @@ func strconvFields(o store.FishEcologyLoc) string {
 	add("layer", o.LayerMin != nil || o.LayerPref != nil || o.LayerMax != nil)
 	add("temp", o.TempMinC != nil || o.TempPrefC != nil || o.TempMaxC != nil)
 	add("diel", o.DielMask != nil)
+	add("curve", o.DielCurve != nil)
 	add("season", o.SeasonMask != nil)
 	add("diet", o.DietJSON != nil)
 	add("weather", o.WeatherJSON != nil)

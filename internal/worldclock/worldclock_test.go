@@ -1,7 +1,6 @@
 package worldclock
 
 import (
-	"math"
 	"testing"
 )
 
@@ -53,48 +52,20 @@ func TestSegmentOfBoundaries(t *testing.T) {
 	}
 }
 
-func TestActiveBoostBySegmentCount(t *testing.T) {
-	const peak = 2.0
-	cases := []struct {
-		mask int64
-		want float64
-	}{
-		{8, 2.0},               // 一段：满额
-		{1 | 4, 1 + 2.0/3},     // 两段
-		{1 | 2 | 8, 1 + 1.0/3}, // 三段
-		{15, 1},                // 四段：无时段红利
-		{0, 1},                 // 无档案
-	}
-	for _, c := range cases {
-		if got := ActiveBoost(c.mask, peak); math.Abs(got-c.want) > 1e-9 {
-			t.Fatalf("mask=%d 期望 %.4f，实得 %.4f", c.mask, c.want, got)
-		}
-	}
-	// peak<=1 时没有任何加成，防止后台把倍率调成 0 后出现「活跃反而更低」。
-	if got := ActiveBoost(8, 0); got != 1 {
-		t.Fatalf("peak=0 应退化为 1，实得 %v", got)
-	}
-	if got := ActiveBoost(8, 0.5); got != 1 {
-		t.Fatalf("peak<1 应退化为 1，实得 %v", got)
-	}
-}
-
 func TestMaskHelpers(t *testing.T) {
-	if got := MaskLabels(8); got != "夜" {
-		t.Fatalf("mask=8 应为「夜」，实得 %q", got)
+	if got := MaskLabels(1); got != "夜" {
+		t.Fatalf("mask=1 应为「夜」，实得 %q", got)
 	}
-	if got := MaskLabels(1 | 4 | 8); got != "晨/暮/夜" {
-		t.Fatalf("mask=13 应为「晨/暮/夜」，实得 %q", got)
+	if got := MaskLabels(1 | 2 | 8); got != "夜/晨/昏" {
+		t.Fatalf("mask=11 应为「夜/晨/昏」，实得 %q", got)
 	}
 	if got := MaskLabels(0); got != "无" {
 		t.Fatalf("mask=0 应为「无」，实得 %q", got)
 	}
-	for _, c := range []struct {
-		mask int64
-		want int
-	}{{0, 0}, {8, 1}, {1 | 2 | 8, 3}, {15, 4}} {
-		if got := MaskSegments(c.mask); got != c.want {
-			t.Fatalf("mask=%d 段数应为 %d，实得 %d", c.mask, c.want, got)
+	// 段名与位序一一对应（后台表头按这个顺序画四段）。
+	for i, want := range []string{"夜", "晨", "昼", "昏"} {
+		if got := SegmentName(i); got != want {
+			t.Fatalf("第 %d 段应为 %q，实得 %q", i, want, got)
 		}
 	}
 }

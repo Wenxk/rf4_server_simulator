@@ -55,6 +55,9 @@ func (d *DB) ListFishBaitOverrides(ctx context.Context) ([]FishBaitOverride, err
 // SaveFishBaitOverride 写入或替换一个鱼种的覆盖。
 func (d *DB) SaveFishBaitOverride(ctx context.Context, o FishBaitOverride, by string) error {
 	mode := strings.TrimSpace(o.RotateMode)
+	// 只认手工组的两种模式。自动抽取不再是 rotate_mode 的取值——它是
+	// fish_bait_auto_rotation 里的独立开关（见 00077 迁移注释）；历史值
+	// 'auto' 一律归一成 soft，避免和独立开关形成两套真相。
 	if mode != "strict" {
 		mode = "soft"
 	}

@@ -1,6 +1,8 @@
 # 昼夜口径归并：分布层不再自带一份昼夜习性
 
-Status: done
+Status: cancelled
+
+> 已被 `specs/changes/diel-activity-curve` 取代：昼夜改四段乘性曲线，位序翻转为 1 夜 2 晨 4 昼 8 昏。本文保留作历史记录。
 
 ## Problem Statement
 

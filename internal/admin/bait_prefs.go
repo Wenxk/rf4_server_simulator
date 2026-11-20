@@ -51,6 +51,9 @@ type baitPrefRow struct {
 	RotateSec  int64                    `json:"rotate_sec"`
 	RotateMode string                   `json:"rotate_mode"`
 	Rotation   gameserver.RotationState `json:"rotation"`
+	// AutoRotation 是独立的逐鱼自动轮换开关（表 fish_bait_auto_rotation），
+	// 与 rotate_mode 无关：开了它就不看手工组，按稀有度现抽本期开口饵。
+	AutoRotation bool `json:"auto_rotation"`
 }
 
 type baitPrefEvidence struct {
@@ -303,6 +306,15 @@ func (s *Server) handleBaitPrefs(w http.ResponseWriter, r *http.Request) {
 			overrides[o.FishZh] = o
 		}
 	}
+	// 4.5) 自动轮换开关（按 fish_key，与覆盖解耦）：没有覆盖的鱼也能开。
+	autoOn := map[string]bool{}
+	if autoRows, aerr := s.db.ListFishBaitAuto(r.Context()); aerr == nil {
+		for _, a := range autoRows {
+			if a.Enabled {
+				autoOn[a.FishKey] = true
+			}
+		}
+	}
 	// 3.5) 鱼口画像：fish_ecology（判鱼 G 层同源）+ fish_grade_lines（档位体重）
 	ecoByFish := map[string][2]any{}
 	if ecoRows, eerr := s.db.SQL.QueryContext(r.Context(),
@@ -331,6 +343,18 @@ func (s *Server) handleBaitPrefs(w http.ResponseWriter, r *http.Request) {
 
 	metas := loadBaitMeta(r.Context(), s.db)
 
+	// 自动轮换要把 allow 展开成具体饵，全量饵定义只加载一次；否则 200 条鱼
+	// 各查一遍 item_def（每遍 4000+ 行）会把后台列表拖成几秒。
+	var autoBaits gameserver.RuleBaitList
+	globalAutoOn := false
+	autoRound := int64(0)
+	if len(autoOn) > 0 {
+		autoBaits = gameserver.LoadAllRuleBaits(r.Context(), s.db)
+		globalAutoOn = s.autoRotationGlobalOn(r.Context())
+		// 人工「立即重抽」的偏移，必须和判鱼侧用同一个值，否则表格显示的是上一轮。
+		autoRound = s.autoRotationRound(r.Context())
+	}
+
 	now := time.Now()
 	out := make([]baitPrefRow, 0, len(fish))
 	for _, f := range fish {
@@ -358,7 +382,20 @@ func (s *Server) handleBaitPrefs(w http.ResponseWriter, r *http.Request) {
 			row.Allow, row.Deny = o.Allow, o.Deny
 			row.BottomOh, row.Cond = o.BottomOnly, o.Condition
 			row.Groups, row.RotateSec, row.RotateMode = o.Groups, o.RotateSec, o.RotateMode
-			row.Rotation = rotationView(o, now)
+		}
+		row.AutoRotation = autoOn[f.key]
+		// 轮换状态：自动抽取优先（它不看手工组），否则按时间桶算手工组。
+		// 没有覆盖的鱼也能开自动抽取，所以这一段放在覆盖分支外面。
+		if row.AutoRotation {
+			row.Rotation = gameserver.ExportedAutoRotation(f.key, autoBaits,
+				row.Allow, row.Deny, row.BottomOh, s.fishRarity(r.Context(), f.key),
+				s.autoRotationSec(r.Context()), autoRound, now)
+			// 逐鱼开关勾了、但总开关没开：抽签结果照算，游戏内不生效。
+			if !globalAutoOn {
+				row.Rotation.GlobalOff = true
+			}
+		} else if o, ok := overrides[f.name]; ok {
+			row.Rotation = gameserver.ExportedRotationState(o.Groups, o.RotateSec, o.RotateMode, now)
 		}
 		if a := byFish[f.key]; a != nil {
 			row.Tier3, row.Tier2, row.Total = a.tier3, a.tier2, a.total

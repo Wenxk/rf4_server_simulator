@@ -97,6 +97,20 @@ type Server struct {
 	baitOvCache map[string]baitOverrideEntry
 	baitOvAt    time.Time
 
+	// 自动轮换：全量饵定义与「按规则展开后的池子」缓存。
+	// 池子按 fish_key + 规则指纹缓存，规则覆盖变化时整体清空。
+	allBaitMu  sync.RWMutex
+	allBait    []ruleBait
+	allBaitAt  time.Time
+	baitPoolMu sync.RWMutex
+	baitPool   map[string][]baitGroup
+	// 逐鱼自动轮换开关（fish_bait_auto_rotation），键是 fish_key。
+	// 与规则覆盖分开缓存：开关只决定「这条鱼要不要抽本期开口饵」，
+	// 不改变规则内容，所以开关变化不需要清池子。
+	baitAutoMu    sync.RWMutex
+	baitAutoCache map[string]bool
+	baitAutoAt    time.Time
+
 	// 搏鱼曲线池
 	curves  map[string][][19]float64
 	curveMu sync.Mutex

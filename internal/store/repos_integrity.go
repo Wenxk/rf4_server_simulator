@@ -39,6 +39,9 @@ var RuntimeTables = []string{
 	"request_receipts", "market_offer", "shop_item_override",
 	"fish_weight_override", "fish_bite_setting", "fish_grade_lines", "skill_link",
 	"fish_ecology", "skill_fish_effect_def", "skill_cast_effect_def", "hook_bite_profile", "fish_bait_override",
+	// 自动轮换的逐鱼开关：只存「这条鱼要不要按稀有度抽本期开口饵」，
+	// 与规则覆盖解耦（见 00077 迁移注释）。
+	"fish_bait_auto_rotation",
 	"fish_zone", "fish_zone_fish",
 	// 生态档案的水域覆盖（后台可写）与判鱼决策追踪（诊断环切表）：
 	// 两者都是运营数据，既不随存档回滚，也不属于静态资料镜像。

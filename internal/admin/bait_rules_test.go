@@ -137,3 +137,68 @@ func TestBaitRuleSaveAndReset(t *testing.T) {
 		t.Fatalf("恢复后不应再有轮换: %v", rot)
 	}
 }
+
+// 「立即重抽本期」只做一件事：轮次偏移 +1。偏移必须落库（重启不退回上一轮），
+// 并且要推 reload_tunables 让判鱼侧立刻重读（那边有 30 秒缓存）。
+func TestBaitAutoRerollBumpsRound(t *testing.T) {
+	db := testDB(t)
+	ctx := context.Background()
+	if err := db.EnsureAdmin(ctx, "admin", "admin123"); err != nil {
+		t.Fatal(err)
+	}
+	cfg := config.Admin{HTTPAddr: "127.0.0.1:0", JWTSecret: "test"}
+	srv := NewServer(cfg, db, logging.Discard(), WebFS())
+	if _, err := srv.Start(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = srv.Shutdown(context.Background()) })
+	base := "http://" + srv.Addr()
+	client := &http.Client{Timeout: 5 * time.Second}
+
+	resp, err := client.Post(base+"/api/login", "application/json",
+		strings.NewReader(`{"username":"admin","password":"admin123"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var login map[string]any
+	_ = json.NewDecoder(resp.Body).Decode(&login)
+	resp.Body.Close()
+	token, _ := login["token"].(string)
+	if token == "" {
+		t.Fatalf("登录失败: %v", login)
+	}
+
+	reroll := func() int64 {
+		t.Helper()
+		r, _ := http.NewRequest("POST", base+"/api/bait/auto-rotation/reroll", strings.NewReader(`{}`))
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", "Bearer "+token)
+		resp, err := client.Do(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		var out struct {
+			Round int64 `json:"round"`
+		}
+		_ = json.NewDecoder(resp.Body).Decode(&out)
+		if resp.StatusCode != 200 {
+			t.Fatalf("重抽失败: %d %+v", resp.StatusCode, out)
+		}
+		return out.Round
+	}
+
+	if got := reroll(); got != 1 {
+		t.Fatalf("第一次重抽应返回 round=1，实得 %d", got)
+	}
+	if got := reroll(); got != 2 {
+		t.Fatalf("第二次重抽应返回 round=2，实得 %d", got)
+	}
+	var stored string
+	if err := db.SQL.QueryRow(`SELECT value FROM tunables WHERE key='bait_rotation_auto_round'`).Scan(&stored); err != nil {
+		t.Fatalf("偏移没有落库: %v", err)
+	}
+	if stored != "2" {
+		t.Fatalf("库里的偏移应为 2，实得 %q", stored)
+	}
+}

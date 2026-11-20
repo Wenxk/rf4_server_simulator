@@ -27,12 +27,12 @@ test('fish rarity bar shows intrinsic tiers and preset posts three tiers',async(
   if(key==='/api/fish/config')return json({
    area:'琥珀湖',
    setting:{bite_probability:1,bite_delay_fixed:0,bite_delay_scale:1,bite_delay_max:20,bite_delay_lure_max:6},
-   game_day:3,game_hour:15,diel_now_segment:2,diel_now_name:'暮',diel_weight_enabled:true,diel_peak_boost:2,diel_penalty:0.3,
+   game_day:3,game_hour:15,diel_now_segment:1,diel_now_name:'晨',diel_weight_enabled:true,diel_curve_min:0.08,
    fish:[
     {fish_key:'carp',name_zh:'普通鲤鱼',base_weight:100,weight:100,enabled:true,rarity_tier:0,rarity_label:'普通',
-     diel_mask:15,diel_labels:['晨','昼','暮','夜'],diel_active:true,diel_factor:1,effective_weight:100,tier_weight:100},
+     diel_mask:15,diel_labels:'夜/晨/昼/昏',diel_curve:'[1,0.6,0.55,0.8]',diel_active:true,diel_factor:0.6,effective_weight:60,tier_weight:100},
     {fish_key:'beluga',name_zh:'欧洲鳇',base_weight:5,weight:5,enabled:true,rarity_tier:2,rarity_label:'超稀有',
-     diel_mask:15,diel_labels:['晨','昼','暮','夜'],diel_active:true,diel_factor:1,effective_weight:5,tier_weight:5},
+     diel_mask:15,diel_labels:'夜/晨/昼/昏',diel_curve:'[1,0.3,0.2,0.5]',diel_active:false,diel_factor:0.2,effective_weight:1,tier_weight:5},
    ]
   });
   if(key==='/api/fish/weights/preset'){

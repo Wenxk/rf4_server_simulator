@@ -1,6 +1,8 @@
 # 昼夜权重：让基础权重跟着鱼种的昼夜习性浮动
 
-Status: done
+Status: cancelled
+
+> 已被 `specs/changes/diel-activity-curve` 取代：峰值加成与非活跃压制度整体下线，改由 `fish_ecology.diel_curve` 四段曲线表达，峰值恒为 1、最低 0.08。本文保留作历史记录。
 
 ## Problem Statement
 

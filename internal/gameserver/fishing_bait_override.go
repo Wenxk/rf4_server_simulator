@@ -36,6 +36,13 @@ type RotationState struct {
 	ActiveBaits []string `json:"active_baits"`
 	IntervalSec int64    `json:"interval_sec"`
 	NextSwitch  int64    `json:"next_switch"`
+	// 自动轮换（mode=auto）专用：本期配额、展开后的池子大小、未抽中系数。
+	Quota    int     `json:"quota,omitempty"`
+	PoolSize int     `json:"pool_size,omitempty"`
+	OffScale float64 `json:"off_scale,omitempty"`
+	// GlobalOff 表示该鱼开关已勾选、抽签也算出来了，但全局总开关是关的，
+	// 游戏内并不生效。后台据此提示「总开关未开」，避免误以为已经生效。
+	GlobalOff bool `json:"global_off,omitempty"`
 }
 
 // ExportedRotationState 供管理后台展示用的轮换状态（与判鱼同一套计算）。
@@ -47,6 +54,8 @@ func ExportedRotationState(groups [][]string, rotateSec int64, mode string, now 
 // 用时间桶而不是定时器，重启不丢状态，后台展示与判鱼天然一致。
 func rotationState(rot baitRotation, now time.Time) RotationState {
 	state := RotationState{Mode: rot.mode, Total: len(rot.groups), Active: -1}
+	// 手工模式只有软性/严格两种；自动抽取的状态由 ExportedAutoRotation
+	// 单独计算（开关在 fish_bait_auto_rotation，不在轮换模式里）。
 	if state.Mode != "strict" {
 		state.Mode = "soft"
 	}
@@ -139,6 +148,8 @@ func (s *Server) invalidateBaitOverrides() {
 	s.baitOvCache = nil
 	s.baitOvAt = time.Time{}
 	s.baitOvMu.Unlock()
+	// 规则变了，按规则展开的自动轮换池子也必须作废，否则会继续用旧名单抽签。
+	s.invalidateBaitPools()
 }
 
 // cleanRuleTerms 去掉空白项，避免后台保存的空串影响匹配。

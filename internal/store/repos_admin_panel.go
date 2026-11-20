@@ -91,6 +91,9 @@ type FishConfigRow struct {
 	RarityTier int    `json:"rarity_tier"`
 	DielMask   int64  `json:"diel_mask"`
 	DielLabels string `json:"diel_labels"`
+	// DielCurve 是四段乘性权重 `[夜,晨,昼,昏]`（已合并水域覆盖）；
+	// 空串表示该鱼只有位图，页面按 1.0 / 0.35 的旧口径展示。
+	DielCurve string `json:"diel_curve"`
 
 	// 按「当前游戏时刻」现算的展示值，仅供后台读取：不落库，判鱼侧也不读。
 	// DielFactor 是昼夜系数（活跃时段按专一度折算，非活跃时段是压制倍率），
@@ -112,6 +115,9 @@ type FishConfigRow struct {
 	BaitGroups  [][]string `json:"bait_groups"`  // 轮换组
 	BaitRotSec  int64      `json:"bait_rotate_sec"`
 	BaitRotMode string     `json:"bait_rotate_mode"`
+	// BaitAuto 是独立的逐鱼自动轮换开关（fish_bait_auto_rotation，按 fish_key）。
+	// 它与上面 override 里的手工组互斥：为真时轮换按稀有度现抽，忽略 BaitGroups。
+	BaitAuto bool `json:"bait_auto"`
 }
 
 type FishBiteSetting struct {
@@ -139,15 +145,14 @@ type AdminFishConfig struct {
 	FishPool []string        `json:"fish_pool"`
 
 	// 当前游戏时刻与昼夜倍率，由 admin 层在返回前填充（store 不查 tunable）。
-	// 前端据此在表头写「现在是夜 · 夜行鱼 ×2.0」，并解释当前权重列是怎么来的。
-	GameDay           int64   `json:"game_day"`
-	GameHour          int64   `json:"game_hour"`
-	DielNowSegment    int     `json:"diel_now_segment"`
-	DielNowName       string  `json:"diel_now_name"`
-	DielWeightEnabled bool    `json:"diel_weight_enabled"`
-	DielPeakBoost     float64 `json:"diel_peak_boost"`
-	DielPenalty       float64 `json:"diel_penalty"`
-
+	// 前端据此在表头写「现在是夜 · 该鱼 ×0.42」，并解释当前权重列是怎么来的。
+	GameDay           int64  `json:"game_day"`
+	GameHour          int64  `json:"game_hour"`
+	DielNowSegment    int    `json:"diel_now_segment"`
+	DielNowName       string `json:"diel_now_name"`
+	DielWeightEnabled bool   `json:"diel_weight_enabled"`
+	// DielCurveMin 是曲线的最低系数（0.08），仅供页面说明「最惨压到多少」。
+	DielCurveMin float64 `json:"diel_curve_min"`
 }
 
 type FishConfigSave struct {
@@ -619,6 +624,15 @@ func (d *DB) GetAdminFishConfig(ctx context.Context, loc string) (*AdminFishConf
 			baitOvs[o.FishZh] = o
 		}
 	}
+	// 自动轮换开关：只按 fish_key 记录，与上面的覆盖表解耦。
+	baitAuto := map[string]bool{}
+	if list, aerr := d.ListFishBaitAuto(ctx); aerr == nil {
+		for _, a := range list {
+			if a.Enabled {
+				baitAuto[a.FishKey] = true
+			}
+		}
+	}
 	names := map[string]string{}
 	rows, err := d.SQL.QueryContext(ctx, `
 		SELECT fish_key, COALESCE(NULLIF(name_zh,''),fish_key) FROM loc_fish WHERE loc=?
@@ -637,17 +651,20 @@ func (d *DB) GetAdminFishConfig(ctx context.Context, loc string) (*AdminFishConf
 	// 算出的生效权重。掩码走水域覆盖优先（与判鱼侧 fishEcologyFor 的合并口径
 	// 一致），否则在生态弹窗里改过昼夜的鱼，后台仍显示全局值，看起来像是没生效。
 	diel := map[string]int64{}
+	dielCurve := map[string]string{}
 	rarity := map[string]int{}
 	if drows, derr := d.SQL.QueryContext(ctx, `
-		SELECT e.fish_key, COALESCE(o.diel_mask, e.diel_mask, 0), COALESCE(e.rarity_tier, 0)
+		SELECT e.fish_key, COALESCE(o.diel_mask, e.diel_mask, 0),
+		       COALESCE(o.diel_curve, e.diel_curve, ''), COALESCE(e.rarity_tier, 0)
 		FROM fish_ecology e
 		LEFT JOIN fish_ecology_loc o ON o.stat_loc = ? AND o.fish_key = e.fish_key`, loc); derr == nil {
 		for drows.Next() {
 			var key string
 			var mask int64
+			var curve string
 			var tier int
-			if drows.Scan(&key, &mask, &tier) == nil {
-				diel[key], rarity[key] = mask, tier
+			if drows.Scan(&key, &mask, &curve, &tier) == nil {
+				diel[key], dielCurve[key], rarity[key] = mask, curve, tier
 			}
 		}
 		_ = drows.Close()
@@ -669,7 +686,7 @@ func (d *DB) GetAdminFishConfig(ctx context.Context, loc string) (*AdminFishConf
 		}
 		row := FishConfigRow{
 			FishKey: r.FishKey, NameZh: name, BaseWeight: r.Catches, Weight: r.Catches, Enabled: true,
-			RarityTier: tier, DielMask: diel[r.FishKey],
+			RarityTier: tier, DielMask: diel[r.FishKey], DielCurve: dielCurve[r.FishKey],
 			DielLabels:  worldclock.MaskLabels(diel[r.FishKey]),
 			RarityLabel: FishRarityLabel(tier),
 			TierWeight:  tierWeights[tier],
@@ -678,6 +695,7 @@ func (d *DB) GetAdminFishConfig(ctx context.Context, loc string) (*AdminFishConf
 			row.Weight, row.Enabled, row.HasOverride = ov.Weight, ov.Enabled, true
 		}
 		applyBaitRotation(&row, baitOvs[name])
+		row.BaitAuto = baitAuto[r.FishKey]
 		cfg.Fish = append(cfg.Fish, row)
 		cfg.FishPool = append(cfg.FishPool, r.FishKey)
 	}
@@ -696,12 +714,13 @@ func (d *DB) GetAdminFishConfig(ctx context.Context, loc string) (*AdminFishConf
 		row := FishConfigRow{
 			FishKey: key, NameZh: name, BaseWeight: 0, Weight: ov.Weight,
 			Enabled: ov.Enabled, HasOverride: true,
-			RarityTier: tier, DielMask: diel[key],
+			RarityTier: tier, DielMask: diel[key], DielCurve: dielCurve[key],
 			DielLabels:  worldclock.MaskLabels(diel[key]),
 			RarityLabel: FishRarityLabel(tier),
 			TierWeight:  tierWeights[tier],
 		}
 		applyBaitRotation(&row, baitOvs[name])
+		row.BaitAuto = baitAuto[key]
 		cfg.Fish = append(cfg.Fish, row)
 	}
 	return cfg, nil

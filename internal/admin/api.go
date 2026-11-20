@@ -119,6 +119,8 @@ func NewServer(cfg config.Admin, db *store.DB, log logger, webFS fs.FS) *Server 
 	mux.HandleFunc("GET /api/bait/categories", auth(s.handleBaitCategories))
 	mux.HandleFunc("PUT /api/bait/rules", auth(s.handleBaitRuleSave))
 	mux.HandleFunc("POST /api/bait/rules/reset", auth(s.handleBaitRuleReset))
+	mux.HandleFunc("POST /api/bait/auto-rotation", auth(s.handleBaitAutoRotation))
+	mux.HandleFunc("POST /api/bait/auto-rotation/reroll", auth(s.handleBaitAutoReroll))
 	mux.HandleFunc("GET /api/fish/sea-now", auth(s.handleFishSeaNow))
 	mux.HandleFunc("GET /api/fish/sea-zone-latest", auth(s.handleFishSeaZoneLatest))
 	mux.HandleFunc("GET /api/fish/sea-zones", auth(s.handleFishSeaZones))
@@ -459,15 +461,8 @@ func (s *Server) handleTunableSet(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 400, "开关只能为 0 或 1")
 		return
 	}
-	// 昼夜倍率直接乘在判鱼权重上：小于 1 的"加成"和大于 1 的"惩罚"都会把手感搞反，
-	// 所以两端各自卡死范围，别让调参调出负向倍率。
-	if req.Key == "fish_diel_active_boost" || req.Key == "fish_diel_inactive_penalty" {
-		v, err := strconv.ParseFloat(req.Value, 64)
-		if err != nil || math.IsNaN(v) || math.IsInf(v, 0) || v < 0.05 || v > 3 {
-			httpError(w, 400, "昼夜倍率必须是 0.05~3 的数字")
-			return
-		}
-	}
+	// 昼夜已改成四段曲线（峰值 1.0 / 最低 0.08，见 fish_ecology.diel_curve），
+	// 不再有可调的加成/压制度：曲线本身就是数据，改手感请改曲线或覆盖权重。
 	// 追踪保留条数是环形表的唯一上限：非整数会让裁剪 LIMIT 落空，保留等于关掉。
 	if req.Key == "fish_roll_trace_keep" {
 		v, err := strconv.Atoi(req.Value)

@@ -12,14 +12,21 @@ import (
 	"rf4server/internal/worldclock"
 )
 
-// 5：昼夜口径归并——删除分布层的写死活性表后，档案里的 diel_mask 成为
-// 唯一昼夜依据，梅花鲈补上傍晚（11 → 13，原先漏暮、误含昼）。版本号抬高
-// 触发 ensureFishEcology 重灌。
+// 6：昼夜改用四段乘性曲线（diel_curve，[夜,晨,昼,昏]，峰值 1.0、最低 0.08），
+// 并把掩码位序改成与上游一致（1 夜 / 2 晨 / 4 昼 / 8 昏）。旧库的掩码由迁移
+// 00079 旋转过，这里抬高版本号是为了把 253 条资产的曲线灌进已有的档案行——
+// 版本号停在 5 的话 `WHERE profile_version < excluded.profile_version` 全不成立，
+// 曲线上不来，等于白改。
 //
 // 稀有度不在这里：rarity_tier 现在是鱼种固有属性（species_rarity：0 普通 /
 // 1 稀有 / 2 超稀有），由启动时的 SyncFishRarityFromStatic 写入，种子 JSON
 // 里不再带这个字段——少一个会随文件漂移的档位来源。
-const fishEcologyProfileVersion = 5
+const (
+	fishEcologyProfileVersion = 6
+	// fishDielCurveMin 是曲线的最低系数：低活跃段仍允许偶发记录，
+	// 但不置 0，避免该鱼在整段内彻底消失（与上游同口径）。
+	fishDielCurveMin = 0.08
+)
 
 //go:embed assets/fish_ecology_defs.json
 var fishEcologyDefsJSON []byte
@@ -32,14 +39,17 @@ var (
 // fishEcologyProfile 是鱼口系统使用的鱼种生态基线。水层使用 0=水面、1=水底
 // 的归一化坐标，后续可叠加具体钓点水深，不把某条河的实际米数写死在鱼种上。
 type fishEcologyProfile struct {
-	FishKey       string  `json:"fish_key"`
-	LayerMin      float64 `json:"layer_min"`
-	LayerPref     float64 `json:"layer_pref"`
-	LayerMax      float64 `json:"layer_max"`
-	TempMinC      float64 `json:"temp_min_c"`
-	TempPrefC     float64 `json:"temp_pref_c"`
-	TempMaxC      float64 `json:"temp_max_c"`
-	DielMask      int64   `json:"diel_mask"`
+	FishKey   string  `json:"fish_key"`
+	LayerMin  float64 `json:"layer_min"`
+	LayerPref float64 `json:"layer_pref"`
+	LayerMax  float64 `json:"layer_max"`
+	TempMinC  float64 `json:"temp_min_c"`
+	TempPrefC float64 `json:"temp_pref_c"`
+	TempMaxC  float64 `json:"temp_max_c"`
+	DielMask  int64   `json:"diel_mask"`
+	// DielCurve 是四段乘性权重 `[夜,晨,昼,昏]`，峰值固定 1.0、最低 0.08。
+	// 空串表示该鱼只有位图，fishDielWeight 会回退到 1.0 / 0.35 的旧口径。
+	DielCurve     string  `json:"diel_curve"`
 	SeasonMask    int64   `json:"season_mask"`
 	DietJSON      string  `json:"diet_json"`
 	WeatherJSON   string  `json:"weather_json"`
@@ -87,16 +97,17 @@ func (s *Server) ensureFishEcology(ctx context.Context) (int, error) {
 		res, ierr := s.DB.SQL.ExecContext(ctx, `
 			INSERT INTO fish_ecology(
 				fish_key, layer_min, layer_pref, layer_max,
-				temp_min_c, temp_pref_c, temp_max_c, diel_mask,
+				temp_min_c, temp_pref_c, temp_max_c, diel_mask, diel_curve,
 				season_mask, diet_json, weather_json, action_json, substrate_json,
 				color_json, current_pref, activity, light_pref, clarity_pref,
 				aggression, enabled, profile_version, source, updated_ts
-			) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+			) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 			ON CONFLICT(fish_key) DO UPDATE SET
 				layer_min=excluded.layer_min, layer_pref=excluded.layer_pref,
 				layer_max=excluded.layer_max, temp_min_c=excluded.temp_min_c,
 				temp_pref_c=excluded.temp_pref_c, temp_max_c=excluded.temp_max_c,
-				diel_mask=excluded.diel_mask, season_mask=excluded.season_mask,
+				diel_mask=excluded.diel_mask, diel_curve=excluded.diel_curve,
+				season_mask=excluded.season_mask,
 				diet_json=excluded.diet_json, weather_json=excluded.weather_json,
 				action_json=excluded.action_json, substrate_json=excluded.substrate_json,
 				color_json=excluded.color_json, current_pref=excluded.current_pref,
@@ -106,7 +117,7 @@ func (s *Server) ensureFishEcology(ctx context.Context) (int, error) {
 				updated_ts=excluded.updated_ts
 			WHERE fish_ecology.profile_version < excluded.profile_version`,
 			p.FishKey, p.LayerMin, p.LayerPref, p.LayerMax,
-			p.TempMinC, p.TempPrefC, p.TempMaxC, p.DielMask,
+			p.TempMinC, p.TempPrefC, p.TempMaxC, p.DielMask, p.DielCurve,
 			p.SeasonMask, p.DietJSON, p.WeatherJSON, p.ActionJSON, p.SubstrateJSON,
 			p.ColorJSON, p.CurrentPref, p.Activity, p.LightPref, p.ClarityPref,
 			p.Aggression, boolInt(p.Enabled), p.ProfileVersion, p.Source, now)
@@ -126,7 +137,7 @@ func (s *Server) reloadFishEcologyCache(ctx context.Context) error {
 	}
 	rows, err := s.DB.SQL.QueryContext(ctx, `
 		SELECT fish_key, layer_min, layer_pref, layer_max,
-		       temp_min_c, temp_pref_c, temp_max_c, diel_mask,
+		       temp_min_c, temp_pref_c, temp_max_c, diel_mask, diel_curve,
 		       season_mask, diet_json, weather_json, action_json, substrate_json,
 		       color_json, current_pref, activity, light_pref, clarity_pref,
 		       aggression, rarity_tier, enabled, profile_version, source
@@ -141,7 +152,7 @@ func (s *Server) reloadFishEcologyCache(ctx context.Context) error {
 		var enabled int
 		if err := rows.Scan(
 			&p.FishKey, &p.LayerMin, &p.LayerPref, &p.LayerMax,
-			&p.TempMinC, &p.TempPrefC, &p.TempMaxC, &p.DielMask,
+			&p.TempMinC, &p.TempPrefC, &p.TempMaxC, &p.DielMask, &p.DielCurve,
 			&p.SeasonMask, &p.DietJSON, &p.WeatherJSON, &p.ActionJSON, &p.SubstrateJSON,
 			&p.ColorJSON, &p.CurrentPref, &p.Activity, &p.LightPref, &p.ClarityPref,
 			&p.Aggression, &p.RarityTier, &enabled, &p.ProfileVersion, &p.Source,
@@ -169,9 +180,11 @@ type fishEcologyLocOverride struct {
 	layerMin, layerPref, layerMax *float64
 	tempMinC, tempPrefC, tempMaxC *float64
 	dielMask, seasonMask          *int64
-	dietJSON, weatherJSON         *string
-	activity                      *float64
-	enabled                       *bool
+	// dielCurve 非 nil 时接管昼夜曲线（空串表示该水域回退到位图判断）。
+	dielCurve             *string
+	dietJSON, weatherJSON *string
+	activity              *float64
+	enabled               *bool
 }
 
 // reloadFishEcologyLocCache 全量载入水域覆盖。与全局档案同一次刷新，
@@ -190,7 +203,7 @@ func (s *Server) reloadFishEcologyLocCache(ctx context.Context) error {
 		ov := fishEcologyLocOverride{
 			layerMin: o.LayerMin, layerPref: o.LayerPref, layerMax: o.LayerMax,
 			tempMinC: o.TempMinC, tempPrefC: o.TempPrefC, tempMaxC: o.TempMaxC,
-			dielMask: o.DielMask, seasonMask: o.SeasonMask,
+			dielMask: o.DielMask, dielCurve: o.DielCurve, seasonMask: o.SeasonMask,
 			dietJSON: o.DietJSON, weatherJSON: o.WeatherJSON,
 			activity: o.Activity,
 		}
@@ -238,6 +251,11 @@ func mergeFishEcology(p fishEcologyProfile, ov *fishEcologyLocOverride) fishEcol
 	}
 	if ov.dielMask != nil {
 		p.DielMask = *ov.dielMask
+	}
+	// 曲线与掩码分别覆盖：只改掩码时曲线仍是全局的，会被 fishDielWeight 优先采用，
+	// 视觉上就是「改了掩码没生效」。所以显式给曲线留了覆盖位（空串=压回掩码判断）。
+	if ov.dielCurve != nil {
+		p.DielCurve = *ov.dielCurve
 	}
 	if ov.seasonMask != nil {
 		p.SeasonMask = *ov.seasonMask
@@ -309,6 +327,9 @@ func defaultFishEcology(key string) fishEcologyProfile {
 		if profile.Source == "" {
 			profile.Source = "local-sim:deterministic-v3"
 		}
+		// 版本号一律以代码常量为准：资产里的 profile_version 只是生成时的标记，
+		// 若让它盖住常量，抬高常量也不会触发重灌（00078 加 diel_curve 后就是这种坑）。
+		profile.ProfileVersion = fishEcologyProfileVersion
 		return profile
 	}
 	return fishEcologyProfile{
@@ -345,13 +366,13 @@ func (s *Server) fishEcology(ctx context.Context, key string) fishEcologyProfile
 	var enabled, profileVersion int
 	err := s.DB.SQL.QueryRowContext(ctx, `
 		SELECT fish_key, layer_min, layer_pref, layer_max,
-		       temp_min_c, temp_pref_c, temp_max_c, diel_mask,
+		       temp_min_c, temp_pref_c, temp_max_c, diel_mask, diel_curve,
 		       season_mask, diet_json, weather_json, action_json, substrate_json,
 		       color_json, current_pref, activity, light_pref, clarity_pref,
 		       aggression, rarity_tier, enabled, profile_version, source
 		FROM fish_ecology WHERE fish_key=?`, key).Scan(
 		&p.FishKey, &p.LayerMin, &p.LayerPref, &p.LayerMax,
-		&p.TempMinC, &p.TempPrefC, &p.TempMaxC, &p.DielMask,
+		&p.TempMinC, &p.TempPrefC, &p.TempMaxC, &p.DielMask, &p.DielCurve,
 		&p.SeasonMask, &p.DietJSON, &p.WeatherJSON, &p.ActionJSON, &p.SubstrateJSON,
 		&p.ColorJSON, &p.CurrentPref, &p.Activity, &p.LightPref, &p.ClarityPref,
 		&p.Aggression, &p.RarityTier, &enabled, &profileVersion, &p.Source)
@@ -445,12 +466,12 @@ func (s *Server) fishBiteEnvironmentWeight(ctx context.Context, key string, c fi
 		return 0
 	}
 	_, hour := worldDayAndHour(c.now.Unix())
-	diel := fishDielWeight(p, hour,
-		s.tunableF("fish_diel_active_boost", 2.0),
-		s.tunableF("fish_diel_inactive_penalty", 0.3))
+	// 四段曲线只做乘性压制（峰值 1.0 / 最低 0.08），不再有「专性鱼翻倍」那套加成：
+	// 鱼种之间的差异交给曲线本身的分段形状表达。
+	diel := fishDielWeight(p, hour)
 	if !ecologyOn {
 		// 只开昼夜层时直接返回该系数：不牵连水层、水温、天气、清澈度。
-		return clampFloat(diel, .02, 4)
+		return clampFloat(diel, fishDielCurveMin, 1)
 	}
 	type weightedFactor struct {
 		value     float64
@@ -510,43 +531,51 @@ func (s *Server) fishBiteEnvironmentWeight(ctx context.Context, key string, c fi
 }
 
 // fishActivityForHour 把游戏小时映射到昼夜掩码的**位序**（不是时段编号）：
-// 0=晨 1=昼 2=暮 3=夜，与后台「1 晨 2 昼 4 暮 8 夜」的位定义严格一一对应。
+// 0=夜 1=晨 2=昼 3=昏，与「1 夜 2 晨 4 昼 8 昏」的位定义、以及 diel_curve
+// 的 [夜,晨,昼,昏] 四段顺序严格一一对应。
 //
 // 分段规则本身在 internal/worldclock —— 后台也要按同一套算术算「现在哪个时段」，
 // 两边各写一份迟早会漂。2026-11-17 曾修正过一次位映射错位（原返回时段编号再被
-// 当位序用，整体错一格），改正后由 worldclock.SegmentOf 统一负责。
+// 当位序用，整体错一格）；2026-11-20 又把位序改成与上游一致的「夜在前」，
+// 目的是让上游的生态资产与曲线能整份直接使用。
 func fishActivityForHour(hour int64) uint {
 	return uint(worldclock.SegmentOf(hour))
 }
 
-// fishDielWeight 返回昼夜系数：该鱼种处在活跃时段拿加成，非活跃时段拿压制（默认 0.3）。
-//
-// 加成按「专一度」分档而不是一刀切：活跃段数越少、越是只在特定时段出没的鱼，
-// 那个时段就该越集中。全时段活跃的鱼（4 段）拿 1.0——它本来一直在，没有时段红利
-// 可拿。详见 dielActiveBoost。
-//
-// 窝料门等只要「会不会被吸引」的地方会把结果再夹到 ≤1，因此 >1 的加成只作用在判鱼权重上。
-func fishDielWeight(profile fishEcologyProfile, hour int64, activeBoost, inactivePenalty float64) float64 {
-	bit := fishActivityForHour(hour)
-	if profile.DielMask&(1<<bit) != 0 {
-		return dielActiveBoost(profile.DielMask, activeBoost)
+// dielCurveWeights 解析四段权重（夜、晨、昼、昏）。返回 nil 表示该鱼没有曲线
+// （空串、非四段、非法 JSON 都算），调用方回退到位图判断。
+func dielCurveWeights(raw string) []float64 {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
 	}
-	return inactivePenalty
+	var w []float64
+	if err := json.Unmarshal([]byte(raw), &w); err != nil || len(w) != 4 {
+		return nil
+	}
+	for i := range w {
+		w[i] = clampFloat(w[i], 0, 1)
+	}
+	return w
 }
 
-// dielActiveBoost 把「峰值加成 peak」按活跃段数折算：
+// fishDielWeight 返回当前时段对吃口的影响系数。
 //
-//	1 段（专性，如纯夜行）→ peak（默认 2.0，夜间权重翻倍）
-//	2 段                   → 1+(peak-1)/3
-//	3 段                   → 1+2(peak-1)/3
-//	4 段（全天活跃）       → 1.0，没有时段红利
+// 有曲线时按窗口期加权：峰值段 1.0、次优段按观测比例衰减、非活跃段最低 0.08
+// （接近不出但不置零）。曲线是**乘性**权重，只会压低不会抬高——想突出某条鱼，
+// 应该调它的基础/覆盖权重，而不是把昼夜系数写到 1 以上。
 //
-// 这样纯夜行鱼夜里 2.0、白天 0.3（约 6.7 倍差距），而「昼夜都活跃」的鱼几乎不受影响，
-// 不会因为开了昼夜权重就整图鱼口重新洗牌。
-// dielActiveBoost 见 worldclock.ActiveBoost —— 后台展示要用同一套折算，
-// 所以公式放在共享包里，这里只是保持判鱼侧的调用名不变。
-func dielActiveBoost(mask int64, peak float64) float64 {
-	return worldclock.ActiveBoost(mask, peak)
+// 没有曲线时回退旧位图：命中 1.0、未命中 0.35（与上游同口径，供旧档案、
+// 手工清空曲线或回滚使用）。
+func fishDielWeight(profile fishEcologyProfile, hour int64) float64 {
+	bit := int(fishActivityForHour(hour))
+	if curve := dielCurveWeights(profile.DielCurve); curve != nil {
+		return clampFloat(curve[bit], fishDielCurveMin, 1)
+	}
+	if profile.DielMask&(1<<uint(bit)) != 0 {
+		return 1
+	}
+	return .35
 }
 
 func fishEcologyJSONMap(raw string) map[string]float64 {

@@ -238,8 +238,11 @@ def main():
         total_bait_hit += bh
         total_bait_rows += br
         if i % args.batch == 0 or i == len(fishes):
+            # 每批提交一次：全量 252 鱼要十几分钟，只在结尾提交会让进度不可见，
+            # 中途中断也白跑。INSERT OR IGNORE 幂等，中断后重跑自动续。
+            db.commit()
             print(f"[{i}/{len(fishes)}] {fish}: 纪录 {len(recs)}，新增 {new} 已存在 {seen}"
-                  f" 饵名匹配 {bh}/{br}")
+                  f" 饵名匹配 {bh}/{br}", flush=True)
         time.sleep(args.sleep)
     db.commit()
     db.close()

@@ -1046,6 +1046,9 @@ func (s *Server) execAdminCmd(cmd *AdminCommand) {
 	case "reload_bait_rules":
 		s.invalidateBaitOverrides()
 		s.log.Info("管理指令：鱼饵规则覆盖已刷新")
+	case "reload_bait_auto":
+		s.invalidateBaitAuto()
+		s.log.Info("管理指令：自动轮换开关已刷新")
 	case "reload_fish_ecology":
 		s.invalidateFishEcologyCache()
 		if err := s.reloadFishEcologyCache(s.dbCtx()); err != nil {

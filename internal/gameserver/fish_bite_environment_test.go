@@ -24,8 +24,10 @@ func TestFishEcologyAssetCoversAllSpeciesAndActions(t *testing.T) {
 			t.Fatalf("鱼种 key 为空或重复: %q", profile.FishKey)
 		}
 		seen[profile.FishKey] = true
-		if profile.ProfileVersion != fishEcologyProfileVersion {
-			t.Errorf("%s profile_version=%d", profile.FishKey, profile.ProfileVersion)
+		// 资产里的 profile_version 只是生成时的标记，判鱼侧一律以代码常量为准
+		// （defaultFishEcology 会覆写），所以这里校验的是覆写后的实际值。
+		if got := defaultFishEcology(profile.FishKey).ProfileVersion; got != fishEcologyProfileVersion {
+			t.Errorf("%s profile_version=%d", profile.FishKey, got)
 		}
 		if profile.RarityTier < 0 || profile.RarityTier > 3 {
 			t.Errorf("%s rarity_tier=%d", profile.FishKey, profile.RarityTier)

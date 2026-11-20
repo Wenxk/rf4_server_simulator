@@ -9,15 +9,18 @@ import (
 // FishEcologyLoc 一条「水域 × 鱼种」的生态档案覆盖。
 // 指针字段为 nil = 该字段继承全局 fish_ecology（部分覆盖语义）。
 type FishEcologyLoc struct {
-	StatLoc     string   `json:"stat_loc"`
-	FishKey     string   `json:"fish_key"`
-	LayerMin    *float64 `json:"layer_min"`
-	LayerPref   *float64 `json:"layer_pref"`
-	LayerMax    *float64 `json:"layer_max"`
-	TempMinC    *float64 `json:"temp_min_c"`
-	TempPrefC   *float64 `json:"temp_pref_c"`
-	TempMaxC    *float64 `json:"temp_max_c"`
-	DielMask    *int64   `json:"diel_mask"`
+	StatLoc   string   `json:"stat_loc"`
+	FishKey   string   `json:"fish_key"`
+	LayerMin  *float64 `json:"layer_min"`
+	LayerPref *float64 `json:"layer_pref"`
+	LayerMax  *float64 `json:"layer_max"`
+	TempMinC  *float64 `json:"temp_min_c"`
+	TempPrefC *float64 `json:"temp_pref_c"`
+	TempMaxC  *float64 `json:"temp_max_c"`
+	DielMask  *int64   `json:"diel_mask"`
+	// DielCurve 四段曲线 `[夜,晨,昼,昏]`：nil = 继承全局曲线，空串 = 该水域该鱼种
+	// 显式回退到位图判断（覆盖全局曲线）。
+	DielCurve   *string  `json:"diel_curve"`
 	SeasonMask  *int64   `json:"season_mask"`
 	DietJSON    *string  `json:"diet_json"`
 	WeatherJSON *string  `json:"weather_json"`
@@ -34,7 +37,7 @@ func (db *DB) ListFishEcologyLoc(ctx context.Context, statLoc string) ([]FishEco
 	}
 	rows, err := db.SQL.QueryContext(ctx, `
 		SELECT stat_loc, fish_key, layer_min, layer_pref, layer_max,
-		       temp_min_c, temp_pref_c, temp_max_c, diel_mask, season_mask,
+		       temp_min_c, temp_pref_c, temp_max_c, diel_mask, diel_curve, season_mask,
 		       diet_json, weather_json, activity, enabled, updated_by, updated_ts
 		FROM fish_ecology_loc WHERE stat_loc=? ORDER BY fish_key`, statLoc)
 	if err != nil {
@@ -59,7 +62,7 @@ func (db *DB) AllFishEcologyLoc(ctx context.Context) ([]FishEcologyLoc, error) {
 	}
 	rows, err := db.SQL.QueryContext(ctx, `
 		SELECT stat_loc, fish_key, layer_min, layer_pref, layer_max,
-		       temp_min_c, temp_pref_c, temp_max_c, diel_mask, season_mask,
+		       temp_min_c, temp_pref_c, temp_max_c, diel_mask, diel_curve, season_mask,
 		       diet_json, weather_json, activity, enabled, updated_by, updated_ts
 		FROM fish_ecology_loc`)
 	if err != nil {
@@ -86,16 +89,18 @@ func scanFishEcologyLoc(sc rowScanner) (FishEcologyLoc, error) {
 	var layerMin, layerPref, layerMax sql.NullFloat64
 	var tempMin, tempPref, tempMax sql.NullFloat64
 	var dielMask, seasonMask, enabled sql.NullInt64
+	var dielCurve sql.NullString
 	var dietJSON, weatherJSON sql.NullString
 	var activity sql.NullFloat64
 	if err := sc.Scan(&o.StatLoc, &o.FishKey, &layerMin, &layerPref, &layerMax,
-		&tempMin, &tempPref, &tempMax, &dielMask, &seasonMask,
+		&tempMin, &tempPref, &tempMax, &dielMask, &dielCurve, &seasonMask,
 		&dietJSON, &weatherJSON, &activity, &enabled, &o.UpdatedBy, &o.UpdatedTS); err != nil {
 		return o, err
 	}
 	o.LayerMin, o.LayerPref, o.LayerMax = nullF(layerMin), nullF(layerPref), nullF(layerMax)
 	o.TempMinC, o.TempPrefC, o.TempMaxC = nullF(tempMin), nullF(tempPref), nullF(tempMax)
 	o.DielMask, o.SeasonMask, o.Enabled = nullI(dielMask), nullI(seasonMask), nullI(enabled)
+	o.DielCurve = nullS(dielCurve)
 	o.DietJSON, o.WeatherJSON = nullS(dietJSON), nullS(weatherJSON)
 	o.Activity = nullF(activity)
 	return o, nil
@@ -136,19 +141,20 @@ func (db *DB) UpsertFishEcologyLoc(ctx context.Context, o FishEcologyLoc, update
 	_, err := db.SQL.ExecContext(ctx, `
 		INSERT INTO fish_ecology_loc(
 			stat_loc, fish_key, layer_min, layer_pref, layer_max,
-			temp_min_c, temp_pref_c, temp_max_c, diel_mask, season_mask,
+			temp_min_c, temp_pref_c, temp_max_c, diel_mask, diel_curve, season_mask,
 			diet_json, weather_json, activity, enabled, updated_by, updated_ts)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(stat_loc, fish_key) DO UPDATE SET
 			layer_min=excluded.layer_min, layer_pref=excluded.layer_pref,
 			layer_max=excluded.layer_max, temp_min_c=excluded.temp_min_c,
 			temp_pref_c=excluded.temp_pref_c, temp_max_c=excluded.temp_max_c,
-			diel_mask=excluded.diel_mask, season_mask=excluded.season_mask,
+			diel_mask=excluded.diel_mask, diel_curve=excluded.diel_curve,
+			season_mask=excluded.season_mask,
 			diet_json=excluded.diet_json, weather_json=excluded.weather_json,
 			activity=excluded.activity, enabled=excluded.enabled,
 			updated_by=excluded.updated_by, updated_ts=excluded.updated_ts`,
 		o.StatLoc, o.FishKey, o.LayerMin, o.LayerPref, o.LayerMax,
-		o.TempMinC, o.TempPrefC, o.TempMaxC, o.DielMask, o.SeasonMask,
+		o.TempMinC, o.TempPrefC, o.TempMaxC, o.DielMask, o.DielCurve, o.SeasonMask,
 		o.DietJSON, o.WeatherJSON, o.Activity, o.Enabled, updatedBy, o.UpdatedTS)
 	return err
 }
