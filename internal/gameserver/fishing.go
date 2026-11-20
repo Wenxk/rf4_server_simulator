@@ -1496,7 +1496,7 @@ func (s *Server) rollFishFromDBWithRules(loc, bait string, gearCapKg float64, bo
 			sample := func() float64 {
 				return float64(s.sampleWeightDB(cctx, key, s.baitWeightModeForRoll(key, c.baits, c), scale, capG, c))
 			}
-			w = int64(s.applyRollTrophyLuck(sample(), bonus.TrophyLuck, sample))
+			w = int64(applyTrophyLuck(sample(), bonus.TrophyLuck, sample))
 		}
 		if w == 0 {
 			for i, candidate := range keys {
@@ -1978,7 +1978,7 @@ func (s *Server) rollFishPoolsWithRules(loc string, gearCapKg float64, bonus fis
 		upper = math.Min(upper, capG/scale)
 	}
 	sample := func() float64 { return triangular(minG, maxG, mode, upper) }
-	w := s.applyRollTrophyLuck(sample(), bonus.TrophyLuck, sample)
+	w := applyTrophyLuck(sample(), bonus.TrophyLuck, sample)
 	if w == 0 {
 		return nil
 	}
@@ -2015,20 +2015,15 @@ func poolWeightCapG(gearCapKg, fightTolerance float64) float64 {
 }
 
 // applyTrophyLuck 按技能概率将鱼提升一档，最高为 4 档；无加成时保持原档位。
+//
+// 档位比例模式（grade_ratio_enabled）下仍然生效：它决定的是「这套装备/技能能不能
+// 把这条鱼往上抬一档」，与后台配置的四档基础占比是两回事——面板填的是无幸运时的
+// 基准，实际出鱼率会随玩家幸运略高。这是玩家升级装备与技能的直接回报，不能屏蔽。
 func applyTrophyLuck(weight, luck float64, sample func() float64) float64 {
 	if luck > 0 && rand.Float64() < luck {
 		return math.Max(weight, sample())
 	}
 	return weight
-}
-
-// applyRollTrophyLuck 统一按发鱼模式决定奖杯幸运是否参与；档位比例是总开关，
-// 开启后任何旧加成都不能改写配置的四档份额。
-func (s *Server) applyRollTrophyLuck(weight, luck float64, sample func() float64) float64 {
-	if s.gradeRatioEnabled() {
-		return weight
-	}
-	return applyTrophyLuck(weight, luck, sample)
 }
 
 func triangular(min, max, mode float64, upperBounds ...float64) float64 {

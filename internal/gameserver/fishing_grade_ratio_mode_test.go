@@ -3,7 +3,6 @@ package gameserver
 import (
 	"math"
 	"testing"
-	"time"
 )
 
 // 饵效倍率不得改变四档比例；面板显示的占比就是实际发鱼的占比。
@@ -32,26 +31,29 @@ func TestGradeRatioSharesIgnoreBaitModeMultiplier(t *testing.T) {
 	}
 }
 
-func TestGradeRatioDisablesTrophyLuckResample(t *testing.T) {
-	srv := &Server{
-		tunCache: map[string]float64{"grade_ratio_enabled": 1},
-		tunAt:    time.Now(),
+// 档位比例下 TrophyLuck 必须继续生效：四档占比是「无幸运时的基准」，
+// 装备与技能带来的上星概率是玩家升级的直接回报，不能被比例模式吞掉。
+func TestGradeRatioKeepsTrophyLuckResample(t *testing.T) {
+	up := func() float64 { return 500 }
+	// luck=1 必定触发一次「取更高体重」的重采样。
+	if got := applyTrophyLuck(300, 1, up); got != 500 {
+		t.Fatalf("幸运拉满时应抬到更高体重 500，实得 %g", got)
 	}
-	got := srv.applyRollTrophyLuck(300, 2, func() float64 { return 500 })
-	if got != 300 {
-		t.Fatalf("档位比例开启时 TrophyLuck 不得重采样，实得 %g", got)
-	}
-
-	srv.tunCache["grade_ratio_enabled"] = 0
-	got = srv.applyRollTrophyLuck(300, 2, func() float64 { return 500 })
-	if got != 500 {
-		t.Fatalf("档位比例关闭后应恢复 TrophyLuck 重采样，实得 %g", got)
+	// 没有幸运时保持原值，不会凭空上档。
+	if got := applyTrophyLuck(300, 0, up); got != 300 {
+		t.Fatalf("无幸运时应保持 300，实得 %g", got)
 	}
 }
 
-func TestGradeRatioRetainedMassIgnoresTrophyLuck(t *testing.T) {
+// 查询预估也必须按幸运放大，否则玩家看到的「预估上星率」与实际不符。
+func TestGradeRatioRetainedMassAppliesTrophyLuck(t *testing.T) {
 	law := fishWeightLaw{roundedSurvival: func(int64) float64 { return .4 }}
-	if got := law.retainedMass(1000, 2); got != .4 {
-		t.Fatalf("档位比例查询预估不得按 TrophyLuck 放大，实得 %g", got)
+	// q*(1+luck*(1-q)) = 0.4*(1+0.5*0.6) = 0.52
+	if got := law.retainedMass(1000, .5); math.Abs(got-.52) > 1e-9 {
+		t.Fatalf("预估保留质量应按幸运放大到 0.52，实得 %g", got)
+	}
+	// 无幸运时回到基准占比。
+	if got := law.retainedMass(1000, 0); math.Abs(got-.4) > 1e-9 {
+		t.Fatalf("无幸运时应为基准 0.4，实得 %g", got)
 	}
 }

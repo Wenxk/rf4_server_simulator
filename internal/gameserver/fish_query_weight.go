@@ -35,8 +35,10 @@ func (d fishWeightLaw) survival(weight float64) float64 {
 
 func (d fishWeightLaw) retainedMass(minimumG int64, luck float64) float64 {
 	if d.roundedSurvival != nil {
-		// 档位比例模式按配置绝对占比，TrophyLuck 不得把高档概率二次放大。
-		return d.roundedSurvival(minimumG)
+		// 档位比例给出的是无幸运时的基准占比；奖杯幸运在这里把高档的保留质量
+		// 往上抬，玩家换装备/升技能才看得到上星率的差别。
+		q := d.roundedSurvival(minimumG)
+		return q * (1 + clampFloat(luck, 0, 1)*(1-q))
 	}
 	if d.scale <= 0 || d.mass == nil || d.upper <= d.lower {
 		return 0

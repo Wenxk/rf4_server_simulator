@@ -22,7 +22,8 @@ Status: done
 
 - `internal/gameserver/fishing.go`：`sampleWeightDB` 在比例模式开启时，以 `cachedSettleStatics` 的 `[0..2]` 作为档位线；关闭时继续使用原对数正态路径。
 - 比例参数为 `grade_ratio_enabled`、`grade_pct_below`、`grade_pct_qualified`、`grade_pct_trophy`、`grade_pct_super`；开关代码与后台默认值为 1。
-- 饵效倍率只影响鱼种选择；档位比例开启时不得再改写四档份额。`TrophyLuck`、鱼猎阶段/保底/回访和钩型软匹配也不得改写配置占比。
+- 饵效倍率只影响鱼种选择；档位比例开启时不得再改写四档份额。鱼猎阶段/保底/回访和钩型软匹配也不得改写配置占比。
+- `TrophyLuck`（装备与技能带来的上星概率）例外：四档占比是**无幸运时的基准**，幸运仍可把单次渔获抬高一档。玩家升级装备/技能必须看得到上星率变化，否则成长没有回报；因此实际高档率会略高于面板基准，这是设计取舍而非偏差。
 - 档位比例是档位派发总开关：开启时淡水 `sampleHuntWeight` 直接走比例采样，不再叠加鱼猎阶段、奖杯保底/补偿和钩型软匹配；海图声呐复用同一组四档权重。关闭后恢复阶段权重与 `hook_spawn_match_strength`。
 - `internal/admin/api.go`：`grade_ratio_enabled` 纳入 0/1 开关校验。
 - `internal/admin/web/index.html`：新增「鱼获档位比例」滑杆组，四档使用相对权重并实时显示自动归一后的实际占比；保存时写入总和 100% 的数值，不要求手动凑数。
@@ -33,7 +34,8 @@ Status: done
 
 - 单元/行为测试：`internal/gameserver/fishing_grade_ratio_test.go` 覆盖默认比例、参数即时生效、缺档位归一化、默认开启、显式关闭回退和装备上限。
 - 优先级测试：同一服务端同时配置档位比例开启与钩型软匹配强度 2，断言有效强度为 0；关闭档位比例后强度恢复为 2。
-- 绝对占比测试：饵效倍率和 `TrophyLuck` 在档位比例开启时都不得改变四档权重；查询预估的 `retainedMass` 也不得按 `TrophyLuck` 放大。
+- 绝对占比测试：饵效倍率在档位比例开启时不得改变四档权重。
+- 幸运上限测试：`TrophyLuck` 仍可在比例采样后抬高单次渔获档位，`retainedMass` 按幸运放大——保证装备/技能成长有可观测回报。
 - 总开关测试：将未达标比例设为 0、合格设为 100%，在鱼猎阶段开启时连续调用 `sampleHuntWeight`，必须全部返回合格档；海图声呐四档权重必须与配置占比一致。
 - 归一化测试：分别使用总和 100、总和 4、总和 50 的四档相对权重，断言最终有效占比按权重自动归一；后台 API 拒绝负数和非数字权重。
 - 回归测试：构造 `fish_grade_lines.qualified_g` 与 `settleStatics[0]` 不一致的鱼种，调用真实 `sampleWeightDB`，再用最终 `rollGradeForRoll` 判档，确认不会出现由错误抽样线导致的未达标鱼。
