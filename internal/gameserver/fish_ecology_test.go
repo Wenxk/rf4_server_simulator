@@ -48,6 +48,16 @@ func TestFishEcologySeedsSpeciesAndMatchesWaterLayers(t *testing.T) {
 	if version != fishEcologyProfileVersion || layer <= .01 {
 		t.Fatalf("旧版本生态行未自动升级: version=%d layer=%f", version, layer)
 	}
+	// 昼夜曲线必须跟着版本升级一起灌进来：只抬版本号不灌曲线，等于白改
+	// （曲线为空会静默回退到位图 1.0/0.35，手感退回改前）。
+	var curve string
+	if err := db.SQL.QueryRow(
+		`SELECT diel_curve FROM fish_ecology WHERE fish_key='n.pike'`).Scan(&curve); err != nil {
+		t.Fatal(err)
+	}
+	if dielCurveWeights(curve) == nil {
+		t.Fatalf("旧版本生态行升级时未恢复昼夜曲线: %q", curve)
+	}
 	srv.tunCache = map[string]float64{"fish_ecology_enabled": 1}
 	srv.tunAt = time.Now()
 
