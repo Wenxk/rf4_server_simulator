@@ -76,6 +76,8 @@ func NewServer(cfg config.Admin, db *store.DB, log logger, webFS fs.FS) *Server 
 	mux.HandleFunc("GET /api/dashboard", auth(s.handleDashboard))
 	mux.HandleFunc("GET /api/tunables", auth(s.handleTunableList))
 	mux.HandleFunc("POST /api/tunables", auth(s.handleTunableSet))
+	// 技能升级概率三档（原版 / 百分百 / 自定义）原子切换。
+	mux.HandleFunc("POST /api/skill_gain_mode", auth(s.handleSkillGainModeSet))
 	mux.HandleFunc("POST /api/fish_tv_test", auth(s.handleFishTVTest))
 	mux.HandleFunc("GET /api/players", auth(s.handlePlayers))
 	mux.HandleFunc("GET /api/players/detail", auth(s.handlePlayerDetail))
@@ -482,6 +484,15 @@ func (s *Server) handleTunableSet(w http.ResponseWriter, r *http.Request) {
 		v, err := strconv.ParseFloat(req.Value, 64)
 		if err != nil || math.IsNaN(v) || math.IsInf(v, 0) || v < 0 {
 			httpError(w, 400, "鱼获档位权重必须是非负数字")
+			return
+		}
+	}
+	// 技能升级概率：0=原版随熟练度衰减的公式，1~100=每次判定按该百分比（100 必涨）。
+	// 超范围会让技能要么永远不涨、要么一次必涨，两者都会把成长节奏改坏。
+	if strings.HasPrefix(req.Key, "skill_gain_pct_") {
+		v, err := strconv.ParseFloat(strings.TrimSpace(req.Value), 64)
+		if err != nil || math.IsNaN(v) || math.IsInf(v, 0) || v < 0 || v > 100 {
+			httpError(w, 400, "技能升级概率必须是 0~100 的数字（0=原版公式）")
 			return
 		}
 	}

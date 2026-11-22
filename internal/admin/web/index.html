@@ -450,6 +450,15 @@ const TUNABLE_DEFS=[
   ['fish_roll_trace_enabled','判鱼追踪开关',1,'1=每杆真实咬钩都留一份决策快照（候选鱼种与各层权重），供「钓场与鱼口」页的判鱼追踪面板排错；0=完全不采、零开销。纯诊断，不参与判鱼'],
   ['fish_roll_trace_keep','判鱼追踪保留条数',300,'追踪表按此条数环形保留，超出丢最旧；0=不落库。单玩家咬钩约 30 秒一次，300 条足够回溯最近一段时间'],
   ['fish_diel_weight_enabled','昼夜权重开关',1,'1=按鱼种的昼夜四段曲线调整判鱼权重：峰值段 ×1、最不活跃段最低 ×0.08（只压不抬）。曲线存在 fish_ecology.diel_curve，顺序 [夜,晨,昼,昏]，逐鱼可在生态弹窗或水域覆盖里改。独立于生态总开关，生态关着也生效；0=昼夜完全中性'],
+  ['skill_gain_pct_1','技能成长·浮子钓鱼',0,'0=原版概率（随熟练度衰减）；1~100=每次判定直接按该百分比，100=必定增长。只替换「这次涨不涨」，涨 0.1/0.2 的增量规则不变；固定模式下不叠加欢乐时光修正'],
+  ['skill_gain_pct_2','技能成长·纺车钓鱼',0,'同上：0=原版，1~100=固定百分比'],
+  ['skill_gain_pct_3','技能成长·底钓',0,'同上：0=原版，1~100=固定百分比'],
+  ['skill_gain_pct_11','技能成长·海钓',0,'同上：0=原版，1~100=固定百分比'],
+  ['skill_gain_pct_4','技能成长·捕获鱼饵（挖饵/饵料制作）',0,'挖饵与饵料制作共用该大类；0=原版，1~100=固定百分比。挖饵按每次独立判定，制作按每个制作件独立判定'],
+  ['skill_gain_pct_6','技能成长·烹调术',0,'同上：0=原版，1~100=固定百分比'],
+  ['skill_gain_pct_7','技能成长·配置饵料',0,'混合诱饵/PVA 等配方走该大类（本地补齐，上游清单漏了这档）；0=原版，1~100=固定百分比'],
+  ['skill_gain_pct_5','技能成长·大类 5（801-815）',0,'尚未定名的大类（节点 801-815）；0=原版，1~100=固定百分比。保留以对齐上游清单'],
+  ['skill_gain_pct_8','技能成长·制作鱼饵（手工饵）',0,'同上：0=原版，1~100=固定百分比'],
   ['fish_diel_inactive_block','非活跃时段禁口',1,'1=曲线值 <0.5 的段（= 位图未置位 = 鱼种卡上的活跃时段之外）该鱼权重直接归零，整段时间钓不到这条鱼；0=回到旧口径，只乘曲线系数（边缘段常剩 0.3~0.45，会出现「卡片写夜行、凌晨照样连竿」）。只作用于昼夜层，峰值段不受影响'],
   ['fish_weight_scale','鱼体重倍率',1,'全地图鱼重整体缩放，2=两倍重'],
   ['fish_weight_cap','鱼重受钓具上限',0,'1=超出钓具负重的鱼按上限截断；0=不限制'],
@@ -1366,6 +1375,39 @@ function spawnModeControl(t){
  else if(mode==='two_stage')body=twoStageSliderCard('daily',t)+twoStageSliderCard('baited',t);
  return `<div class="tunable-field tunable-wide"><div><label>发鱼模式</label><div class="tunable-hint">三种模式互斥，点击即整体切换（写入三个开关，单事务保存）；切换后最多 30 秒生效。海钓与路亚在三种模式下都走四阶段。</div></div><div style="display:flex;gap:8px;flex-wrap:wrap">${btns}</div>${legacyNote}${fishHuntNote}</div>${body}`;
 }
+// 技能成长三档：原版 / 全部 100% / 自定义。后端只认九个 skill_gain_pct_*，
+// 这里只是把它们一次性批量写掉（单事务），避免逐项保存留半套配置。
+const SKILL_GAIN_KEYS=['skill_gain_pct_1','skill_gain_pct_2','skill_gain_pct_3','skill_gain_pct_11','skill_gain_pct_4','skill_gain_pct_6','skill_gain_pct_7','skill_gain_pct_5','skill_gain_pct_8'];
+function skillGainModeOf(t){
+  const vals=SKILL_GAIN_KEYS.map(k=>String(Number((t||{})[k]??0)));
+  if(vals.every(v=>v==='100'))return 'fixed100';
+  if(vals.every(v=>v==='0'||v==='NaN'))return 'native';
+  return 'custom';
+}
+function skillGainCard(t){
+  const mode=skillGainModeOf(t);
+  const opts=[['native','原版概率','按熟练度衰减的原始公式'],['fixed100','全部 100%','每次都涨，用于快速验证'],['custom','自定义','用上面九个逐项值']];
+  const btns=opts.map(([m,label,hint])=>`<button class="btn sm" style="min-width:150px;${mode===m?'background:#2f7d4f;border-color:#2f7d4f':'opacity:.6'}" onclick="askSkillGainMode('${m}')" title="${hint}">${label}${mode===m?'：当前':''}</button>`).join('');
+  return `<section class="tunable-group" data-page="reward"><h3>技能成长一键模式<small style="font-weight:400;margin-left:8px;color:var(--muted)">原版 / 全部 100% / 自定义；切换会一次性写入九个概率（单事务，最多 30 秒生效）</small></h3><div class="tunable-fields"><div class="tunable-field tunable-wide"><div><label>当前模式</label><div class="tunable-hint">「自定义」只改标记、保留下面逐项填的值；要真生效请把想改的大类填成 1~100。</div></div><div style="display:flex;gap:8px;flex-wrap:wrap">${btns}</div></div></div></section>`;
+}
+async function askSkillGainMode(mode){
+  const names={native:'原版概率',fixed100:'全部 100% 必涨',custom:'自定义'};
+  const cur=skillGainModeOf(lastTunables);
+  if(cur===mode){toast('当前已是「'+names[mode]+'」');return}
+  if(mode==='custom'){try{await saveSkillGainMode('custom')}catch(e){toast(e.message,'bad')}return}
+  askConfirm('切换技能成长模式','切换为「'+names[mode]+'」？九个技能大类会被一次性改写，逐项值随后可以再调。',async()=>{
+    try{
+      await api('/api/skill_gain_mode',{method:'POST',body:JSON.stringify({mode})});
+      toast('已切换为「'+names[mode]+'」，最多 30 秒生效');
+      await loadTunables();
+    }catch(e){toast(e.message,'bad')}
+  });
+}
+async function saveSkillGainMode(mode){
+  await api('/api/skill_gain_mode',{method:'POST',body:JSON.stringify({mode})});
+  toast('已标记为自定义，逐项值保持不变');
+  await loadTunables();
+}
 async function askSpawnMode(mode){
  const opt=SPAWN_MODE_OPTIONS.find(o=>o[0]===mode);
  if(!opt)return;
@@ -1438,11 +1480,12 @@ async function loadTunables(){
   ]},
   {id:'reward',tab:'收益与通知',sub:'经验 · 掉卡 · 礼包 · 档位 · 聊天',groups:[
     ['经验与结算','改后只对新结算的鱼生效，已入护的不重算',['xp_gain','release_xp_ratio']],
+    ['技能成长','按技能大类覆盖升级概率：0=原版（随熟练度衰减），1~100=固定百分比（100 必涨）。只换「是否涨」，增量仍是 0.1/0.2；固定模式不叠加欢乐时光修正',['skill_gain_pct_1','skill_gain_pct_2','skill_gain_pct_3','skill_gain_pct_11','skill_gain_pct_4','skill_gain_pct_6','skill_gain_pct_7','skill_gain_pct_5','skill_gain_pct_8']],
     ['钓获掉卡','本地自定概率；最多 30 秒生效，重连或重复结算不补抽',['card_drop_normal','card_drop_star','card_drop_blue','card_drop_rare_scale']],
     ['钓获礼包','钓上鱼当场开箱，奖励直接进背包并播报',['loot_box_enabled','loot_box_chance','loot_box_trophy_guarantee']],
     ['聊天通知','跑鱼提示与上钩播报分别设置；保存后最多 30 秒生效',['fish_escape_taunt','fish_hooked_chat']],
   ],
-  spawnCard:true},
+  spawnCard:true, skillCard:true},
   {id:'event',tab:'限时活动',sub:'新年 · 周年 · 分支与结束时间',groups:[
     ['限时活动','同一时间只允许开启一个活动 · 分支 ID 可在下方任意组合，开关决定挂到新年还是周年面板 · 改完都要完整退出游戏重登',['event_newyear_enabled','event_anniversary_enabled','event_branches','event_anniversary_end_unix']],
   ]},
@@ -1454,6 +1497,7 @@ async function loadTunables(){
    `<button class="params-tab${p.id===cur?' on':''}" data-page="${p.id}" onclick="setParamsPage('${p.id}')"${p.id===cur?' aria-current="page"':''}>${esc(p.tab)}<small>${esc(p.sub)}</small></button>`).join('');
  $('#paramsBody').innerHTML=PAGES.map(p=>
    p.groups.map(g=>group(g[0],g[1],g[2],p.id)).join('')
+   + (p.skillCard ? skillGainCard(t) : '')
    + (p.spawnCard ? `<section class="tunable-group" data-page="${p.id}"><h3>发鱼模式<small style="font-weight:400;margin-left:8px;color:var(--muted)">档位比例 · 鱼猎四阶段 · 两档制（底浮）三选一；选中哪种就显示哪组的权重设置</small></h3><div class="tunable-fields">${spawnModeControl(t)}</div></section>` : '')
    + (p.id==='event' ? eventStageGiftsCard(t) : '')
  ).join('');

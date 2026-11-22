@@ -909,6 +909,57 @@ func BiteModeFor(t map[string]string) string {
 	return "mixed"
 }
 
+// 八类技能 + 本地补的「配置饵料」。
+//
+// 上游清单是 1/2/3/11/4/6/5/8，漏了 7（craftFeedSkillID 配置饵料），
+// 结果是「一键百分百」时混合诱饵仍走原版衰减公式，与功能承诺不符。
+// 5 是 801-815 那组尚未定名的大类，保留以对齐上游。
+var skillGainPctKeys = []string{
+	"skill_gain_pct_1", "skill_gain_pct_2", "skill_gain_pct_3", "skill_gain_pct_11",
+	"skill_gain_pct_4", "skill_gain_pct_6", "skill_gain_pct_7", "skill_gain_pct_5",
+	"skill_gain_pct_8",
+}
+
+// SkillGainModeSet 原子切换技能升级概率模式。
+// native=全部 0（原版），fixed100=全部 100，custom 只更新 UI 标记，保留现有逐项值。
+func (d *DB) SkillGainModeSet(ctx context.Context, mode, updatedBy string) error {
+	pct := ""
+	switch mode {
+	case "native":
+		pct = "0"
+	case "fixed100":
+		pct = "100"
+	case "custom":
+	default:
+		return fmt.Errorf("未知技能升级概率模式: %s", mode)
+	}
+	now := float64(time.Now().Unix())
+	tx, err := d.SQL.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	if pct != "" {
+		for _, key := range skillGainPctKeys {
+			if _, err := tx.ExecContext(ctx, `
+				INSERT INTO tunables(key, value, updated_by, updated_ts) VALUES(?,?,?,?)
+				ON CONFLICT (key) DO UPDATE SET value=?, updated_by=?, updated_ts=?`,
+				key, pct, updatedBy, now,
+				pct, updatedBy, now); err != nil {
+				return err
+			}
+		}
+	}
+	if _, err := tx.ExecContext(ctx, `
+		INSERT INTO tunables(key, value, updated_by, updated_ts) VALUES('skill_gain_mode',?,?,?)
+		ON CONFLICT (key) DO UPDATE SET value=?, updated_by=?, updated_ts=?`,
+		mode, updatedBy, now,
+		mode, updatedBy, now); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 // BiteModeSet 原子切换鱼汛模式：realistic=五开，legacy=五关。
 func (d *DB) BiteModeSet(ctx context.Context, mode, updatedBy string) error {
 	value := "0"
