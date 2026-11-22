@@ -29,6 +29,10 @@ internal/wiregen/testdata/corpus.jsonl.gz
 .DS_Store
 Thumbs.db
 
+# 前端依赖：后台 UI 冒烟测试用的 playwright（本机 npm i 产生，不入库）；
+# 它还会抢 NODE_PATH 的解析，跑测试时请用仓库外的依赖或临时移开
+node_modules/
+
 # 逆向资料（客户端文件/反编译产物/抓包），只留在本地，永不入库
 /ref/
 il2csharp_full
