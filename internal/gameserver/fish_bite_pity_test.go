@@ -6,7 +6,7 @@ import (
 )
 
 // 空轮三件套：空因标注、保底杂口（环境放宽）、空轮节奏由 tunable 控制。
-// 食性硬门不放宽是本设计的红线：pityEnv 下 G1 依然剔除非掠食鱼。
+// 保底只放宽环境类因素，不放宽 allow/deny。
 
 // 保底杂口：分布散布为 0 的鱼在 pityEnv 下保底 0.15，正常路径仍为 0。
 func TestPityDistributionFloor(t *testing.T) {
@@ -42,8 +42,8 @@ func TestPityDistributionFloor(t *testing.T) {
 	_ = s
 }
 
-// 保底杂口：G2 水层地板在 pityEnv 下抬到 ≥0.05；G1 拟饵硬门不受 pityEnv 影响。
-func TestPityLayerFloorButNotLureGate(t *testing.T) {
+// 保底杂口：G2 水层地板在 pityEnv 下抬到 ≥0.05。
+func TestPityLayerFloor(t *testing.T) {
 	s, db := seedBaitRuleTest(t)
 	if _, err := db.SQL.Exec(`INSERT OR REPLACE INTO fish_ecology(fish_key,layer_min,layer_pref,layer_max,temp_min_c,temp_pref_c,temp_max_c,diel_mask,diet_json)
 		VALUES('frog',0.9,0.95,1.0,0,20,40,15,'{"lure":0.2,"worm":1.0}')`); err != nil {
@@ -72,15 +72,5 @@ func TestPityLayerFloorButNotLureGate(t *testing.T) {
 	}
 	if want := 100 * 0.05; wp[0] != want {
 		t.Fatalf("pity 地板 ×0.05, got %v", wp[0])
-	}
-	// G1 红线：拟饵(lure 0.2 < 0.30)即使 pityEnv 也必须剔除。
-	lureCtx := fishRollContext{baits: []string{"rule_lure"}, now: time.Now()}
-	lurePity := lureCtx
-	lurePity.pityEnv = true
-	if k, _ := s.applyBiteGates(s.dbCtx(), []string{"frog"}, []float64{100}, lureCtx, cfg); len(k) != 0 {
-		t.Fatal("G1 拟饵硬门应剔除 frog")
-	}
-	if k, _ := s.applyBiteGates(s.dbCtx(), []string{"frog"}, []float64{100}, lurePity, cfg); len(k) != 0 {
-		t.Fatal("pityEnv 不得放宽 G1 拟饵硬门")
 	}
 }

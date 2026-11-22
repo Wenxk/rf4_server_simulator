@@ -62,14 +62,25 @@ func TestGroundbaitAndPvaConsumeOnWaterEntryOnly(t *testing.T) {
 				t.Fatal("未入水时不得消耗窝料/PVA")
 			}
 
-			// 首次入水位出现：消耗钓组上这 1 个。
+			// 首次入水位出现：消耗钓组上这 1 个，并立刻从背包补装同款（自动装填）。
 			tick(0x400)
 			if row, _ := db.GetItemByGUID(ctx, mounted); row != nil {
 				t.Fatalf("入水后挂载实例应被消耗，仍存在 %+v", row)
 			}
-			// 同一杆持续在水中不会重复扣。
+			// 自动装填再预留一份：60 - 1(挂载) - 1(补装) = 58。
+			if row, err := db.GetItemByGUID(ctx, stack.GUID); err != nil || row == nil || row.Qty != 58 {
+				t.Fatalf("消耗 1 份并自动补装 1 份后来源堆应为 58，实得 %+v err=%v", row, err)
+			}
+			category := catGroundbaitMix
+			if itemID == "pva_stick_s" {
+				category = catPVAStick
+			}
+			if got := len(rigCompKeysOfCategory(s.storedRigComponents(ctx, rod), category)); got != 1 {
+				t.Fatalf("入水后应自动补装 1 份，实得 %d", got)
+			}
+			// 同一杆持续在水中不会重复扣，也不会重复补。
 			tick(0x400)
-			if row, err := db.GetItemByGUID(ctx, stack.GUID); err != nil || row == nil || row.Qty != 59 {
+			if row, err := db.GetItemByGUID(ctx, stack.GUID); err != nil || row == nil || row.Qty != 58 {
 				t.Fatalf("同一杆只应消耗 1 个，来源堆实得 %+v err=%v", row, err)
 			}
 		})

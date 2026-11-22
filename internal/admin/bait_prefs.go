@@ -39,21 +39,15 @@ type baitPrefRow struct {
 
 	// 鱼口画像（fish_ecology，与判鱼 G 层同表同源）：按类食性权重 + 水层 + 档位体重线。
 	Diet   map[string]float64 `json:"diet,omitempty"` // worm/fish/boilie/plant/crustacean/lure
-	LureOK bool               `json:"lure_ok"`        // lure≥0.30 过 G1 硬门
 	Layer  [3]float64         `json:"layer"`          // min/pref/max（0水面~1水底）
 	QualG  int64              `json:"qual_g"`         // 合格档体重（钩容量适配计算用）
 	TrophG int64              `json:"trophy_g"`
 
-	// 可编辑覆盖与轮换：source=override 表示该鱼已被后台规则覆盖。
-	Source     string                   `json:"source"` // default | override
-	Enabled    bool                     `json:"enabled"`
-	Groups     [][]string               `json:"groups"`
-	RotateSec  int64                    `json:"rotate_sec"`
-	RotateMode string                   `json:"rotate_mode"`
-	Rotation   gameserver.RotationState `json:"rotation"`
-	// AutoRotation 是独立的逐鱼自动轮换开关（表 fish_bait_auto_rotation），
-	// 与 rotate_mode 无关：开了它就不看手工组，按稀有度现抽本期开口饵。
-	AutoRotation bool `json:"auto_rotation"`
+	// 可编辑覆盖：source=override 表示该鱼已被后台规则覆盖。
+	Source       string                   `json:"source"` // default | override
+	Enabled      bool                     `json:"enabled"`
+	AutoRotation bool                     `json:"auto_rotation"`
+	Rotation     gameserver.RotationState `json:"rotation"`
 }
 
 type baitPrefEvidence struct {
@@ -136,8 +130,15 @@ func applyBiteVerdict(row *baitPrefRow, meta map[string]baitMeta) {
 		row.BiteVerdict = "无可用饵"
 		return
 	}
+	// 被停用的覆盖不参与判鱼：结论要用回落后的内置规则，不能用覆盖里的 allow。
+	allow, deny, bottom := row.Allow, row.Deny, row.BottomOh
+	if row.Source == "override" && !row.Enabled {
+		if info, ok := gameserver.ExportedBaitRules(row.NameZh); ok {
+			allow, deny, bottom = info.Allow, info.Deny, info.BottomOnly
+		}
+	}
 	for _, c := range cands {
-		verdict, _, _ := gameserver.ExportedBaitVerdict(row.NameZh, c.id, c.name, c.cat, c.lure, c.bt, c.pct, c.tier)
+		verdict, _, _ := gameserver.ExportedBaitVerdict(allow, deny, bottom, c.id, c.name, c.cat, c.lure, c.bt, c.tier)
 		switch verdict {
 		case "bite":
 			row.BiteReady++
@@ -364,7 +365,6 @@ func (s *Server) handleBaitPrefs(w http.ResponseWriter, r *http.Request) {
 			_ = json.Unmarshal([]byte(e[0].(string)), &diet)
 			row.Diet = diet
 			row.Layer = e[1].([3]float64)
-			row.LureOK = diet["lure"] >= 0.30
 		}
 		if g, ok := gradeByFish[f.key]; ok {
 			row.QualG, row.TrophG = g[0], g[1]
@@ -381,11 +381,9 @@ func (s *Server) handleBaitPrefs(w http.ResponseWriter, r *http.Request) {
 			row.HasRule = true
 			row.Allow, row.Deny = o.Allow, o.Deny
 			row.BottomOh, row.Cond = o.BottomOnly, o.Condition
-			row.Groups, row.RotateSec, row.RotateMode = o.Groups, o.RotateSec, o.RotateMode
 		}
 		row.AutoRotation = autoOn[f.key]
-		// 轮换状态：自动抽取优先（它不看手工组），否则按时间桶算手工组。
-		// 没有覆盖的鱼也能开自动抽取，所以这一段放在覆盖分支外面。
+		// 自动轮换：本期开口饵由同一套 exported 抽签算出；手工轮换组已删除。
 		if row.AutoRotation {
 			row.Rotation = gameserver.ExportedAutoRotation(f.key, autoBaits,
 				row.Allow, row.Deny, row.BottomOh, s.fishRarity(r.Context(), f.key),
@@ -394,8 +392,6 @@ func (s *Server) handleBaitPrefs(w http.ResponseWriter, r *http.Request) {
 			if !globalAutoOn {
 				row.Rotation.GlobalOff = true
 			}
-		} else if o, ok := overrides[f.name]; ok {
-			row.Rotation = gameserver.ExportedRotationState(o.Groups, o.RotateSec, o.RotateMode, now)
 		}
 		if a := byFish[f.key]; a != nil {
 			row.Tier3, row.Tier2, row.Total = a.tier3, a.tier2, a.total
@@ -422,6 +418,8 @@ func (s *Server) handleBaitPrefs(w http.ResponseWriter, r *http.Request) {
 		"rows":          out,
 		"fish_key_ok":   len(nameByKey),
 		"rules_enabled": s.baitRulesEnabled(r.Context()),
-		"now":           now.Unix(),
+		// 整类规则词：钓场页要把「颗粒」这类词标成「整类」，与具体饵名区分开。
+		"type_terms": gameserver.ExportedBaitTypeTerms(),
+		"now":        now.Unix(),
 	})
 }

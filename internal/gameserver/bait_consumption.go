@@ -655,8 +655,21 @@ func (s *Server) consumeBaitEvent(ctx context.Context, uid int64, rod, event str
 			out.Updated = append(out.Updated, guid)
 			continue
 		}
-		// 只消耗已挂载的一份，下一次抛竿前再补饵。
-		if _, err := consumeItemQtyTx(ctx, tx, row, 1); err != nil {
+		// 消耗型饵一次咬口吃掉整份：钩上这份几颗就扣几颗。扣减粒度必须跟玩家实际
+		// 挂上的数量一致——玉米浮×2 扣 2 颗、2+2 两个饵槽各扣 2 颗（合计 4 颗）、
+		// 成束蛆 5/10/15 也按整束扣。旧逻辑每口只扣 1 颗，钩上会残留半份，
+		// 玩家看到的就是「设置 2 颗，中鱼后变 1 颗」。发丝/雪人/POP-UP/方法/
+		// 刚性铰链/chod/maggot 各钓组都走这一条。
+		// 入水投放（窝料/PVA，baitUseRule 的 cast 分支）仍按每次 1 份投，
+		// 损耗型（拟饵、Zig 泡沫）走下面的 !consumed 分支按 durability 扣，都不吃这条。
+		eat := int64(1)
+		if !cast {
+			eat = row.Qty
+		}
+		if eat < 1 {
+			eat = 1
+		}
+		if _, err := consumeItemQtyTx(ctx, tx, row, eat); err != nil {
 			return out, err
 		}
 		if cast && (def.Category == 46 || def.Category == 30) {
@@ -827,6 +840,9 @@ func (s *Server) consumeCastBait(sess *Session, st *FishState) error {
 	if err == nil {
 		sess.pushBaitChange(change)
 		s.depositCastGroundbait(sess, st, change, fmt.Sprintf("%s:%d", rod, cast.UnixNano()))
+		// 食笼/PVA 入水即扣：立刻从背包补装同款，玩家不必每次手动往食笼里装料。
+		// 补的是「挂在竿上那一份」，不是落点格子里已经化开的那一锅。
+		s.autoReloadBaitSlots(sess, rod, "入水补窝")
 	}
 	return err
 }
@@ -967,6 +983,35 @@ func (s *Server) reloadBaitForCast(ctx context.Context, uid int64, rod string) (
 		}
 	}
 	return out, nil
+}
+
+// autoReloadBaitSlots 在「饵已经被吃掉、但这一杆还在钓」时立刻补挂同款库存。
+//
+// 触发点：吐饵（14/12 f0=1）、真脱钩（f0=2/8）、嘬饵否决，以及入水即消耗的窝料。
+//
+// 为什么现在就要补：客户端侧完全感知不到钩已空——饵的 4/21 和鱼离场是同一帧
+// 到的，杆还插在水里，玩家只会觉得"这条没上钩，还能继续等"。而服务端下一轮
+// 咬钩会卡在 canFishWithBait 上：直接置 Resolved 返回，不发鱼也不打日志，
+// 一杆就此静默死亡。补挂之后咬钩 timer 照常重排，等于自动重新开始钓鱼阶段。
+//
+// 只补同款：来源是 consumeBaitEvent 留下的 rebait:/refill: 记录，记录里存着
+// 原来的 item_id、钩位和（自制窝料的）配方。库存没有同款时什么都不做，
+// 记录留着给下一次抛竿/收竿再试，行为与改动前一致。
+func (s *Server) autoReloadBaitSlots(sess *Session, rod, reason string) {
+	if s == nil || sess == nil || s.DB == nil || rod == "" {
+		return
+	}
+	change, err := s.reloadBaitForCast(sess.pushCtx(), sess.Userid, rod)
+	if err != nil {
+		s.log.Warn("自动补饵失败", "rod", shortGUID(rod), "reason", reason, "err", err)
+		return
+	}
+	if len(change.Updated) == 0 && len(change.Removed) == 0 {
+		return
+	}
+	sess.pushBaitChange(change)
+	s.log.Info("自动补饵", "rod", shortGUID(rod), "reason", reason,
+		"updated", len(change.Updated), "removed", len(change.Removed))
 }
 
 func (s *Server) orderBaitsByHook(ctx context.Context, uid int64, rod string) error {

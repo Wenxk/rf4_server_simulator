@@ -153,6 +153,11 @@ type BaitRuleInfo struct {
 	Condition  string   `json:"condition"`
 }
 
+// ExportedBaitRuleKey 把鱼种中文名归一成规则表/覆盖表的查找键。
+// 后台要按「与判鱼同一把键」去匹配 fish_bait_override，否则「泥鳅鱼 / 泥鳅」
+// 这类写法差异会让后台算出的自动轮换名单和游戏里不一致。
+func ExportedBaitRuleKey(fishZh string) string { return ruleName(fishZh) }
+
 // ExportedBaitRules 按中文鱼名查规则表，供管理后台只读展示。
 // 返回 ok=false 表示该鱼在规则表里没有条目（严格模式下只能靠饵效证据放行）。
 func ExportedBaitRules(fishZh string) (BaitRuleInfo, bool) {
@@ -189,37 +194,46 @@ func ExportedBaitOutcomes(fishZh string, baits []struct {
 	out := make([]BaitOutcome, 0, len(baits))
 	for _, b := range baits {
 		rb := ruleBait{id: b.ID, name: b.NameZh, category: b.Category, lureType: b.LureType, baitType: b.BaitType}
-		allowed := hasRule && baitAllowedByRule(r, rb, nil)
-		blocked := hasRule && baitBlockedByRule(r, fishRollContext{}, rb)
-		if blocked {
-			out = append(out, BaitOutcome{BaitID: b.ID, Verdict: "blocked", Strength: 0, Reason: "规则标明不吃"})
-			continue
-		}
-		if allowed && hasRule {
-			out = append(out, BaitOutcome{BaitID: b.ID, Verdict: "bite", Strength: 1, Reason: "规则允许"})
+		if hasRule {
+			if baitBlockedByRule(r, fishRollContext{}, rb) {
+				out = append(out, BaitOutcome{BaitID: b.ID, Verdict: "blocked", Strength: 0, Reason: "规则标明不吃"})
+				continue
+			}
+			if baitAllowedByRule(r, rb) {
+				out = append(out, BaitOutcome{BaitID: b.ID, Verdict: "bite", Strength: 1, Reason: "规则允许"})
+				continue
+			}
+			out = append(out, BaitOutcome{BaitID: b.ID, Verdict: "blocked", Strength: 0, Reason: "不在本期 allow"})
 			continue
 		}
 		if b.Tier >= 3 {
 			out = append(out, BaitOutcome{BaitID: b.ID, Verdict: "bite", Strength: 0.6, Reason: "玩家实测常用"})
 			continue
 		}
-		out = append(out, BaitOutcome{BaitID: b.ID, Verdict: "fallback", Strength: 0.1, Reason: "规则未允许，仅保底咬口"})
+		if b.Tier >= 1 {
+			out = append(out, BaitOutcome{BaitID: b.ID, Verdict: "fallback", Strength: 0.1, Reason: "实证在榜，仅低权重"})
+			continue
+		}
+		out = append(out, BaitOutcome{BaitID: b.ID, Verdict: "blocked", Strength: 0, Reason: "无规则且无实证"})
 	}
 	return out
 }
 
 // ExportedBaitVerdict 单款饵的判定，给后台画「会咬/保底/不吃」三态。
-// 与 filterFishBaitSet 同源：规则允许 → 会咬；companion 实证 top 档 → 会咬；
-// 实证在榜 → 保底档；规则禁 → 不吃。
-// officialPct 只用于后台展示官服占比，不参与结论（2026-11-19 用户口径）。
-func ExportedBaitVerdict(fishZh, baitID, baitName string, category, lureType, baitType int64, officialPct float64, tier int) (string, float64, string) {
-	r, hasRule := lookupFishBaitRule(fishZh)
+// 与 filterFishBaitSet 同源：有规则时只认 allow（deny 优先），不再看 companion
+// 越级或食性硬门；无规则时才按 companion 证据兜底。
+func ExportedBaitVerdict(allow, deny, bottom []string, baitID, baitName string, category, lureType, baitType int64, tier int) (string, float64, string) {
+	r := fishBaitRule{allow: cleanRuleTerms(allow), deny: cleanRuleTerms(deny), bottomOnly: cleanRuleTerms(bottom)}
 	rb := ruleBait{id: baitID, name: baitName, category: category, lureType: lureType, baitType: baitType}
-	if hasRule && baitBlockedByRule(r, fishRollContext{}, rb) {
-		return "blocked", 0, "规则标明不吃"
-	}
-	if hasRule && baitAllowedByRule(r, rb, nil) {
-		return "bite", 1, "规则允许"
+	hasRule := len(r.allow) > 0
+	if hasRule {
+		if baitBlockedByRule(r, fishRollContext{}, rb) {
+			return "blocked", 0, "规则标明不吃"
+		}
+		if baitAllowedByRule(r, rb) {
+			return "bite", 1, "规则允许"
+		}
+		return "blocked", 0, "不在本期 allow"
 	}
 	if tier >= 3 {
 		return "bite", 0.6, "玩家实测常用"
@@ -227,7 +241,7 @@ func ExportedBaitVerdict(fishZh, baitID, baitName string, category, lureType, ba
 	if tier >= 1 {
 		return "fallback", 0.10, "实证在榜，仅低权重"
 	}
-	return "fallback", 0.1, "规则未允许，仅保底咬口"
+	return "blocked", 0, "无规则且无实证"
 }
 
 // ExportedBaitRuleCount 规则表条目数（前端展示用）。
@@ -306,17 +320,30 @@ var baitNameAliases = map[string][]string{
 // matchTerms 是预归一化的规则词表。构建池子要对 4123 款饵逐一匹配同一条
 // 规则，逐次重算 ruleName/ruleKey 会把同一批词归一化上万遍（实测占九成开销）。
 // 词表按规则归一化一次，饵自身归一化一次，之后全是纯字符串比较。
+//
+// termIdx 把「大类词」预先解析成 baitTypeTerms 下标（-1=普通饵名）：
+// 批量匹配时直接按枚举比较，不必每款饵再查一次哈希表。
 type matchTerms struct {
-	raw []string
-	t   []string
-	kt  []string
+	raw     []string
+	t       []string
+	kt      []string
+	termIdx []int32
 }
 
 func newMatchTerms(terms []string) matchTerms {
-	m := matchTerms{raw: terms, t: make([]string, len(terms)), kt: make([]string, len(terms))}
+	m := matchTerms{
+		raw:     terms,
+		t:       make([]string, len(terms)),
+		kt:      make([]string, len(terms)),
+		termIdx: make([]int32, len(terms)),
+	}
 	for i, term := range terms {
 		m.t[i] = ruleName(term)
 		m.kt[i] = ruleKey(term)
+		m.termIdx[i] = -1
+		if idx, ok := baitTypeTermIndex[m.kt[i]]; ok {
+			m.termIdx[i] = int32(idx)
+		}
 	}
 	return m
 }
@@ -333,7 +360,12 @@ var baitAliasNorm = func() map[string][]string {
 }()
 
 func (b ruleBait) matches(term string) bool {
-	return b.matchOne(term, ruleName(term), ruleKey(term), ruleName(b.name), ruleKey(b.name))
+	kt := ruleKey(term)
+	// 大类词先判：写「颗粒」就是要整类，不能退化成「名字叫颗粒的那款饵」。
+	if cat, ok := baitTypeTermOf(kt); ok {
+		return cat.matches(b)
+	}
+	return b.matchOne(term, ruleName(term), kt, ruleName(b.name), ruleKey(b.name))
 }
 
 func (b ruleBait) matchesAny(terms []string) bool {
@@ -345,11 +377,21 @@ func (b ruleBait) matchesAny(terms []string) bool {
 
 // matchesPre 用预归一化的词表匹配，供池子构建等批量场景使用。
 func (b ruleBait) matchesPre(p matchTerms) bool {
+	return b.matchesPreNorm(p, ruleName(b.name), ruleKey(b.name))
+}
+
+// matchesPreNorm 同上，但饵名的两种归一化由调用方提供（已有缓存时不重算）。
+func (b ruleBait) matchesPreNorm(p matchTerms, n, kn string) bool {
 	if len(p.raw) == 0 {
 		return false
 	}
-	n, kn := ruleName(b.name), ruleKey(b.name)
 	for i, term := range p.raw {
+		if idx := p.termIdx[i]; idx >= 0 {
+			if baitTypeTerms[idx].matches(b) {
+				return true
+			}
+			continue
+		}
 		if b.matchOne(term, p.t[i], p.kt[i], n, kn) {
 			return true
 		}
@@ -357,46 +399,14 @@ func (b ruleBait) matchesPre(p matchTerms) bool {
 	return false
 }
 
-// matchOne 是单条「饵 × 规则词」的判定。t/kt 是 term 的两种归一化，
-// n/kn 是饵名的两种归一化，由调用方预计算。
+// matchOne 是单条「饵 × 规则词」的判定（只处理具体饵名/型号）。
+// 大类词（拟饵、颗粒、浮水饵…）不在这里判：调用方先用 baitTypeTermOf 分流，
+// 统一交给 BaitTypeTerm.matches，避免两处各写一套枚举映射。
+// t/kt 是 term 的两种归一化，n/kn 是饵名的两种归一化，由调用方预计算。
 func (b ruleBait) matchOne(term, t, kt, n, kn string) bool {
 	for _, alias := range baitAliasNorm[b.id] {
 		if t == alias {
 			return true
-		}
-	}
-	if t == "各类饵" {
-		return true
-	}
-	if t == "拟饵" {
-		return b.category == 17
-	}
-	if t == "活饵类" {
-		return b.category == 27 && b.baitType == 4
-	}
-	if t == "饵鱼类" || t == "饵鱼" || t == "各类饵鱼" {
-		return b.category == 27 && (b.baitType == 4 || b.baitType == 15)
-	}
-	if b.category == 27 {
-		switch t {
-		case "蠕虫", "蠕虫类":
-			return b.baitType == 6
-		case "昆虫幼虫":
-			return b.baitType == 2
-		case "昆虫":
-			return b.baitType == 7
-		case "鱼肉类":
-			return b.baitType == 14 || b.id == "fish_flesh"
-		}
-	}
-	if b.category == 17 {
-		switch t {
-		case "亮片", "亮片类", "亮片系列饵":
-			return b.lureType == 1 || b.lureType == 2
-		case "旋转饵", "旋转饵类", "旋转亮片路亚":
-			return b.lureType == 1
-		case "软饵类", "拟真软饵":
-			return b.lureType == 3
 		}
 	}
 	for _, suffix := range []string{"系列饵", "系列", "类"} {
@@ -552,72 +562,41 @@ func (s *Server) filterFishBaitSet(loc string, ids []string, keys []string, weig
 		if weights[i] <= 0 {
 			continue
 		}
-		r, rot := s.resolveBaitRule(ctx, names[key])
-		// 自动轮换：把本期的开口饵替换成 allow，后面的判定完全走原路
-		// （allow 命中=满分档，其余落到 allow 之外的证据档位降权）。
-		r, autoActive := s.applyAutoRotation(ctx, c, key, r, now)
-		// 轮换：按时间桶取当前组；strict 只认当前组，soft 组外降权但仍可咬。
-		// 自动抽取开了就不看手工组：两者是同一批 allow 的两种来源，叠加会互相抵消。
-		var activeGroup []string
-		if !autoActive {
-			activeGroup = activeBaitGroup(rot, now)
-		}
-		strictRotation := activeGroup != nil && rot.mode == "strict"
+		r := s.resolveBaitRule(ctx, names[key])
+		// 自动轮换：把本期的开口饵替换成 allow。吃口资格只认这份 allow，
+		// 不再有 companion 越级或食性硬门兜底。
+		r, _ = s.applyAutoRotation(ctx, c, key, r, now)
 		if !ruleConditionAllows(r, c) {
 			continue
 		}
 		best := 0.0
 		preferred := 0
 		hasRule := len(r.allow) > 0
-		// 先扫一遍候选池，确认规则是否至少放行了一款饵。整条规则因为翻译差异
-		// 一条都没对上时，才允许 companion 证据越级给满档；只要清单里还有
-		// 合法饵，证据就不能绕过白名单（红虫 1.08 vs 兜底 0.086 那类问题）。
-		allowedFlags := make([]bool, len(baits))
-		// 自动轮换生效时 allow 是刚抽出来的有效名单（池子非空），companion
-		// 不该再以「规则没匹配上」为由越级给满档，否则轮换会被 tier3 架空。
-		anyAllowed := autoActive
 		for j, b := range baits {
-			if !rotationKeepsBait(activeGroup, strictRotation, b) {
-				continue
-			}
-			allowedFlags[j] = baitAllowedByRule(r, b, activeGroup)
-			if allowedFlags[j] {
-				anyAllowed = true
-			}
-		}
-		for j, b := range baits {
-			if !rotationKeepsBait(activeGroup, strictRotation, b) {
-				continue // strict 轮换：组外的饵本轮不咬
-			}
 			// 禁饵与“底钓只吃”只作用于这一款饵：多钩组上挂一条被禁的饵，
 			// 不能把同一杆上其它合法饵一起判死（那会让整条鱼消失）。
 			if baitBlockedByRule(r, c, b) {
 				continue
 			}
-			allowed := allowedFlags[j]
 			score := 0.0
-			full := false
 			variation := fishVariation(fmt.Sprintf("%s/%s/%s/%d", loc, key, b.id, period))
-			// evidence[j] 实为 companion tier map（1=在榜 2=热门 3=top 档），非计数。
-			comp := evidence[j][key]
-			// companion 只在「这条鱼没有规则、或规则一条候选饵都没匹配上」时才允许
-			// 越级给满档，否则规则表白名单会被证据表架空。anyAllowed 由本轮候选池
-			// 决定，因此规则写错字导致整条失效的鱼仍能被证据救回。
-			if allowed || (!hasRule || !anyAllowed) && comp >= 3 {
-				full = true
+			if hasRule {
+				// 严格 allow：当前生效名单之外的饵一律 0，不再看 companion 档位。
+				if !baitAllowedByRule(r, b) {
+					continue
+				}
 				score = 1.0 + 0.5*variation
-			} else if comp >= 1 {
-				// 「allow 之外但 companion 在榜」的档位。自动轮换没抽中的饵
-				// 就落在这里；2026-11-19 由 0.35 降到 0.10。
-				score = maxBaitPreference * s.evidenceLowScale()
-			} else if b.legalAlternative(r) {
-				score = maxBaitPreference * 0.05
-			}
-			if full {
 				preferred++
-			}
-			if activeGroup != nil {
-				score *= rotationScoreMultiplier(activeGroup, b)
+			} else {
+				// 没有规则（兜底鱼池/未收录鱼）才看 companion 证据；
+				// 有规则时证据不能绕过 allow。
+				comp := evidence[j][key]
+				if comp >= 3 {
+					score = 1.0 + 0.5*variation
+					preferred++
+				} else if comp >= 1 {
+					score = maxBaitPreference * s.evidenceLowScale()
+				}
 			}
 			best = math.Max(best, score)
 		}
@@ -717,16 +696,13 @@ func ruleConditionAllows(r fishBaitRule, c fishRollContext) bool {
 	return true
 }
 
-// baitAllowedByRule 判断一款饵是否在本条规则的允许名单里。
-// 当前轮换组的饵视为本轮主推，即使不在静态允许列表里。
-func baitAllowedByRule(r fishBaitRule, b ruleBait, activeGroup []string) bool {
+// baitAllowedByRule 判断一款饵是否在当前生效的 allow 名单里。
+// 自动轮换已把本期开口饵写进 r.allow，因此这里不再接受额外的轮换组参数。
+func baitAllowedByRule(r fishBaitRule, b ruleBait) bool {
 	if len(r.allow) == 0 {
 		return false
 	}
-	if b.matchesAny(r.allow) {
-		return true
-	}
-	return activeGroup != nil && b.matchesAny(activeGroup)
+	return b.matchesAny(r.allow)
 }
 
 // baitBlockedByRule 判断一款饵是否被禁饵或「底钓只吃」挡下。
@@ -739,59 +715,6 @@ func baitBlockedByRule(r fishBaitRule, c fishRollContext, b ruleBait) bool {
 		if b.matches(term) {
 			return true
 		}
-	}
-	return false
-}
-
-// 非偏好只在已识别食性族内保留杂口，不把所有天然饵视为通用食物。
-func (b ruleBait) legalAlternative(r fishBaitRule) bool {
-	if b.category != 27 {
-		return false
-	}
-	var diet string
-	switch b.baitType {
-	case 2, 6, 7:
-		diet = "虫"
-	case 8:
-		diet = "煮饵"
-	case 9:
-		diet = "颗粒"
-	case 10:
-		diet = "玉米"
-	case 11, 13:
-		diet = "植物"
-	case 4, 15:
-		diet = "饵鱼"
-	case 14:
-		diet = "鱼肉"
-	}
-	if b.id == "fish_flesh" {
-		diet = "鱼肉"
-	}
-	terms := strings.Join(r.allow, "/")
-	switch diet {
-	case "虫":
-		for _, term := range []string{"蠕虫", "蚯蚓", "红虫", "苍蝇", "蛆虫", "毛翅", "树皮甲虫", "昆虫", "地龙", "土蚕", "水蛭", "蜉蝣", "襀翅", "牛虻", "草蜢", "蟋蟀", "蜣螂", "金龟", "龙虱", "蝼蛄"} {
-			if strings.Contains(terms, term) {
-				return true
-			}
-		}
-	case "植物":
-		for _, term := range []string{"面包", "面团", "粥", "玉米", "豌豆", "坚果", "奶酪", "水果", "蜂蜜", "奶油", "椰子", "中立", "自然风味"} {
-			if strings.Contains(terms, term) {
-				return true
-			}
-		}
-	case "煮饵":
-		return strings.Contains(terms, "煮饵") || strings.Contains(terms, "煮成饵") || strings.Contains(strings.ToLower(terms), "boilie") || strings.Contains(strings.ToLower(terms), "popup") || strings.Contains(strings.ToLower(terms), "pop up")
-	case "颗粒":
-		return strings.Contains(terms, "颗粒") || strings.Contains(strings.ToLower(terms), "pellet")
-	case "玉米":
-		return strings.Contains(terms, "玉米")
-	case "饵鱼":
-		return strings.Contains(terms, "饵鱼") || strings.Contains(terms, "活饵")
-	case "鱼肉":
-		return strings.Contains(terms, "鱼肉") || strings.Contains(terms, "鱼片")
 	}
 	return false
 }

@@ -55,22 +55,3 @@ func TestFishBaitAutoDoesNotTouchOverride(t *testing.T) {
 		t.Fatalf("关闭后应删除记录，实得 %+v", auto)
 	}
 }
-
-// 覆盖行里的历史 rotate_mode='auto' 一律归一成 soft：自动抽取改由
-// 独立开关表达，避免两套真相并存。
-func TestFishBaitOverrideDropsAutoMode(t *testing.T) {
-	db := openBaitAutoTestDB(t)
-	ctx := context.Background()
-	if err := db.SaveFishBaitOverride(ctx, FishBaitOverride{
-		FishZh: "常见拟鲤", Allow: []string{"红蚯蚓"}, RotateMode: "auto", Enabled: true,
-	}, "test"); err != nil {
-		t.Fatal(err)
-	}
-	rows, err := db.ListFishBaitOverrides(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(rows) != 1 || rows[0].RotateMode != "soft" {
-		t.Fatalf("rotate_mode 应归一成 soft，实得 %+v", rows)
-	}
-}

@@ -92,6 +92,62 @@ func TestTwoStageCustomWeightsNormalize(t *testing.T) {
 	}
 }
 
+func TestFourStageCustomWeightsNormalize(t *testing.T) {
+	s := huntWeightsTestServer(map[string]float64{
+		"hunt_stage_daily_below":     20,
+		"hunt_stage_daily_qualified": 140,
+		"hunt_stage_daily_trophy":    30,
+		"hunt_stage_daily_super":     10,
+	})
+	w1, w2, w3, w4, _ := s.fishHuntWeights(fishHuntModeFreshwater, fishHuntDaily, &fishHuntState{}, 0, false)
+	want := [4]float64{10, 70, 15, 5}
+	got := [4]float64{w1, w2, w3, w4}
+	for i := range want {
+		if math.Abs(got[i]-want[i]) > 1e-9 {
+			t.Fatalf("四阶段自定义权重应归一到总和 100%%: got=%v want=%v", got, want)
+		}
+	}
+	// 海钓与路亚共用同一张表，取巨人阶段验证另一组键。
+	s.tunCache["hunt_stage_giant_below"] = 5
+	s.tunCache["hunt_stage_giant_qualified"] = 55
+	s.tunCache["hunt_stage_giant_trophy"] = 30
+	s.tunCache["hunt_stage_giant_super"] = 10
+	s.tunAt = time.Now()
+	for _, mode := range []int{fishHuntModeFreshwater, fishHuntModeMarine, fishHuntModeLure} {
+		w1, w2, w3, w4, _ = s.fishHuntWeights(mode, fishHuntGiant, &fishHuntState{}, 0, false)
+		got = [4]float64{w1, w2, w3, w4}
+		if math.Abs(w1-5) > 1e-9 || math.Abs(w2-55) > 1e-9 || math.Abs(w3-30) > 1e-9 || math.Abs(w4-10) > 1e-9 {
+			t.Fatalf("mode=%d 巨物阶段应读同一张表: got=%v", mode, got)
+		}
+	}
+}
+
+func TestFourStageAllZeroFallsBackToDefaults(t *testing.T) {
+	s := huntWeightsTestServer(map[string]float64{
+		"hunt_stage_giant_below":     0,
+		"hunt_stage_giant_qualified": 0,
+		"hunt_stage_giant_trophy":    0,
+		"hunt_stage_giant_super":     0,
+	})
+	w1, w2, w3, w4, _ := s.fishHuntWeights(fishHuntModeFreshwater, fishHuntGiant, &fishHuntState{}, 0, false)
+	if math.Abs(w1-10) > 1e-9 || math.Abs(w2-64) > 1e-9 || math.Abs(w3-20) > 1e-9 || math.Abs(w4-6) > 1e-9 {
+		t.Fatalf("四档全 0 应回退默认 10/64/20/6: got=(%.1f,%.1f,%.1f,%.1f)", w1, w2, w3, w4)
+	}
+}
+
+func TestFourStageNegativeTreatedAsZero(t *testing.T) {
+	s := huntWeightsTestServer(map[string]float64{
+		"hunt_stage_active_below":     -5,
+		"hunt_stage_active_qualified": 60,
+		"hunt_stage_active_trophy":    20,
+		"hunt_stage_active_super":     20,
+	})
+	w1, w2, w3, w4, _ := s.fishHuntWeights(fishHuntModeFreshwater, fishHuntActive, &fishHuntState{}, 0, false)
+	if math.Abs(w1) > 1e-9 || math.Abs(w2-60) > 1e-9 || math.Abs(w3-20) > 1e-9 || math.Abs(w4-20) > 1e-9 {
+		t.Fatalf("负权重应按 0 处理: got=(%.1f,%.1f,%.1f,%.1f)", w1, w2, w3, w4)
+	}
+}
+
 func TestHuntStateEnabledCombinesFlags(t *testing.T) {
 	s, _ := newRigTestServer(t)
 	cases := []struct {

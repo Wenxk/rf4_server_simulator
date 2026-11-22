@@ -58,7 +58,9 @@ func TestFishEcologySeedsSpeciesAndMatchesWaterLayers(t *testing.T) {
 	if dielCurveWeights(curve) == nil {
 		t.Fatalf("旧版本生态行升级时未恢复昼夜曲线: %q", curve)
 	}
-	srv.tunCache = map[string]float64{"fish_ecology_enabled": 1}
+	// 这一段测季节/水层因子，不测昼夜：鲶鱼是夜行鱼，禁口开关开着时正午权重会被直接归零，
+	// 会把「暖季底层偏向鲶鱼」的断言带偏，所以这里显式关掉非活跃禁口。
+	srv.tunCache = map[string]float64{"fish_ecology_enabled": 1, "fish_diel_inactive_block": 0}
 	srv.tunAt = time.Now()
 
 	// 水层匹配与季节/时段无关，直接测水层因子：合成鱼口权重还乘了季节与水温，

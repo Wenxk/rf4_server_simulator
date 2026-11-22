@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand"
 	"testing"
+	"time"
 
 	"rf4server/internal/store"
 )
@@ -143,6 +144,19 @@ func TestBaitWeightReadsLivePrimaryAndSecondaryBaits(t *testing.T) {
 			if err := db.TunableSet(t.Context(), "bait_pref_weight_shift", "2", "test"); err != nil {
 				t.Fatal(err)
 			}
+			// 严格 allow 下只有名单内能咬：把本测试实际挂的三款饵写进覆盖，
+			// 否则 companion 证据会被 allow 白名单挡住，抽样直接归零。
+			if err := db.SaveFishBaitOverride(t.Context(), store.FishBaitOverride{
+				FishZh: "常见拟鲤", Allow: []string{"蚯蚓", "红蚯蚓", "苍蝇"}, Enabled: true,
+			}, "test"); err != nil {
+				t.Fatal(err)
+			}
+			// 测试静态库的 item_catalog 名称可能为空；严格 allow 按名字匹配，
+			// 先把本用例实际挂的三款饵补上中文名。
+			if _, err := db.SQL.Exec(`INSERT OR REPLACE INTO item_catalog(item_id,name_zh) VALUES('worm_01','蚯蚓'),('muckworm','红蚯蚓'),('fly','苍蝇')`); err != nil {
+				t.Fatal(err)
+			}
+			s.invalidateBaitOverrides()
 			if _, err := db.SQL.Exec(`INSERT OR REPLACE INTO companion_bait_fish(bait_id,fish_key,tier,evidence) VALUES('worm_01','c.roach',1,1),('muckworm','c.roach',3,10),('fly','c.roach',1,1)`); err != nil {
 				t.Fatal(err)
 			}
@@ -164,10 +178,16 @@ func TestBaitWeightReadsLivePrimaryAndSecondaryBaits(t *testing.T) {
 				return result.MountedGUID
 			}
 			cache := newFishingRollCache()
+			// 分布每 4 游戏小时重抽；用固定时刻避开「这一格这一时辰恰好没鱼」
+			// 造成的抽样归零（与本用例要验证的饵位读取无关）。
+			fixed := time.Unix(worldDayEpochUnix+1500, 0)
+			for distributionMultiplier("rules-test/0", "c.roach", fixed) == 0 {
+				fixed = fixed.Add(150 * time.Second)
+			}
 			mean := func() float64 {
 				return sampleBaitWeightMean(t, s, 400, 3200, cache, func() *RolledFish {
 					// 客户端缓存仍报高档饵，体重应读取当前实际饵位。
-					return s.rollFishForRig(t.Context(), testUID, rod.GUID, "level_900_rules", "muckworm", neutralFishingSkillBonus(), fishRollContext{cache: cache})
+					return s.rollFishForRig(t.Context(), testUID, rod.GUID, "level_900_rules", "muckworm", neutralFishingSkillBonus(), fishRollContext{cache: cache, now: fixed})
 				})
 			}
 			mount("worm_01", 350)

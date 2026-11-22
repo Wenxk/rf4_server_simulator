@@ -1,7 +1,6 @@
 package gameserver
 
 import (
-	"context"
 	"testing"
 	"time"
 )
@@ -22,9 +21,12 @@ func TestFishBaitPreferenceAlternateCombinationAndChange(t *testing.T) {
 		return w[0]
 	}
 	favorite := weight([]string{"rule_worm"}, now)
-	other := weight([]string{"rule_other"}, now)
-	if other <= 0 || other >= favorite || other > 0.12 || favorite < 1 {
-		t.Fatalf("favorite=%f other=%f", favorite, other)
+	if favorite < 1 {
+		t.Fatalf("favorite=%f", favorite)
+	}
+	// 严格 allow：不在名单里的饵直接 0，不再有「保底杂口」。
+	if other := weight([]string{"rule_other"}, now); other != 0 {
+		t.Fatalf("allow 之外的饵应归零，实得 %f", other)
 	}
 	if weight([]string{"rule_worm", "rule_fly"}, now) <= favorite {
 		t.Fatal("two preferred baits must participate together")
@@ -45,22 +47,5 @@ func TestFishBaitPreferenceAlternateCombinationAndChange(t *testing.T) {
 	}
 	if favorite == weight([]string{"rule_worm"}, now.Add(600*time.Second)) {
 		t.Fatal("bait preference did not vary over game time")
-	}
-	setBaitRuleSwitch(t, s, "1")
-	// 强制只选拟鲤，验证差异也传到了实际派鱼概率，而非仅改变鱼种比例。
-	if _, err := db.SQL.Exec(`INSERT INTO fish_weight_override(loc,fish_key,weight,enabled,updated_by,updated_ts) VALUES('rules-test','frog',0,0,'test',0),('rules-test','c.roach',1,1,'test',0)`); err != nil {
-		t.Fatal(err)
-	}
-	preferredHits, otherHits := 0, 0
-	for i := 0; i < 160; i++ {
-		if s.rollFishForRig(context.Background(), 0, "", "level_900_rules", "rule_worm", neutralFishingSkillBonus(), fishRollContext{cache: cache}) != nil {
-			preferredHits++
-		}
-		if s.rollFishForRig(context.Background(), 0, "", "level_900_rules", "rule_other", neutralFishingSkillBonus(), fishRollContext{cache: cache}) != nil {
-			otherHits++
-		}
-	}
-	if preferredHits < 65 || otherHits > 35 || preferredHits <= otherHits {
-		t.Fatalf("preferred hits=%d alternate hits=%d", preferredHits, otherHits)
 	}
 }

@@ -2,6 +2,7 @@ package gameserver
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -24,6 +25,8 @@ func TestDielWeightAppliesWithoutEcology(t *testing.T) {
 	setTunables(t, db, map[string]string{
 		"fish_ecology_enabled":     "0",
 		"fish_diel_weight_enabled": "1",
+		// 这几条只测「昼夜系数是乘子」，把非活跃禁口关掉，避免凌晨/白天的段被直接归零。
+		"fish_diel_inactive_block": "0",
 	})
 	srv.execAdminCmd(&AdminCommand{Op: "reload_tunables"})
 	if err := srv.reloadFishEcologyCache(ctx); err != nil {
@@ -83,6 +86,8 @@ func TestDielWeightDoesNotHonourGlobalEnabled(t *testing.T) {
 	setTunables(t, db, map[string]string{
 		"fish_ecology_enabled":     "0",
 		"fish_diel_weight_enabled": "1",
+		// 这几条只测「昼夜系数是乘子」，把非活跃禁口关掉，避免凌晨/白天的段被直接归零。
+		"fish_diel_inactive_block": "0",
 	})
 	srv.execAdminCmd(&AdminCommand{Op: "reload_tunables"})
 	if err := srv.reloadFishEcologyCache(ctx); err != nil {
@@ -94,8 +99,8 @@ func TestDielWeightDoesNotHonourGlobalEnabled(t *testing.T) {
 	}
 }
 
-// 曲线是「接近不出但不置零」：低于下限的值必须钳到 0.08，
-// 否则低活跃段会真的把该鱼从候选池里抹掉。
+// 曲线本身是「接近不出但不置零」：低于下限的值必须钳到 0.08。
+// 真正把非活跃时段压成 0 的是上面那层 fish_diel_inactive_block，不在这个函数里。
 func TestDielCurveClampsToMinimum(t *testing.T) {
 	p := fishEcologyProfile{DielCurve: "[1,0.01,0,0.2]"}
 	if got := fishDielWeight(p, 12); got != fishDielCurveMin {
@@ -113,5 +118,45 @@ func setTunables(t *testing.T, db *store.DB, kv map[string]string) {
 		if err := db.TunableSet(context.Background(), k, v, "tester"); err != nil {
 			t.Fatalf("写 tunable %s: %v", k, err)
 		}
+	}
+}
+
+// 非活跃时段禁口（fish_diel_inactive_block，默认开）：曲线 <0.5 的段（= 位图未置位
+// = 鱼种卡上的活跃时段之外）该鱼权重直接归零，不再只乘一个 0.3~0.4 的边缘系数。
+func TestDielInactiveBlockZeroesOutsideWindow(t *testing.T) {
+	srv, db := newRigTestServer(t)
+	ctx := context.Background()
+	if _, err := db.SQL.Exec(
+		`INSERT INTO fish_ecology(fish_key, layer_pref, temp_pref_c, diel_mask, diel_curve)
+		 VALUES('t.strictnight', 0.5, 15, 1, '[1,0.3,0.1,0.2]')`); err != nil {
+		t.Fatal(err)
+	}
+	setTunables(t, db, map[string]string{
+		"fish_ecology_enabled":     "0",
+		"fish_diel_weight_enabled": "1",
+		"fish_diel_inactive_block": "1",
+	})
+	srv.execAdminCmd(&AdminCommand{Op: "reload_tunables"})
+	if err := srv.reloadFishEcologyCache(ctx); err != nil {
+		t.Fatal(err)
+	}
+	atHour := func(h int64) fishRollContext {
+		return fishRollContext{
+			loc: "loc_test", rigType: 1, cache: newFishingRollCache(),
+			now: time.Unix(worldDayEpochUnix+h*realSecPerGameHour, 0),
+		}
+	}
+	if got := srv.fishBiteEnvironmentWeight(ctx, "t.strictnight", atHour(12)); got != 0 {
+		t.Fatalf("昼段（曲线 0.1）应直接禁口为 0，实得 %v", got)
+	}
+	if got := srv.fishBiteEnvironmentWeight(ctx, "t.strictnight", atHour(23)); got != 1 {
+		t.Fatalf("夜段是活跃段，应保持峰值 1，实得 %v", got)
+	}
+
+	// 关掉开关回到旧的「乘性压制」口径：昼段是 0.1，不再是 0。
+	setTunables(t, db, map[string]string{"fish_diel_inactive_block": "0"})
+	srv.execAdminCmd(&AdminCommand{Op: "reload_tunables"})
+	if got := srv.fishBiteEnvironmentWeight(ctx, "t.strictnight", atHour(12)); math.Abs(got-0.1) > 1e-9 {
+		t.Fatalf("关掉禁口后昼段应回到曲线值 0.1，实得 %v", got)
 	}
 }

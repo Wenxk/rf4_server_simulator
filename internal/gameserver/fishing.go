@@ -1367,7 +1367,7 @@ func (s *Server) rollFishFromDBWithRules(loc, bait string, gearCapKg float64, bo
 		keys, wts = s.applyBiteGates(cctx, keys, wts, c, gate)
 		c.trace.step(rollStageGate, keys, wts)
 		if len(keys) == 0 {
-			markEmpty("食性/水层硬门")
+			markEmpty("水层地板（候选权重全零）")
 			if c.gateBlocked != nil {
 				*c.gateBlocked = true
 			}
@@ -1417,6 +1417,12 @@ func (s *Server) rollFishFromDBWithRules(loc, bait string, gearCapKg float64, bo
 		wts[i] *= s.fishBiteEnvironmentWeight(cctx, key, c)
 	}
 	c.trace.step(rollStageEcology, keys, wts)
+	// 昼夜禁口（fish_diel_inactive_block）或生态封鱼会在这一层把候选清零；
+	// 不写空因就会落到默认的「概率/权重全零」，后台对账分不清是哪个原因。
+	if !slices.ContainsFunc(wts, func(w float64) bool { return w > 0 }) {
+		markEmpty("非活跃时段（昼夜禁口）")
+		return nil
+	}
 	applyFishSpotBias(keys, wts, c.runtime.spotPref, c.runtime.spotData)
 	c.trace.step(rollStageSpot, keys, wts)
 	// 窝料吸引：把落点格子里那锅料的食性亲和乘到候选权重上。
@@ -1511,6 +1517,9 @@ func (s *Server) rollFishFromDBWithRules(loc, bait string, gearCapKg float64, bo
 			interest = interests[key]
 		}
 		if c.forRig && !c.acceptHappyHourBite(fishingBaitInterest(interest, bonus), s.weatherFishActivity(key, c)) {
+			// 候选权重是好的，卡在「鱼口接受度」这一层掷骰上。不写空因会落到
+			// 默认文案「概率/权重全零」，后台对账把这件事算成权重为 0，排查方向相反。
+			markEmpty("鱼口接受度（天气×兴趣）")
 			return nil
 		}
 		if grade <= 0 {
@@ -3095,7 +3104,9 @@ func (s *Server) onRodBiteTimerTicket(uid int64, st *FishState, ticket fishingTi
 		return
 	}
 	if !s.canFishWithBait(s.dbCtx(), uid, st.GearGuid) {
-		// 空竿
+		// 空竿。钩上没饵时这一轮就此停排，客户端看不出区别（饵的 4/21 和鱼
+		// 离场同帧到达），不打日志的话玩家只会看到杆子泡在水里再也不动。
+		s.log.Info("钩上已无饵，本杆停排", "rod", shortGUID(st.GearGuid), "rig_type", st.RigType)
 		st.Pending = nil
 		st.Resolved = true
 		st.mu.Unlock()

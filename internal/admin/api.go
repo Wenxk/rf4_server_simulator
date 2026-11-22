@@ -270,7 +270,7 @@ func adminOf(r *http.Request) string {
 }
 
 func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
-	payload := map[string]any{"username": adminOf(r)}
+	payload := map[string]any{"username": adminOf(r), "item_categories": itemCategoryLabels}
 	if u := s.updatePayload(); u != nil {
 		payload["update"] = u
 	}
@@ -489,6 +489,16 @@ func (s *Server) handleTunableSet(w http.ResponseWriter, r *http.Request) {
 		v, err := strconv.ParseFloat(req.Value, 64)
 		if err != nil || math.IsNaN(v) || math.IsInf(v, 0) || v < 0 {
 			httpError(w, 400, "两档制权重必须是非负数字")
+			return
+		}
+	}
+	// 鱼猎四阶段权重（hunt_stage_{gather,active,giant,daily}_{below,qualified,trophy,super}）
+	// 与两档制同口径：必须是有限非负数。负权重会让阶段抽签的概率表出现负值，
+	// 抽签时按累积和落点，负项等于把后面的阶段挤掉，表现为某些鱼永不开口。
+	if strings.HasPrefix(req.Key, "hunt_stage_") {
+		v, err := strconv.ParseFloat(strings.TrimSpace(req.Value), 64)
+		if err != nil || math.IsNaN(v) || math.IsInf(v, 0) || v < 0 {
+			httpError(w, 400, "四阶段权重必须是非负数字")
 			return
 		}
 	}

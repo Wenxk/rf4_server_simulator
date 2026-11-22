@@ -662,6 +662,51 @@ func (s *Server) twoStageGradeWeights(daily bool) [4]float64 {
 	return w
 }
 
+// fourStageWeightKeys 返回四阶段某一段的四档权重 tunable 键与默认值。
+// 默认值就是改动前写死在 fishHuntWeights 里的字面量：没有配置行时行为完全不变。
+func fourStageWeightKeys(stage int) ([4]string, [4]float64) {
+	switch stage {
+	case fishHuntGather:
+		return [4]string{"hunt_stage_gather_below", "hunt_stage_gather_qualified",
+				"hunt_stage_gather_trophy", "hunt_stage_gather_super"},
+			[4]float64{54.5, 43, 2, .5}
+	case fishHuntActive:
+		return [4]string{"hunt_stage_active_below", "hunt_stage_active_qualified",
+				"hunt_stage_active_trophy", "hunt_stage_active_super"},
+			[4]float64{30, 61.2, 6.8, 2}
+	case fishHuntGiant:
+		return [4]string{"hunt_stage_giant_below", "hunt_stage_giant_qualified",
+				"hunt_stage_giant_trophy", "hunt_stage_giant_super"},
+			[4]float64{10, 64, 20, 6}
+	default:
+		return [4]string{"hunt_stage_daily_below", "hunt_stage_daily_qualified",
+				"hunt_stage_daily_trophy", "hunt_stage_daily_super"},
+			[4]float64{74.7, 24, 1, .3}
+	}
+}
+
+// fourStageGradeWeights 读取某阶段后台配置的四档权重：负值与非数值按 0 处理，
+// 总和归一到 100（与两档制同口径）；四档全 0 回退默认表，避免把该阶段调成不出鱼。
+func (s *Server) fourStageGradeWeights(stage int) [4]float64 {
+	keys, defs := fourStageWeightKeys(stage)
+	w := [4]float64{}
+	for i := range w {
+		v := s.tunableF(keys[i], defs[i])
+		if v < 0 || math.IsNaN(v) || math.IsInf(v, 0) {
+			v = 0
+		}
+		w[i] = v
+	}
+	total := w[0] + w[1] + w[2] + w[3]
+	if total <= 0 {
+		return defs
+	}
+	for i := range w {
+		w[i] = w[i] / total * 100
+	}
+	return w
+}
+
 func (s *Server) fishHuntWeights(mode, stage int, h *fishHuntState, trophyLuck float64,
 	comp bool) (w1, w2, w3, w4 float64, forceTrophy bool) {
 	if mode == fishHuntModeFreshwater && s.twoStageHuntEnabled() {
@@ -669,16 +714,9 @@ func (s *Server) fishHuntWeights(mode, stage int, h *fishHuntState, trophyLuck f
 		w := s.twoStageGradeWeights(stage == fishHuntDaily)
 		w1, w2, w3, w4 = w[0], w[1], w[2], w[3]
 	} else {
-		switch stage {
-		case fishHuntGather:
-			w1, w2, w3, w4 = 54.5, 43, 2, .5
-		case fishHuntActive:
-			w1, w2, w3, w4 = 30, 61.2, 6.8, 2
-		case fishHuntGiant:
-			w1, w2, w3, w4 = 10, 64, 20, 6
-		default:
-			w1, w2, w3, w4 = 74.7, 24, 1, .3
-		}
+		// 四阶段：三张分支（淡水/海钓/路亚）共用同一张后台可调表。
+		w := s.fourStageGradeWeights(stage)
+		w1, w2, w3, w4 = w[0], w[1], w[2], w[3]
 	}
 	if stage > fishHuntDaily && h != nil {
 		switch {

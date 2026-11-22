@@ -54,33 +54,18 @@ func TestBaitScoreIgnoresLocalCatchesAndOfficialShare(t *testing.T) {
 	if w := weight("a_salmon"); w != base {
 		t.Fatalf("官服占比不应参与判定：有纪录 %f ≠ 无纪录 %f", w, base)
 	}
-	// companion 饵效实证 tier3：允许越级给满档（规则一条都没匹配上时）。
+	// companion 饵效实证 tier3：有 allow 规则时不能绕过白名单。
 	if _, err := db.SQL.Exec(`INSERT INTO companion_bait_fish(bait_id,fish_key,tier,evidence) VALUES('test_corn','a_salmon',3,900)`); err != nil {
 		t.Fatal(err)
 	}
-	if w := weight("a_salmon"); w <= base {
-		t.Fatalf("companion tier3 应参与判定并抬权重，实得 %f（基线 %f）", w, base)
+	if w := weight("a_salmon"); w != base {
+		t.Fatalf("有 allow 规则时 companion 不应绕过白名单：%f ≠ 基线 %f", w, base)
 	}
 }
 
-// 食谱里的低值（0.2 ≈ 偶尔吃一口）属于"能吃但少"：baitDietStrength 必须返回
-// ok=true 和食谱原值，命中 allow 后权重天然低于主食饵。
-func TestBaitDietLowValueStillEdible(t *testing.T) {
-	diet := map[string]float64{"plant": 0.2, "worm": 2.03}
-	corn := ruleBait{id: "test_corn", name: "玉米粥", category: 27, baitType: 10}
-	worm := ruleBait{id: "rule_worm", name: "蚯蚓", category: 27, baitType: 6}
-	low, ok := baitDietStrength(diet, corn)
-	if !ok || low != 0.2 {
-		t.Fatalf("食谱里写了 plant=0.2 就是能吃：value=%f ok=%v", low, ok)
-	}
-	high, ok := baitDietStrength(diet, worm)
-	if !ok || high != 2.03 {
-		t.Fatalf("主食饵应读到食谱原值：value=%f ok=%v", high, ok)
-	}
-	if high <= low {
-		t.Fatalf("食谱值更高的一方权重应更高：%f 应 > %f", high, low)
-	}
-	// 命中 allow 的低值饵仍要能进候选，不能因为值低被判死。
+// 食谱里的低值（0.2 ≈ 偶尔吃一口）不影响 allow 准入：命中 allow 就进候选，
+// 具体权重由 allow 与 companion 决定，不再走食性强度。
+func TestBaitLowDietValueStillAllowed(t *testing.T) {
 	s, db := seedBaitRuleTest(t)
 	for _, q := range []string{
 		`INSERT INTO loc_alias(alias,loc) VALUES('level_906_diet','diet-low')`,

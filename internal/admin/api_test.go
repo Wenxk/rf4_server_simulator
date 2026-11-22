@@ -502,4 +502,11 @@ func TestSpawnModeEndpoint(t *testing.T) {
 	if code, _ := call("POST", "/api/tunables", token, `{"key":"two_stage_baited_trophy","value":"6"}`); code != 200 {
 		t.Fatalf("两档制合法权重应 200，实得 %d", code)
 	}
+	// 鱼猎四阶段权重同口径：非负数字可写，负数拒绝。
+	if code, _ := call("POST", "/api/tunables", token, `{"key":"hunt_stage_active_trophy","value":"-2"}`); code != 400 {
+		t.Fatalf("四阶段负权重应 400，实得 %d", code)
+	}
+	if code, _ := call("POST", "/api/tunables", token, `{"key":"hunt_stage_active_trophy","value":"12.5"}`); code != 200 {
+		t.Fatalf("四阶段合法权重应 200，实得 %d", code)
+	}
 }

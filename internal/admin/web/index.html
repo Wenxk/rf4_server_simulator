@@ -226,6 +226,12 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
 #baitTable .bait-edit{flex:none}
 .event-gift-editor{border:0;padding:0;margin:0;min-width:0}.event-gift-editor:disabled{opacity:.5}.event-gift-editor :disabled{cursor:not-allowed}.event-gift-status{margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#0c1927;color:var(--muted);font-size:12px;line-height:1.6}
 @media(max-width:720px){.event-gift-item{grid-template-columns:minmax(0,1fr) auto}.event-gift-item .picked{grid-column:1/-1;flex-direction:column;align-items:flex-start;gap:3px}.event-gift-item .picked b,.event-gift-item .picked span{max-width:100%}}
+/* 规则编辑器：大类按钮与「整类」标签。紫色与自动抽取的 pill 同色系，
+   一眼能分出「这是一整类」还是「具体某一款饵」。 */
+.br-term-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.br-term-grid .btn{font-size:12px;padding:4px 9px}
+.br-term-grid .btn.on{background:#43356b;color:#d9c8ff;border-color:#6a55a3;opacity:.8}
+.br-term-chip{background:#43356b !important;color:#d9c8ff}
 </style>
 </head>
 <body>
@@ -256,7 +262,7 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
       <button data-view="params" onclick="go('params')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1.5 14h5M9.5 8h5M17.5 16h5"/></svg></span><span class="txt"><b>游戏参数</b><small>玩法手感 · 经验结算倍率</small></span></button>
       <button data-view="release" onclick="go('release')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></span><span class="txt"><b>发布说明</b><small>版本更新 · 修复内容</small></span></button>
       <button data-view="about" onclick="go('about')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v5.5M12 7.5h.01"/></svg></span><span class="txt"><b>关于</b><small>项目说明 · README</small></span></button>
-      <button data-view="audit" onclick="go('audit')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></span><span class="txt"><b>审计日志</b><small>后台每次操作的留痕</small></span></button>
+<button data-view="audit" onclick="go('audit')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></span><span class="txt"><b>审计日志</b><small>后台每次操作的留痕</small></span></button>
     </nav>
     <div class="side-foot"><div class="u" id="who">admin</div><div class="m"><span class="status-dot"></span> 服务在线</div><button class="btn alt sm" onclick="logout()">退出登录</button></div>
   </aside>
@@ -275,12 +281,12 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
     <section class="view" id="view-stores"><div class="card"><div class="toolbar"><select id="storeSelect" class="grow" onchange="loadStoreItems()"></select><input id="storeSearch" placeholder="搜索商品 / 名称" onkeydown="if(event.key==='Enter')loadStoreItems()"><button class="btn" onclick="loadStoreItems()">查询</button></div><div id="storeSummary" class="muted" style="margin:12px 0"></div><div class="table-wrap" id="storeTable"></div></div></section>
     <section class="view" id="view-fish"><div class="card" id="fishRulesCard" style="margin-bottom:12px"><div class="rules-strip"><h2>鱼口模式</h2><span id="biteModeInline" style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap"><span id="biteModeBody">读取中…</span></span><small class="muted" id="biteModeStatus"></small></div><div class="rules-strip" style="margin-top:8px"><label class="rule-item"><span>硬性鱼口约束</span><input type="checkbox" class="switch" id="biteGateSwitch" disabled onchange="toggleFishRules('gate',this)"></label><label class="rule-item"><span>逐鱼种生态</span><input type="checkbox" class="switch" id="fishEcologySwitch" disabled onchange="toggleFishRules('ecology',this)"></label><label class="rule-item"><span>鱼群随机分布</span><input type="checkbox" class="switch" id="fishDistributionSwitch" disabled onchange="toggleFishRules('distribution',this)"></label><label class="rule-item"><span>鱼类吃饵偏好</span><input type="checkbox" class="switch" id="fishRulesSwitch" disabled onchange="toggleFishRules('bait',this)"></label><label class="rule-item"><span>天气与温度鱼口</span><input type="checkbox" class="switch" id="fishWeatherSwitch" disabled onchange="toggleFishRules('weather',this)"></label><label class="rule-item"><span>欢乐时光</span><input type="checkbox" class="switch" id="happyHourSwitch" disabled onchange="toggleFishRules('happy',this)"></label><small class="muted" id="rulesStatus"></small><button class="btn alt sm" id="rulesHelpBtn" aria-expanded="false" onclick="toggleRulesHelp()">说明 ⌄</button></div><div id="rulesHelp" hidden><p class="muted" style="margin:0 0 8px">各项独立保存；硬性约束、生态、天气、饵料和分布规则默认关闭，欢乐时光默认开启。上方「鱼口模式」一键切换五项组合。</p><div class="rule-help"><b>硬性鱼口约束</b><span id="biteGateMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>逐鱼种生态</b><span id="fishEcologyMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>鱼群随机分布</b><span id="fishDistributionMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>鱼类吃饵偏好</b><span id="fishRulesMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>天气与温度鱼口</b><span id="fishWeatherMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>欢乐时光</b><span id="happyHourMessage" role="status">正在读取开关。</span></div></div></div><div class="grid fish-layout" style="grid-template-columns:270px minmax(0,1fr)"><div class="card"><div class="section-head"><h2>水域</h2></div><input id="fishSearch" placeholder="筛选水域" oninput="renderFishAreas()"><div id="fishAreas"></div></div><div class="card" id="fishEditor"><div class="empty">选择水域配置鱼口</div></div></div><div class="card" id="rollTraceCard" style="margin-top:12px"><div class="section-head"><div><h2>判鱼追踪</h2><small>最近的真实咬钩判定：候选鱼种在各层乘完后的权重 · 空轮的空因 · 只读诊断，不影响玩法</small></div><span class="muted" id="rollTraceStatus"></span><button class="btn alt sm" id="rollTraceScope" onclick="loadRollTrace(true,!ROLL_TRACE_ALL)">看全部水域</button><button class="btn alt sm" onclick="loadRollTrace(true)">刷新</button></div><div id="rollTraceBody"><div class="empty">加载中…</div></div></div></section>
     <section class="view" id="view-hooks"><div class="card"><div class="section-head"><div><h2>真实钩子型号档案</h2><small>物理数据来自 item_def；倍率和兜底值只影响咬口，不改钩子拉力</small></div></div><div class="toolbar"><input class="grow" id="hookSearch" placeholder="搜索 item_id / 厂牌，如 triple_20686、simmons" onkeydown="if(event.key==='Enter')loadHookProfiles()"><select id="hookSize"><option value="">全部尺寸</option></select><select id="hookFamily"><option value="">全部钩型族</option><option value="classic">Classic</option><option value="carp">Carp</option><option value="treble">Treble</option><option value="jighead">Jighead</option><option value="offset">Offset</option><option value="marine">Marine</option><option value="other">Other</option></select><button class="btn" onclick="loadHookProfiles()">查询</button></div><p class="muted" style="margin:10px 0">默认倍率 1.0、兜底值 0；修改后写入审计，最多 30 秒由主服热加载。入口容量按真实钩体长度计算。</p><div class="table-wrap" id="hookProfilesTable"><div class="empty">读取中…</div></div></div></section>
-    <section class="view" id="view-bait"><div class="card"><div class="section-head"><div><h2>鱼饵偏好</h2><small id="baitSummary" class="muted">正在读取…</small></div></div><div class="toolbar"><input class="grow" id="baitSearch" placeholder="搜索鱼种 key / 中文名，如 pike、狗鱼" onkeydown="if(event.key==='Enter')loadBaitPrefs()"><input id="baitLoc" placeholder="水域（可选）" onkeydown="if(event.key==='Enter')loadBaitPrefs()"><select id="baitFilter" onchange="loadBaitPrefs()"><option value="">全部鱼种</option><option value="tier3">有 tier3 饵</option><option value="norule">规则表无条目</option><option value="rule">规则表有条目</option></select><button class="btn" onclick="loadBaitPrefs()">查询</button><button class="btn alt" onclick="rerollBaitAuto()" title="给所有开了「自动抽取」的鱼立刻换一批本期开口饵；周期与下次切换时刻不变">↻ 立即重抽本期</button></div><p class="muted" style="margin:10px 0">判定只用两套证据：<b>规则</b>来自编译进服务端的 fishing_bait_rules.txt（严格模式生效）；<b>tier</b> 来自 companion_bait_fish 饵效实证（tier3 满档 / tier1~2 低权重）。<b>官服占比</b>取自 rf4records.com 渔获纪录，只作参考展示，<b>不参与判鱼</b>。最右「吃不吃」按同一套逻辑给出人话结论。「自动抽取」按<b>型号</b>抽签：抽中「红蚯蚓（10/14/18）· Pop-up」表示这三个尺寸都开口，同型号不同规格在判鱼上等价；<b>名单里只写了一个尺寸也整组开</b>。折叠名一律带形态后缀（煮饵/Pop-up/颗粒/玉米/活饵…），因为「玉米」光看名字分不出是颗粒还是玉米粒。点击行展开全部饵；点右侧「编辑」可改吃/不吃/底钓只吃并配置多组轮换。</p><div class="table-wrap" id="baitTable"></div></div></section>
+    <section class="view" id="view-bait"><div class="card"><div class="section-head"><div><h2>鱼饵偏好</h2><small id="baitSummary" class="muted">正在读取…</small></div></div><div class="toolbar"><input class="grow" id="baitSearch" placeholder="搜索鱼种 key / 中文名，如 pike、狗鱼" onkeydown="if(event.key==='Enter')loadBaitPrefs()"><input id="baitLoc" placeholder="水域（可选）" onkeydown="if(event.key==='Enter')loadBaitPrefs()"><select id="baitFilter" onchange="loadBaitPrefs()"><option value="">全部鱼种</option><option value="tier3">有 tier3 饵</option><option value="norule">规则表无条目</option><option value="rule">规则表有条目</option></select><button class="btn" onclick="loadBaitPrefs()">查询</button><button class="btn alt" onclick="rerollBaitAuto()" title="给所有开了「自动抽取」的鱼立刻换一批本期开口饵；周期与下次切换时刻不变">↻ 立即重抽本期</button></div><p class="muted" style="margin:10px 0">判定只用两套证据：<b>规则</b>来自编译进服务端的 fishing_bait_rules.txt（严格模式生效）；<b>tier</b> 来自 companion_bait_fish 饵效实证（tier3 满档 / tier1~2 低权重）。<b>官服占比</b>取自 rf4records.com 渔获纪录，只作参考展示，<b>不参与判鱼</b>。最右「吃不吃」按同一套逻辑给出人话结论。「自动抽取」按<b>型号</b>抽签：抽中「红蚯蚓（10/14/18）· Pop-up」表示这三个尺寸都开口，同型号不同规格在判鱼上等价；<b>名单里只写了一个尺寸也整组开</b>。折叠名一律带形态后缀（煮饵/Pop-up/颗粒/玉米/活饵…），因为「玉米」光看名字分不出是颗粒还是玉米粒。点击行展开全部饵；点右侧「编辑」可改吃/不吃/底钓只吃。本期开口饵由「自动抽取」列控制。</p><div class="table-wrap" id="baitTable"></div></div></section>
     <section class="view" id="view-mail"><div class="mail-box"><div class="card"><div class="section-head"><h2>撰写邮件</h2><small>队列约 2 秒内由主服投递</small></div><div class="form-grid" style="grid-template-columns:1fr 1fr"><div class="field"><label>收件人 UID</label><input id="mailUid" type="number"></div><div class="field"><label>快捷载入玩家</label><input id="mailPlayerSearch" placeholder="搜索并回车" onkeydown="if(event.key==='Enter')findMailPlayer()"></div></div><div class="field" style="margin-top:12px"><label>邮件正文</label><textarea id="mailText" placeholder="写给玩家的消息…"></textarea></div><div class="section-head" style="margin-top:14px"><h2>附件</h2><button class="btn alt sm" onclick="addAttachment()">+ 添加附件</button></div><div id="attachments"></div><div class="actions"><button class="btn good" onclick="sendMail()">发送邮件</button><button class="btn alt" onclick="previewMail()">预览</button></div></div><div class="card"><div class="section-head"><h2>发送预览</h2></div><div id="mailPreview" class="empty">填写邮件后点击预览</div><div class="section-head" style="margin-top:20px"><h2>常用模板</h2></div><div class="actions"><button class="btn alt sm" onclick="mailTemplate('补偿')">补偿邮件</button><button class="btn alt sm" onclick="mailTemplate('活动奖励')">活动奖励</button><button class="btn alt sm" onclick="mailTemplate('测试')">测试邮件</button></div></div></div></section>
     <section class="view" id="view-params"><div class="card"><div class="section-head"><h2>游戏参数</h2><small>保存后按参数类型生效；部分服务端参数约 30 秒生效，活动奖励必须重启游戏客户端并重新登录</small></div><div class="params-tabs" id="paramsTabs"></div><div id="paramsBody"></div></div></section>
     <section class="view" id="view-release"><div class="card release-card"><div class="section-head"><div><h2>发布说明</h2><p class="muted">读取发布包内的 发布说明.md</p></div><button class="btn alt sm" onclick="loadReleaseNotes()">刷新</button></div><div class="markdown-body release-markdown" id="releaseBody"><div class="empty">读取中…</div></div></div></section>
     <section class="view" id="view-about"><div class="card about-card"><div class="about-head"><div><h2>关于本项目</h2><p>内容来自 README.md · 优先读取本地文件</p></div><a class="btn alt sm" href="https://github.com/OpenFisherCommunity/rf4_server_simulator" target="_blank" rel="noreferrer">在 GitHub 查看</a></div><div class="markdown-body" id="aboutReadme"><div class="empty">读取中…</div></div></div></section>
-    <section class="view" id="view-audit"><div class="card"><div class="section-head"><h2>最近操作</h2><small>最新 200 条</small></div><div class="table-wrap" id="auditTable"></div></div></section>
+<section class="view" id="view-audit"><div class="card"><div class="section-head"><h2>最近操作</h2><small>最新 200 条</small></div><div class="table-wrap" id="auditTable"></div></div></section>
   </main>
 </div>
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()"><div class="modal" id="modal"></div></div>
@@ -294,6 +300,8 @@ for(let i=0;i<=33;i++)$('#hookSize').insertAdjacentHTML('beforeend',`<option val
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Number(n||0).toLocaleString('zh-CN');
 const timeText=ts=>ts?new Date(Number(ts)*1000).toLocaleString('zh-CN'):'-';
+// Go 的 time.Time 序列化成 RFC3339Nano（小数位 7~9 位），Date 只吃到 3 位；多出来的位会让 Date 变 NaN。
+const rfcTime=v=>{const t=String(v||'');if(!t)return '-';const d=new Date(t.replace(/(\.\d{3})\d+/, '$1'));return isNaN(d.getTime())?t:d.toLocaleString('zh-CN')};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const API_ROOT=location.pathname.replace(/\/+$/,'').endsWith('/admin')?'/admin/api':'/api';
 function apiURL(path){return (path==='/api'||path.startsWith('/api/'))?API_ROOT+path.slice(4):path}
@@ -317,6 +325,10 @@ function closeModal(force=false){
   $('#modalBg').classList.remove('on');$('#modal').innerHTML='';MODAL_KIND='';
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+// ---- 物品品类名（服务端 /api/me 下发 item_categories，避免前端另抄一份表）----
+let CAT_LABELS={};
+// catText(n) →「12 鱼钩」；表里没有的品类只显示数字。
+function catText(n){const k=String(n??'');return n==null||n===''?'':(CAT_LABELS[k]?`${k} ${CAT_LABELS[k]}`:k)}
 // ---- 版本更新提示（数据由 launcher 检测后随 /api/me、/api/dashboard 下发）----
 let UPDATE=null;
 function renderUpdate(u){
@@ -354,7 +366,7 @@ async function doLogin(e){
 function logout(){clearInterval(REFRESH_TIMER);REFRESH_TIMER=null;TOKEN='';localStorage.removeItem('rf4_admin_token');$('#app').style.display='none';$('#login').style.display='grid'}
 async function boot(){
   try{
-    const me=await api('/api/me');$('#who').textContent=me.username;$('#login').style.display='none';$('#app').style.display='grid';
+    const me=await api('/api/me');$('#who').textContent=me.username;CAT_LABELS=me.item_categories||{};$('#login').style.display='none';$('#app').style.display='grid';
     renderUpdate(me.update);
     const initial=location.hash.slice(1);go(titles[initial]?initial:'dashboard',true);if(!REFRESH_TIMER)REFRESH_TIMER=setInterval(()=>{if(!TOKEN)return;if(VIEW==='dashboard')loadDashboard(false).catch(()=>{});else if(VIEW==='players')loadPlayers(true).catch(()=>{})},8000);
   }catch(e){logout()}
@@ -432,13 +444,13 @@ const TUNABLE_DEFS=[
   ['bait_rotation_auto_round','自动轮换轮次偏移（勿手改）',0,'「立即重抽本期」按钮每次 +1。时间桶 = floor(now/周期)+偏移，改它等于换一批开口饵，但周期与下次切换时刻不变'],
   ['bait_rotation_auto_sec','自动轮换周期秒',7200,'全局统一周期：7200=2小时。所有鱼在同一时间桶切换，改周期后下一次切换按新长度重新对齐'],
   ['bait_evidence_low_scale','规则外实证饵系数',0.1,'「不在爱吃饵名单里、但 companion 在榜」的饵权重系数：0.1=很难钓到（默认，2026-11-19 由 0.35 下调）、0.35=旧值、0=完全不吃。自动轮换没抽中的饵也落在这一档'],
-  ['bite_gate_lure_diet_min','拟饵食性门槛',0.3,'硬性鱼口约束开启时，生态食性 lure 权重低于该值的鱼不攻拟饵（泥鳅0.20、鲤族0 被剔除；狗鱼2.07、江鳕0.63 保留）。范围 0~1'],
-  ['bite_gate_layer_floor','水层超界杂口',0.01,'硬性鱼口约束开启时，钓层落在鱼种栖息水层范围±0.15 之外时权重乘该系数；0=完全杜绝，0.01=保留约1%极小杂口'],
+  ['bite_gate_layer_floor','水层地板',0.01,'水层地板开启时，钓层超出鱼种栖息区间 ±0.15 的候选乘该系数；0.01=保留约 1% 极小杂口，0=完全杜绝'],
   ['bite_empty_retry_scale','空轮重排倍率',1,'空轮（无符合条件的鱼）后下一轮等待时间的倍率：0.25=空轮 5 秒重试（正常 20 秒上限不变）；1=与正常咬钩同节奏'],
-  ['bite_gate_pity_rounds','保底杂口轮数',0,'连续空杆 N 轮后放宽环境因素（分布散布/水层地板）重掷一次保口；0=关闭。食性硬门不放宽：泥鳅永不攻拟饵'],
+  ['bite_gate_pity_rounds','保底杂口轮数',0,'连续空杆 N 轮后放宽环境因素（分布散布/水层地板）重掷一次保口；0=关闭。allow/deny 不放宽：名单外的饵仍是 0'],
   ['fish_roll_trace_enabled','判鱼追踪开关',1,'1=每杆真实咬钩都留一份决策快照（候选鱼种与各层权重），供「钓场与鱼口」页的判鱼追踪面板排错；0=完全不采、零开销。纯诊断，不参与判鱼'],
   ['fish_roll_trace_keep','判鱼追踪保留条数',300,'追踪表按此条数环形保留，超出丢最旧；0=不落库。单玩家咬钩约 30 秒一次，300 条足够回溯最近一段时间'],
   ['fish_diel_weight_enabled','昼夜权重开关',1,'1=按鱼种的昼夜四段曲线调整判鱼权重：峰值段 ×1、最不活跃段最低 ×0.08（只压不抬）。曲线存在 fish_ecology.diel_curve，顺序 [夜,晨,昼,昏]，逐鱼可在生态弹窗或水域覆盖里改。独立于生态总开关，生态关着也生效；0=昼夜完全中性'],
+  ['fish_diel_inactive_block','非活跃时段禁口',1,'1=曲线值 <0.5 的段（= 位图未置位 = 鱼种卡上的活跃时段之外）该鱼权重直接归零，整段时间钓不到这条鱼；0=回到旧口径，只乘曲线系数（边缘段常剩 0.3~0.45，会出现「卡片写夜行、凌晨照样连竿」）。只作用于昼夜层，峰值段不受影响'],
   ['fish_weight_scale','鱼体重倍率',1,'全地图鱼重整体缩放，2=两倍重'],
   ['fish_weight_cap','鱼重受钓具上限',0,'1=超出钓具负重的鱼按上限截断；0=不限制'],
   ['electric_locked_multiplier','电轮锁轮倍率',3,'电轮锁轮有效承力=当前机械承力与电机承力较小者的该倍率；默认3'],
@@ -775,15 +787,6 @@ function baitBanner(){
   if(BAIT_RULES_ON)return '';
   return '<div style="margin:10px 0;padding:10px 12px;border:1px solid #6c4a2b;background:#2a1e12;border-radius:8px">⚠️ 「鱼类吃饵偏好」开关当前是关闭的：这里保存的规则不影响判鱼。请到「钓场与鱼口」打开该开关后才会生效。</div>';
 }
-function baitRotationHTML(r){
-  const rot=r.rotation||{};
-  // 自动抽取有独立列（baitAutoPickHTML），这里只管手工编组的轮换。
-  if(r.auto_rotation||!rot.enabled||rot.mode==='auto')return '';
-  const next=rot.next_switch?new Date(rot.next_switch*1000).toLocaleTimeString():'—';
-  const mode=rot.mode==='strict'?'严格':'软性';
-  return `<div class="muted" style="font-size:12px;margin-top:4px">🔁 轮换 ${rot.active+1}/${rot.total} · 当前：${esc((rot.active_baits||[]).join(' / '))} · ${mode} · 下次 ${esc(next)}</div>`;
-}
-
 // 自动抽取列：本期抽中哪几款 + 配额/池子 + 下次切换时间。
 // 开关本身在左边的复选框，这里只负责「现在开的是什么饵」。
 function baitAutoPickHTML(r){
@@ -851,7 +854,7 @@ function baitRuleHTML(r){
   const tag=r.source==='override'
     ? (r.enabled?'<span class="tag gold">已覆盖</span>':'<span class="tag">覆盖已停用</span>')
     : '<span class="tag">内置</span>';
-  return rule+baitRotationHTML(r)+'<div style="margin-top:4px">'+tag+'</div>';
+  return rule+'<div style="margin-top:4px">'+tag+'</div>';
 }
 function renderBaitTable(){
   const el=$('#baitTable');
@@ -867,30 +870,28 @@ function renderBaitTable(){
       .filter(([k])=>(r.diet[k]||0)>0.2)
       .sort((a,b)=>(r.diet[b[0]]||0)-(r.diet[a[0]]||0))
       .slice(0,3)
-      .map(([k,zhl,c])=>`<span class="pill" style="background:${c}22;color:${c};border:1px solid ${c}55;margin:1px 0" title="${zhl} ${(r.diet[k]||0).toFixed(2)}">${zhl}${k==='lure'?(r.lure_ok?'✓':'✗'):' '+(r.diet[k]||0).toFixed(1)}</span>`).join(' ')
-      +(r.diet.lure!==undefined?` <span class="pill ${r.lure_ok?'ok':''}" title="G1 硬门：拟饵食性 ${(r.diet.lure||0).toFixed(2)} ${r.lure_ok?'≥0.30 会攻拟饵':'<0.30 不攻拟饵'}">${r.lure_ok?'攻拟饵':'不攻拟饵'}</span>`:'')
+      .map(([k,zhl,c])=>`<span class="pill" style="background:${c}22;color:${c};border:1px solid ${c}55;margin:1px 0" title="${zhl} ${(r.diet[k]||0).toFixed(2)}">${zhl} ${(r.diet[k]||0).toFixed(1)}</span>`).join(' ')
       :'<span class="muted">无档案</span>';
     const layerHTML=r.layer&&(r.layer[2]||r.layer[0])?`<div title="活动 ${(r.layer[0]||0).toFixed(2)}~${(r.layer[2]||0).toFixed(2)} 偏好 ${(r.layer[1]||0).toFixed(2)}（0水面~1水底，黄线=偏好）" style="position:relative;height:14px;border-radius:7px;background:#0a1521;min-width:64px">
       <div style="position:absolute;left:${Math.max(0,r.layer[0]*100)}%;width:${Math.max(2,(Math.min(1,r.layer[2])-Math.max(0,r.layer[0]))*100)}%;top:2px;bottom:2px;background:linear-gradient(90deg,#2f7d5f,#2f7d9f);border-radius:5px"></div>
       <div style="position:absolute;left:calc(${Math.max(0,Math.min(1,r.layer[1])*100)}% - 1.5px);top:0;bottom:0;width:3px;background:#ffe3a0;border-radius:2px"></div>
     </div>`:'<span class="muted">—</span>';
     const bar=(k,zhl)=>{
-      const v=r.diet?(r.diet[k]||0):0, gate=k==='lure'?0.30:0.25, over=v>=gate;
+      const v=r.diet?(r.diet[k]||0):0;
       return `<div style="display:flex;align-items:center;gap:8px;font-size:11.5px">
         <span style="width:36px;color:var(--muted)">${zhl}</span>
         <div style="flex:1;height:9px;border-radius:5px;background:#0a1521;position:relative;overflow:hidden">
-          <div style="position:absolute;left:0;top:0;bottom:0;width:${Math.min(100,v/2.2*100)}%;background:${over?'linear-gradient(90deg,#25805e,#2fb584)':'#3a4a5c'};border-radius:5px"></div>
-          <div style="position:absolute;left:${gate/2.2*100}%;top:0;bottom:0;width:2px;background:#ffbb55"></div>
+          <div style="position:absolute;left:0;top:0;bottom:0;width:${Math.min(100,v/2.2*100)}%;background:linear-gradient(90deg,#25805e,#2fb584);border-radius:5px"></div>
         </div>
-        <b style="width:40px;text-align:right;font-family:Consolas,monospace;color:${over?'#7ee0b0':'var(--muted)'}">${v.toFixed(2)}</b>
+        <b style="width:40px;text-align:right;font-family:Consolas,monospace;color:#7ee0b0">${v.toFixed(2)}</b>
       </div>`;
     };
     const detail=(!open)?'':`<tr><td colspan="9" style="background:#0b1623;padding:14px 18px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 34px">
         <div>
-          <b style="font-size:12px;color:#7a92aa">食性画像（与判鱼 G 层同源 · 黄线=门槛 0.25 / 拟饵 0.30）</b>
+          <b style="font-size:12px;color:#7a92aa">食性画像（仅节奏打分参考，不参与吃不吃）</b>
           <div style="margin-top:8px;display:grid;gap:5px">${CLASSES.map(([k,zhl])=>bar(k,zhl)).join('')}</div>
-          <div class="muted" style="font-size:11px;margin-top:6px">${r.lure_ok?'✅ 此鱼会攻拟饵':'⛔ 此鱼不攻拟饵（G1 硬门剔除，泥鳅类永不咬亮片）'}；灰条=不过门槛（天然饵按鱼种食性判定，攻略/本图纪录只加权）</div>
+          <div class="muted" style="font-size:11px;margin-top:6px">吃不吃只看上面的「吃 / 不吃 / 底钓只吃」；食性值只影响判鱼节奏，不再做硬门。</div>
           <div class="muted" style="font-size:11px;margin-top:6px">证据最强的饵：${esc((r.baits||[]).map(b=>`${b.bait_id}(T${b.tier}/${b.evidence})`).join(' · ')||'—')} ｜ 有规则/实证：${r.in_strict?'是':'否'} · 规则来源：${r.source==='override'?'后台覆盖':'内置'}</div>
         </div>
         <div>
@@ -923,15 +924,16 @@ function renderBaitTable(){
   el.innerHTML=baitBanner()+head+body+'</tbody></table>';
 }
 function toggleBaitRow(k){BAIT_OPEN.has(k)?BAIT_OPEN.delete(k):BAIT_OPEN.add(k);renderBaitTable()}
-// 编辑鱼饵规则：吃/不吃/底钓只吃/轮换组都改成「先选分类，再选具体饵」，
+// 编辑鱼饵规则：吃/不吃/底钓只吃都改成「先选分类，再选具体饵」，
 // 用户不需要记饵料名字；选完以标签形式展示，可单个删除。
 let BR=null;            // 当前编辑中的规则
 let BR_INIT='';         // 打开编辑器时的快照，用于未保存确认
 let BR_VIEW='edit';     // edit | pick
 let BR_PICK=null;       // {bucket,cat,sub,q}
 let BR_CATS=null;       // 分类树缓存
+let BR_TERMS=null;      // 大类词清单（含展示名与数量），与判鱼匹配同一份数据
+let BR_TERM_MAP=null;   // term -> label，用于把标签染成「整类」色
 let BR_SEQ=0;           // 搜索结果防抖
-const BR_WILDCARD=['各类饵','拟饵','活饵类','饵鱼类'];
 
 // 前置条件预设。v 必须与 fishing_bait_rules.txt 里的原文逐字一致：
 // 服务端 deriveConditionFlags 是按关键词解析的（「海图…号区域」「顺水漂流」
@@ -1007,71 +1009,68 @@ function brCondTypeChanged(){
   if(hint)hint.textContent=(p&&p.hint)||'';
 }
 
+// 分类树 + 大类词清单：选择器与标签配色共用一份，拉过一次就缓存。
+// 大类词必须来自后端（与判鱼匹配同一张表），前端不再硬编码。
+function ensureBrTerms(cb){
+  if(BR_TERMS){if(cb)cb();return Promise.resolve(BR_TERMS)}
+  return api('/api/bait/categories').then(d=>{
+    BR_CATS=d.categories||[];
+    BR_TERMS=d.terms||[];
+    BR_TERM_MAP=Object.fromEntries(BR_TERMS.map(t=>[t.term,t.label]));
+    if(cb)cb();
+    return BR_TERMS;
+  }).catch(()=>{BR_CATS=[];BR_TERMS=[];BR_TERM_MAP={};if(cb)cb();return BR_TERMS});
+}
 function editBaitRule(key){
   const r=BAIT_ROWS.find(x=>x.fish_key===key);
   if(!r){toast('找不到该鱼种','bad');return}
   BR={key:r.fish_key,name:r.name_zh,
       allow:(r.allow||[]).slice(),deny:(r.deny||[]).slice(),bottom:(r.bottom_only||[]).slice(),
-      groups:(r.groups||[]).map(g=>g.slice()),
-      sec:r.rotate_sec||0,mode:(r.rotate_mode==='strict'?'strict':'soft'),
       enabled:r.source==='override'?!!r.enabled:true,cond:r.condition||''};
-  if(!BR.groups.length)BR.groups=[[]];
   BR_INIT=brSnapshot();
   BR_VIEW='edit';
+  ensureBrTerms();          // 后台预取：等下次重绘时「整类」标签就能染上色
   renderBrEditor();
 }
 function brBucket(bucket){
   if(bucket==='allow')return BR.allow;
   if(bucket==='deny')return BR.deny;
   if(bucket==='bottom')return BR.bottom;
-  if(bucket[0]==='g')return BR.groups[Number(bucket.slice(1))]||null;
   return null;
 }
 function brBucketLabel(bucket){
   if(bucket==='allow')return '吃';
   if(bucket==='deny')return '不吃';
   if(bucket==='bottom')return '底钓只吃';
-  if(bucket[0]==='g')return '轮换组 '+(Number(bucket.slice(1))+1);
   return bucket;
 }
 function brChips(bucket){
   const list=brBucket(bucket);
   if(!list)return '';
   if(!list.length)return '<span class="muted" style="font-size:12px">（空）</span>';
-  return list.map((v,i)=>`<span class="tag" style="margin:2px 6px 2px 0;display:inline-block">${esc(v)}`+
-    `<a href="javascript:void(0)" onclick="brRemove('${bucket}',${i})" style="margin-left:6px;color:#ff9aac;text-decoration:none">×</a></span>`).join('');
+  // 大类词染成紫色并带说明：一眼看出「这条规则是整类」，不是漏写了具体饵名。
+  return list.map((v,i)=>{
+    const cat=(BR_TERM_MAP||{})[v];
+    return `<span class="tag${cat?' br-term-chip':''}" style="margin:2px 6px 2px 0;display:inline-block"${cat?` title="整类：${esc(cat)}（含该类全部饵）"`:''}>${esc(v)}`+
+      `<a href="javascript:void(0)" onclick="brRemove('${bucket}',${i})" style="margin-left:6px;color:#ff9aac;text-decoration:none">×</a></span>`;
+  }).join('');
 }
 function brRemove(bucket,i){const l=brBucket(bucket);if(l){l.splice(i,1);renderBrEditor()}}
 
 function brSnapshot(){
   if(!BR)return '';
-  return JSON.stringify({allow:BR.allow,deny:BR.deny,bottom:BR.bottom,groups:BR.groups,sec:BR.sec,mode:BR.mode,enabled:BR.enabled,cond:BR.cond});
+  return JSON.stringify({allow:BR.allow,deny:BR.deny,bottom:BR.bottom,enabled:BR.enabled,cond:BR.cond});
 }
 function brReadOptions(){
   if(!BR)return;
-  const iv=$('#brInterval'),md=$('#brMode'),en=$('#brEnabled');
-  if(iv)BR.sec=Math.max(0,Math.round(Number(iv.value||0)*60));
-  if(md)BR.mode=md.value;
+  const en=$('#brEnabled');
   if(en)BR.enabled=en.checked;
   brCondCompose();
-}
-function brModeChanged(){
-  brReadOptions();
-  renderBrEditor();
 }
 function renderBrEditor(){
   const rows=[['allow','吃（允许的饵）'],['deny','不吃'],['bottom','底钓只吃']].map(([k,label])=>
     `<div class="field"><label>${label}</label><div style="margin-bottom:6px;line-height:1.9">${brChips(k)}</div>`+
     `<button class="btn alt sm" onclick="brOpenPick('${k}')">＋ 添加饵</button></div>`).join('');
-  const groups=BR.groups.map((g,i)=>
-    `<div class="field" style="border-top:1px solid var(--line);padding-top:10px"><label>轮换组 ${i+1}</label>`+
-    `<div style="margin-bottom:6px;line-height:1.9">${brChips('g'+i)}</div>`+
-    `<button class="btn alt sm" onclick="brOpenPick('g${i}')">＋ 添加饵</button>`+
-    (BR.groups.length>1?`<button class="btn bad sm" onclick="brDelGroup(${i})">删除该组</button>`:'')+`</div>`).join('');
-  const modeSel=`<div class="field"><label>轮换模式</label><select id="brMode" onchange="brModeChanged()">`+
-    `<option value="soft"${BR.mode==='soft'?' selected':''}>软性（组外降权，仍可咬）</option>`+
-    `<option value="strict"${BR.mode==='strict'?' selected':''}>严格（只认当前组）</option>`+
-    `</select></div>`;
   const condInit=brCondParse(BR.cond);
   const condOpts=BR_COND_TYPES.map(x=>`<option value="${x.t}"${condInit.t===x.t?' selected':''}>${esc(x.label)}</option>`).join('');
   const condHint=(BR_COND_TYPES.find(x=>x.t===condInit.t)||{}).hint||'';
@@ -1084,35 +1083,15 @@ function renderBrEditor(){
     `<div class="muted" id="brCondHint" style="margin-top:6px;font-size:12px;line-height:1.7">${esc(condHint)}</div>`+
     `</div>`;
   const html=rows+
-    `<div class="section-head" style="margin-top:16px"><h2>定时轮换（手工编组）</h2><small>两组以上 + 间隔才会生效；当前组权重高，另一组按模式处理</small></div>`+
-    groups+
-    `<div class="actions" style="margin-bottom:10px"><button class="btn alt sm" onclick="brAddGroup()">＋ 新增一组</button></div>`+
-    `<div class="form-grid" style="grid-template-columns:1fr 1fr">`+
-      `<div class="field"><label>轮换间隔（分钟，0=不轮换）</label><input id="brInterval" type="number" min="0" step="1" value="${BR.sec?Math.round(BR.sec/60):0}"></div>`+
-      modeSel+
-    `</div>`+
-    `<div class="muted" style="margin:-4px 0 8px;font-size:12px;line-height:1.7">`+
-      `「按稀有度自动抽本期开口饵」是独立开关，在上一个页面的表格「自动抽取」列直接勾选，`+
-      `不在这里配。打开后忽略本页的手工组。<b>两者同时开时自动抽取优先。</b>`+
-      `未抽中的饵落到「规则外实证饵系数」那一档（默认 0.1）。</div>`+
+    `<div class="muted" style="margin:4px 0 12px;font-size:12px;line-height:1.7">`+
+      `本期开口饵由「自动抽取」独立控制，在上一个页面的表格里勾选；`+
+      `吃口资格只认上面的「吃 / 不吃 / 底钓只吃」，不再有手工轮换组。</div>`+
     condField+
     `<div class="field"><label><input type="checkbox" id="brEnabled"${BR.enabled?' checked':''}> 启用这份覆盖（不勾=回落到内置规则）</label></div>`+
     `<div class="actions"><button class="btn good" onclick="saveBaitRule()">保存</button>`+
       `<button class="btn alt" onclick="closeModal()">取消</button>`+
       `<button class="btn bad" onclick="resetBaitRule('${esc(BR.key)}')">恢复默认</button></div>`;
-  showModal('编辑鱼饵规则 · '+BR.name,'点「添加饵」先选分类、再选具体饵料；不需要记名字',html,'bait');
-}
-function brAddGroup(){
-  brReadOptions();
-  if(BR.groups.length>=20){toast('最多 20 组','bad');return}
-  BR.groups.push([]);
-  renderBrEditor();
-}
-function brDelGroup(i){
-  brReadOptions();
-  BR.groups.splice(i,1);
-  if(!BR.groups.length)BR.groups=[[]];
-  renderBrEditor();
+  showModal('编辑鱼饵规则 · '+BR.name,'可以整类加入（如「颗粒」「浮水饵」），也可以挑具体饵料；不需要记名字',html,'bait');
 }
 function brOpenPick(bucket){
   brReadOptions();
@@ -1121,29 +1100,47 @@ function brOpenPick(bucket){
   if(BR_CATS)renderBrPicker();
   else{
     showModal('选择鱼饵','读取分类…','<div class="empty">读取中…</div>');
-    api('/api/bait/categories').then(d=>{BR_CATS=d.categories||[];renderBrPicker()})
-      .catch(e=>{BR_CATS=[];renderBrPicker();toast(e.message,'bad')});
+    ensureBrTerms(renderBrPicker);
   }
+}
+// 当前分类下应该露出哪些「整类」按钮：
+// 全部分类时只给三类（全部 / 饵料 / 拟饵），选了具体大类再列出它的二级类型，
+// 免得一屏 40 个按钮。数量为 0 的类型不显示（选了也匹配不到任何饵）。
+function brPickTerms(cat){
+  const all=(BR_TERMS||[]).filter(t=>!t.alias);
+  // 全部分类只给三个顶层词（全部 / 饵料 / 拟饵）；选了具体大类再列它的二级类型。
+  if(!cat)return all.filter(t=>!t.sub);
+  return all.filter(t=>!t.cat||(t.cat===cat&&(!t.sub||t.count>0)));
 }
 function renderBrPicker(){
   const p=BR_PICK;
-  const cats=[{key:0,label:'全部饵料 / 拟饵'},{key:27,label:'饵料'},{key:17,label:'拟饵'},{key:-1,label:'规则通配'}];
+  const cats=[{key:0,label:'全部饵料 / 拟饵'},{key:27,label:'饵料'},{key:17,label:'拟饵'}];
   const catOpts=cats.map(c=>`<option value="${c.key}"${p.cat===c.key?' selected':''}>${esc(c.label)}</option>`).join('');
   let subOpts='<option value="0">全部分类</option>';
   if(p.cat>0){
     const node=(BR_CATS||[]).find(c=>c.key===p.cat);
     const kids=(node&&node.children)||[];
     subOpts='<option value="0">全部分类</option>'+kids.map(s=>
-      `<option value="${s.sub}"${p.sub===s.sub?' selected':''}>${esc(s.label)}（${s.count}）</option>`).join('');
+      `<option value="${s.sub}"${p.sub===s.sub?' selected':''}>${esc(s.label)} · ${s.count}</option>`).join('');
   }
+  const used=(brBucket(p.bucket)||[]);
+  const terms=brPickTerms(p.cat);
+  const termHTML=terms.length?`<div class="field"><label>按大类加入（整类）</label>
+      <div class="br-term-grid">${terms.map(t=>{
+        const on=used.includes(t.term);
+        return `<button class="btn alt sm${on?' on':''}"${on?' disabled':''} onclick="brPickAdd('${esc(t.term)}')"
+          title="把「${esc(t.label)}」整类写进「${esc(brBucketLabel(p.bucket))}」${t.count?'，共 '+t.count+' 款':''}">${esc(t.label)}${t.count?` <span class="muted">${t.count}</span>`:''}</button>`;
+      }).join('')}</div>
+      <div class="muted" style="font-size:11px;margin-top:5px;line-height:1.6">点整类就把这一类的全部饵一次性写进规则；开了自动抽取的鱼，本期开口饵会从这一类里抽。</div>
+    </div>`:'';
   const html=`<div class="form-grid" style="grid-template-columns:1fr 1fr">
       <div class="field"><label>分类</label><select id="brPickCat" onchange="brPickCatChange(this.value)">${catOpts}</select></div>
       <div class="field"><label>二级分类</label><select id="brPickSub" onchange="brPickSubChange(this.value)"${p.cat>0?'':' disabled'}>${subOpts}</select></div>
-    </div>`+
-    (p.cat===-1?'':'<div class="field"><input id="brPickQ" placeholder="搜索名称 / ID" value="'+esc(p.q)+'" oninput="brPickSearch(this.value)" style="width:100%"></div>')+
+    </div>`+termHTML+
+    `<div class="field"><input id="brPickQ" placeholder="搜索名称 / ID" value="${esc(p.q)}" oninput="brPickSearch(this.value)" style="width:100%"></div>`+
     `<div class="results" id="brPickList"><div class="empty">读取中…</div></div>
      <div class="actions"><button class="btn alt" onclick="brPickBack()">返回编辑</button></div>`;
-  showModal('选择鱼饵 · 加入「'+brBucketLabel(p.bucket)+'」','先选分类，再点具体饵料即可加入',html,'bait');
+  showModal('选择鱼饵 · 加入「'+brBucketLabel(p.bucket)+'」','可以点整类一次加完，也可以只挑具体饵料',html,'bait');
   brPickReload();
 }
 function brPickBack(){BR_VIEW='edit';renderBrEditor()}
@@ -1159,10 +1156,6 @@ function brPickAdd(name){
 function brPickReload(){
   const p=BR_PICK,el=$('#brPickList');
   if(!el)return;
-  if(p.cat===-1){
-    el.innerHTML=BR_WILDCARD.map(w=>`<div class="result" onclick="brPickAdd('${w}')"><div><b>${w}</b><div class="muted">规则通配：匹配整类饵料</div></div></div>`).join('');
-    return;
-  }
   const qs='?cat='+(p.cat||0)+'&sub='+(p.sub||0)+'&q='+encodeURIComponent(p.q||'')+'&limit=200';
   api('/api/bait/items'+qs).then(d=>{
     const rows=d.rows||[];
@@ -1174,9 +1167,8 @@ function brPickReload(){
 async function saveBaitRule(){
   if(!BR)return;
   brReadOptions();
-  const groups=BR.groups.map(g=>g.filter(Boolean)).filter(g=>g.length);
   const payload={fish_zh:BR.name,allow:BR.allow,deny:BR.deny,bottom_only:BR.bottom,condition:BR.cond,
-    groups,rotate_sec:BR.sec,rotate_mode:BR.mode,enabled:BR.enabled};
+    enabled:BR.enabled};
   try{
     await api('/api/bait/rules',{method:'PUT',body:JSON.stringify(payload)});
     BR_INIT=brSnapshot();               // 已保存，关闭时不再弹"未保存"确认
@@ -1263,6 +1255,21 @@ const TWO_STAGE_GROUPS={
          defaults:[1,92,6,1],title:'打窝阶段·四档占比',
          hint:'窝料就位进入打窝阶段后按这组占比出鱼；奖杯保底与脱钩补偿照常生效'}
 };
+// 鱼猎四阶段的四张表：默认值 = 改造前写死在服务端的字面量。
+const FOUR_STAGE_GROUPS=[
+ {stage:'daily',title:'日常',
+  keys:['hunt_stage_daily_below','hunt_stage_daily_qualified','hunt_stage_daily_trophy','hunt_stage_daily_super'],
+  defaults:[74.7,24,1,.3]},
+ {stage:'gather',title:'聚鱼',
+  keys:['hunt_stage_gather_below','hunt_stage_gather_qualified','hunt_stage_gather_trophy','hunt_stage_gather_super'],
+  defaults:[54.5,43,2,.5]},
+ {stage:'active',title:'发窝',
+  keys:['hunt_stage_active_below','hunt_stage_active_qualified','hunt_stage_active_trophy','hunt_stage_active_super'],
+  defaults:[30,61.2,6.8,2]},
+ {stage:'giant',title:'巨物发窝',
+  keys:['hunt_stage_giant_below','hunt_stage_giant_qualified','hunt_stage_giant_trophy','hunt_stage_giant_super'],
+  defaults:[10,64,20,6]}
+];
 function spawnModeOf(t){
  if(String(t.grade_ratio_enabled??'')==='1')return 'grade_ratio';
  if(String(t.two_stage_hunt_enabled??'')==='1')return 'two_stage';
@@ -1311,13 +1318,51 @@ async function resetTwoStage(g){
  twoStagePreview(g);
  await saveTwoStage(g);
 }
+// ---- 鱼猎四阶段：4×4 可调表（未达标/达标/奖杯/蓝冠）----
+function fourStageCard(t){
+ const rows=FOUR_STAGE_GROUPS.map(g=>{
+  const raw=g.keys.map((key,i)=>{const v=parseFloat(String(t[key]??g.defaults[i]));return Number.isFinite(v)&&v>0?v:0});
+  const eff=raw.every(v=>v<=0)?g.defaults:raw;
+  const shares=gradeRatioValues(eff);
+  const cells=g.keys.map((key,i)=>`<td><input class="mini-input" type="number" min="0" step="0.1" id="fs_${g.stage}_${i}" value="${eff[i]}" oninput="fourStagePreview()"></td>`).join('');
+  return `<tr><td><b>${g.title}</b></td>${cells}<td class="mono" id="fs_share_${g.stage}">${shares.map(v=>v.toFixed(1)+'%').join(' / ')}</td></tr>`;
+ }).join('');
+ return `<div class="grade-ratio-card"><div class="grade-ratio-head"><div><b>鱼猎四阶段·四档相对权重</b><div class="tunable-hint">填相对值即可，不需要凑满 100：保存时每行自动归一到总和 100%，四档全 0 的行不计。淡水、海钓、路亚共用这张表；两档制模式下淡水改走两档表。奖杯保底与脱钩补偿在比例之上叠加，触发条件不受此表影响。</div></div></div><div class="table-wrap"><table><thead><tr><th>阶段</th><th>未达标</th><th>达标</th><th>奖杯</th><th>蓝冠</th><th>实际占比</th></tr></thead><tbody>${rows}</tbody></table></div><div class="grade-ratio-actions"><button class="btn good sm" onclick="saveFourStage()">保存四阶段比例</button><button class="btn alt sm" onclick="resetFourStage()">恢复默认比例</button></div></div>`;
+}
+function fourStagePreview(){
+ FOUR_STAGE_GROUPS.forEach(g=>{
+  const values=g.keys.map((key,i)=>parseFloat($('#fs_'+g.stage+'_'+i).value)||0);
+  const shares=gradeRatioValues(values);
+  const el=$('#fs_share_'+g.stage);
+  if(el)el.textContent=values.some(v=>v>0)?shares.map(v=>v.toFixed(1)+'%').join(' / '):'全 0 将回退默认';
+ });
+}
+async function saveFourStage(){
+ for(const g of FOUR_STAGE_GROUPS){
+  const values=g.keys.map((key,i)=>parseFloat($('#fs_'+g.stage+'_'+i).value)||0);
+  const total=values.reduce((n,v)=>n+Math.max(0,v),0);
+  if(total<=0){toast(g.title+'四档不能全为 0','bad');return}
+  const shares=gradeRatioPercentValues(values);
+  for(let i=0;i<g.keys.length;i++){
+   await api('/api/tunables',{method:'POST',body:JSON.stringify({key:g.keys[i],value:String(shares[i])})});
+  }
+ }
+ toast('已保存四阶段比例，最多 30 秒生效');
+ await loadTunables();
+}
+async function resetFourStage(){
+ FOUR_STAGE_GROUPS.forEach(g=>g.keys.forEach((key,i)=>{const el=$('#fs_'+g.stage+'_'+i);if(el)el.value=g.defaults[i]}));
+ fourStagePreview();
+ await saveFourStage();
+}
 function spawnModeControl(t){
  const mode=spawnModeOf(t);
  const btns=SPAWN_MODE_OPTIONS.map(([m,label,hint])=>`<button class="btn sm" style="min-width:180px;${mode===m?'background:#2f7d4f;border-color:#2f7d4f':'opacity:.6'}" onclick="askSpawnMode('${m}')" title="${hint}">${label}${mode===m?'：当前':''}</button>`).join('');
  const legacyNote=mode==='legacy'?'<div class="tunable-hint" style="margin-top:8px">当前三个开关全部关闭：发鱼回退旧的对数正态体重采样路径。请选择上面三种模式之一。</div>':'';
- const fishHuntNote=mode==='fish_hunt'?'<div class="tunable-hint" style="margin-top:8px">鱼猎四阶段权重内置为固定值（日常 74.7/24/1/0.3 · 聚鱼 54.5/43/2/0.5 · 发窝 30/61.2/6.8/2 · 巨物 10/64/20/6），暂无滑杆；奖杯保底与脱钩补偿照常生效。</div>':'';
+ const fishHuntNote=mode==='fish_hunt'?'<div class="tunable-hint" style="margin-top:8px">下方的 4×4 表格就是当前生效的四阶段派发比例；调完保存，最多 30 秒生效。</div>':'';
  let body='';
  if(mode==='grade_ratio')body=gradeRatioControl(t);
+ else if(mode==='fish_hunt')body=fourStageCard(t);
  else if(mode==='two_stage')body=twoStageSliderCard('daily',t)+twoStageSliderCard('baited',t);
  return `<div class="tunable-field tunable-wide"><div><label>发鱼模式</label><div class="tunable-hint">三种模式互斥，点击即整体切换（写入三个开关，单事务保存）；切换后最多 30 秒生效。海钓与路亚在三种模式下都走四阶段。</div></div><div style="display:flex;gap:8px;flex-wrap:wrap">${btns}</div>${legacyNote}${fishHuntNote}</div>${body}`;
 }
@@ -1380,11 +1425,11 @@ async function loadTunables(){
  // 全部一次性渲染进 DOM，Tab 只切显隐（见 setParamsPage），避免缓存与重绘。
  const PAGES=[
   {id:'gameplay',tab:'玩法与钓组',sub:'咬钩 · 手感 · 电轮 · 摩擦片磨损',groups:[
-    ['玩法手感','咬钩快慢、饵料偏好、鱼的大小与挣扎力度',['bite_probability','bite_delay_fixed','bite_delay_scale','bite_delay_max','bite_delay_lure_max','bait_pref_scale','bait_pref_weight_shift','bite_gate_lure_diet_min','bite_gate_layer_floor','fish_weight_scale','fish_weight_cap','fight_power_scale','fish_pull_ln_slope','fish_pull_fallback_k','fish_initial_stamina_ratio']],
+    ['玩法手感','咬钩快慢、饵料偏好、鱼的大小与挣扎力度',['bite_probability','bite_delay_fixed','bite_delay_scale','bite_delay_max','bite_delay_lure_max','bait_pref_scale','bait_pref_weight_shift','bite_gate_layer_floor','fish_weight_scale','fish_weight_cap','fight_power_scale','fish_pull_ln_slope','fish_pull_fallback_k','fish_initial_stamina_ratio']],
     ['自动轮换','按稀有度抽本期开口饵，未抽中降权；先在「鱼饵偏好」表格里给该鱼勾上「自动抽取」',['bait_rotation_auto_enabled','bait_rotation_auto_sec','bait_evidence_low_scale']],
     ['钩型与咬口','嘬饵总开关与发鱼软匹配；后台钩型倍率仍独立生效',['hook_nibble_enabled','hook_spawn_match_strength']],
     ['判鱼追踪','只读诊断：记录每杆判鱼的候选与各层权重，用于回答「为什么空军」；不参与判鱼数值',['fish_roll_trace_enabled','fish_roll_trace_keep']],
-    ['昼夜权重','按鱼种的昼夜四段曲线 [夜,晨,昼,昏] 给判鱼权重做乘性压制：峰值 ×1、最低 ×0.08。只压不抬，曲线数据在生态档案里；独立于生态总开关',['fish_diel_weight_enabled']],
+    ['昼夜权重','按鱼种的昼夜四段曲线 [夜,晨,昼,昏] 给判鱼权重做乘性压制：峰值 ×1、最低 ×0.08。只压不抬，曲线数据在生态档案里；独立于生态总开关。非活跃时段（曲线 <0.5）可整段禁口',['fish_diel_weight_enabled','fish_diel_inactive_block']],
     ['电轮参数','电轮锁轮倍率与电机功率折算；改后最多 30 秒生效',['electric_locked_multiplier','electric_motor_kg_per_power']],
     ['摩擦片磨损','泄力打滑通道的系数（2026-11-12 拍平：速率不分档位，旧档位键 reel_slip_wear_low/s25~s28/max 已停用不再读取）；改后最多 30 秒生效，只影响后续结算',['reel_slip_wear','reel_slip_calibration_seconds','reel_slip_deadband_ratio']],
     ['受力磨损速率','轮件/竿件/前导按搏鱼受力秒扣磨损的速率；0=关通道',['wear_stress_oil_per_s','wear_stress_gear_per_s','wear_stress_bearing_per_s','wear_stress_spool_per_s','wear_stress_guides_per_s','wear_stress_rodblank_per_s','wear_leader_per_stress_sec']],
@@ -1661,7 +1706,7 @@ function renderItems(){
 }
 function renderItemRows(){
   const q=ITEM_FILTER.toLowerCase();const rows=(PLAYER.items||[]).filter(x=>!q||`${x.item_id} ${x.name} ${x.guid}`.toLowerCase().includes(q));
-  $('#itemRows').innerHTML=rows.map(x=>`<tr><td><div class="item-cell"><img class="item-icon" src="icons/items/${encodeURIComponent(String(x.item_id||'').toLowerCase())}.webp" onerror="this.style.display='none'"><div><b>${esc(x.name||x.item_id)}</b><div class="muted mono">${esc(x.item_id)}</div></div></div></td><td>${x.category}</td><td>${esc(x.container)}</td><td>${x.qty}</td><td>${Number(x.durability).toFixed(4)}</td><td class="mono muted">${esc(x.guid.slice(0,12))}…</td><td class="right"><button class="btn bad sm" data-guid="${esc(x.guid)}" onclick="deletePlayerItem(this.dataset.guid)">删除</button></td></tr>`).join('')||`<tr><td colspan="7" class="empty">没有物品${GRANT_ITEM_UI_ENABLED?'，点上方「+ 发放物品」添加':''}</td></tr>`;
+  $('#itemRows').innerHTML=rows.map(x=>`<tr><td><div class="item-cell"><img class="item-icon" src="icons/items/${encodeURIComponent(String(x.item_id||'').toLowerCase())}.webp" onerror="this.style.display='none'"><div><b>${esc(x.name||x.item_id)}</b><div class="muted mono">${esc(x.item_id)}</div></div></div></td><td>${esc(catText(x.category))}</td><td>${esc(x.container)}</td><td>${x.qty}</td><td>${Number(x.durability).toFixed(4)}</td><td class="mono muted">${esc(x.guid.slice(0,12))}…</td><td class="right"><button class="btn bad sm" data-guid="${esc(x.guid)}" onclick="deletePlayerItem(this.dataset.guid)">删除</button></td></tr>`).join('')||`<tr><td colspan="7" class="empty">没有物品${GRANT_ITEM_UI_ENABLED?'，点上方「+ 发放物品」添加':''}</td></tr>`;
 }
 async function deletePlayerItem(guid){
   askConfirm('删除物品','把这件物品从该玩家的背包/装备中删除，不可恢复。',async()=>{
@@ -1671,7 +1716,7 @@ async function deletePlayerItem(guid){
 async function showGrantItem(){
   showModal('发放物品','搜索物品目录，选择后输入数量',`<input id="grantSearch" placeholder="物品 ID 或中文名" oninput="debounce('grantSearch',searchGrantItems)"><div class="results" id="grantResults"></div><div class="form-grid" style="grid-template-columns:1fr 110px;margin-top:12px"><div class="field"><label>已选物品</label><input id="grantItemId" placeholder="item_id"></div><div class="field"><label>数量</label><input id="grantQty" type="number" min="1" value="1"></div></div><div class="actions"><button class="btn good" onclick="grantItem()">确认发放</button></div>`);searchGrantItems();
 }
-async function searchGrantItems(){const q=$('#grantSearch').value.trim();const list=await api('/api/catalog/items?q='+encodeURIComponent(q));$('#grantResults').innerHTML=list.map(x=>`<div class="result" data-id="${esc(x.item_id)}" onclick="$('#grantItemId').value=this.dataset.id"><div><b>${esc(x.name||x.item_id)}</b><div class="muted mono">${esc(x.item_id)} · ${x.numeric_id}</div></div><span class="tag">cat ${x.category}</span></div>`).join('')||'<div class="empty">无结果</div>'}
+async function searchGrantItems(){const q=$('#grantSearch').value.trim();const list=await api('/api/catalog/items?q='+encodeURIComponent(q));$('#grantResults').innerHTML=list.map(x=>`<div class="result" data-id="${esc(x.item_id)}" onclick="$('#grantItemId').value=this.dataset.id"><div><b>${esc(x.name||x.item_id)}</b><div class="muted mono">${esc(x.item_id)} · ${x.numeric_id}</div></div><span class="tag">${esc(catText(x.category))}</span></div>`).join('')||'<div class="empty">无结果</div>'}
 async function grantItem(){const item_id=$('#grantItemId').value.trim(),qty=+$('#grantQty').value||1;if(!item_id)return toast('请选择物品','bad');await api('/api/players/grant',{method:'POST',body:JSON.stringify({uid:PLAYER.uid,item_id,qty})});closeModal();toast('已下发，约 2 秒内到达');await sleep(2300);await selectPlayer(PLAYER.uid);setPlayerTab('items')}
 function renderKeepnet(){
   const rows=PLAYER.keepnet||[];
@@ -1731,7 +1776,7 @@ async function loadStoreItems(){
   renderStoreTable();
 }
 function renderStoreTable(){
-  $('#storeTable').innerHTML=`<table><thead><tr><th>商品</th><th>类别</th><th>原价 / 原库存</th><th>有效银价</th><th>有效金币</th><th>有效库存</th><th></th></tr></thead><tbody>${STORE_ITEMS.map((x,i)=>`<tr><td><b>${esc(x.name||x.item_id)}</b><div class="muted mono">${esc(x.item_id)}</div></td><td>${x.category}</td><td class="muted">${fmt(x.base_silver)} / ${fmt(x.base_gold)} / ${fmt(x.base_stock)}</td><td><input class="mini-input" id="ss_${i}" type="number" min="0" value="${x.silver}"></td><td><input class="mini-input" id="sg_${i}" type="number" min="0" value="${x.gold}"></td><td><input class="mini-input" id="st_${i}" type="number" min="0" value="${x.stock}"></td><td class="right"><button class="btn sm ${x.has_override?'good':''}" onclick="saveStoreRow(${i})">${x.has_override?'更新覆盖':'保存'}</button>${x.has_override?` <button class="btn alt sm" onclick="resetStoreRow(${i})">恢复默认</button>`:''}</td></tr>`).join('')||'<tr><td colspan="7" class="empty">该商店没有货架商品</td></tr>'}</tbody></table>`;
+  $('#storeTable').innerHTML=`<table><thead><tr><th>商品</th><th>类别</th><th>原价 / 原库存</th><th>有效银价</th><th>有效金币</th><th>有效库存</th><th></th></tr></thead><tbody>${STORE_ITEMS.map((x,i)=>`<tr><td><b>${esc(x.name||x.item_id)}</b><div class="muted mono">${esc(x.item_id)}</div></td><td>${esc(catText(x.category))}</td><td class="muted">${fmt(x.base_silver)} / ${fmt(x.base_gold)} / ${fmt(x.base_stock)}</td><td><input class="mini-input" id="ss_${i}" type="number" min="0" value="${x.silver}"></td><td><input class="mini-input" id="sg_${i}" type="number" min="0" value="${x.gold}"></td><td><input class="mini-input" id="st_${i}" type="number" min="0" value="${x.stock}"></td><td class="right"><button class="btn sm ${x.has_override?'good':''}" onclick="saveStoreRow(${i})">${x.has_override?'更新覆盖':'保存'}</button>${x.has_override?` <button class="btn alt sm" onclick="resetStoreRow(${i})">恢复默认</button>`:''}</td></tr>`).join('')||'<tr><td colspan="7" class="empty">该商店没有货架商品</td></tr>'}</tbody></table>`;
 }
 async function saveStoreRow(i){
   const x=STORE_ITEMS[i];const body={store_id:x.store_id,item_id:x.item_id,silver:+$('#ss_'+i).value,gold:+$('#sg_'+i).value,stock:+$('#st_'+i).value};
@@ -1742,7 +1787,7 @@ async function resetStoreRow(i){
 }
 let FISH_AREAS=[];
 const FISH_RULE_SWITCHES={
-  gate:{key:'bite_gate_enabled',prefix:'biteGate',enabled:null,on:'硬性资格门：拟饵不再被非掠食鱼（泥鳅、鲤族）攻击；水层超界只保留约1%极小杂口。推荐与吃饵偏好/生态/天气/分布一起开启。',off:'不做硬性约束，任何鱼都可能咬任何饵（旧版手感）。'},
+  gate:{key:'bite_gate_enabled',prefix:'biteGate',enabled:null,on:'只保留水层地板：钓层超出鱼种栖息区间 ±0.15 时只留约 1% 杂口。吃不吃已统一由规则 allow/deny 决定。',off:'不做水层地板，水层错配只按生态层软权重衰减（旧版手感）。'},
   ecology:{key:'fish_ecology_enabled',prefix:'fishEcology',enabled:null,on:'启用 252 种鱼的水层/季节/天气/底质/拟饵动作等生态权重，影响吃口与候选鱼种。昼夜权重已独立成单独开关，默认就生效，不受这里影响。',off:'以上生态因子全部中性。注意昼夜权重仍按「游戏参数 → 昼夜权重」独立生效，要连昼夜一起关需到那里关。'},
   weather:{key:'fish_weather_enabled',prefix:'fishWeather',enabled:null,on:'按游戏内温度、天气和鱼种习性影响吃口；底钓、浮钓会间歇试口。',off:'关闭天气鱼口修正，沿用原来的一次判鱼流程。'},
   distribution:{key:'fish_distribution_enabled',prefix:'fishDistribution',enabled:null,on:'按地图鱼种和所在区域变化鱼口，每四个游戏小时重新分布（只管位置，昼夜由「昼夜权重」单独控制）。',off:'沿用现有分布，各处水域可出鱼，不增加点位限制。'},
@@ -1806,8 +1851,8 @@ async function toggleFishRules(kind,el){
 }
 // 鱼饵偏好缓存：鱼口控制页在鱼种行里附带饵料摘要，只拉一次。
 // 饵料映射缓存。钓鱼口页的"爱吃的饵"列会读它；鱼饵偏好页保存后必须
-// 主动失效，否则钓场页永远显示保存前的规则与轮换组。
-let BAIT_MAP=null,BAIT_MAP_P=null;
+// 主动失效，否则钓场页永远显示保存前的规则。
+let BAIT_MAP=null,BAIT_MAP_P=null,BAIT_TERMS_MAP={};
 function invalidateBaitMap(){BAIT_MAP=null;BAIT_MAP_P=null}
 function ensureBaitMap(force){
   if(force)invalidateBaitMap();
@@ -1815,63 +1860,62 @@ function ensureBaitMap(force){
   if(BAIT_MAP_P)return BAIT_MAP_P;
   BAIT_MAP_P=api('/api/bait/prefs?limit=2000').then(d=>{
     BAIT_MAP={};(d.rows||[]).forEach(r=>{BAIT_MAP[r.fish_key]=r});
+    // 整类词表（颗粒/浮水饵/拟饵…）：用来把候选池里的类型词标成「整类」。
+    BAIT_TERMS_MAP=Object.fromEntries((d.type_terms||[]).map(t=>[t.term,t.label]));
     return BAIT_MAP;
   }).catch(e=>{BAIT_MAP_P=null;throw e});
   return BAIT_MAP_P;
 }
-// 鱼口列表里的一行饵料摘要：规则吃/不吃 + tier3 饵名称 + 轮换状态。
-// row 是 /api/fish/config 返回的鱼种行，带权威的 bait_* 字段；
+// 鱼口列表里的一行饵料摘要：本期自动抽取的开口饵 + 规则吃/不吃 + 官服占比 + 证据。
+// row 是 /api/fish/config 返回的鱼种行，带权威的 bait_* / bait_pick 字段；
 // BAIT_MAP 里的 /api/bait/prefs 数据作为补充（提供吃/不吃与证据）。
 function baitSummaryHTML(key,row){
   const r=BAIT_MAP&&BAIT_MAP[key];
-  if(!r&&(!row||row.bait_source!=='override'))return '<div class="muted" style="font-size:11px">饵料：<span title="静态库无此鱼种的饵料记录">无资料</span></div>';
-  const allow=((r&&r.allow)||[]).slice(0,4).join('/')||'—';
+  // 自动抽取开关以 /api/fish/config 的 bait_auto 为准（直读开关表），
+  // 本期抽中哪几款优先用同接口的 bait_pick（后端按判鱼同一套 hash 现算）；
+  // 老响应没有 bait_pick 时回退到鱼饵偏好页那份 rotation.active_baits。
+  const autoOn=!!(row&&row.bait_auto)||!!(r&&r.auto_rotation);
+  if(!r&&!autoOn&&(!row||row.bait_source!=='override'))return '<div class="muted" style="font-size:11px">饵料：<span title="静态库无此鱼种的饵料记录">无资料</span></div>';
+  const allowList=(r&&r.allow)||[];
+  // 整类词加个「（整类）」后缀：候选池里「颗粒」是 30 组 98 款，不是某一款饵。
+  const allowName=v=>BAIT_TERMS_MAP[v]?`${v}（整类）`:v;
+  const allow=(allowList.slice(0,4).map(allowName).join('/')||'—')+(allowList.length>4?` 等 ${allowList.length} 种`:'');
   const deny=((r&&r.deny)||[]).slice(0,2).join('/');
   const t3=((r&&r.baits)||[]).filter(b=>b.tier===3).slice(0,3).map(b=>b.bait_id).join(', ');
   const total=(r&&r.total)||0, tier3=(r&&r.tier3)||0, tier2=(r&&r.tier2)||0;
-  const tip=`吃: ${((r&&r.allow)||[]).join(' / ')||'—'}${deny?'\n不吃: '+((r&&r.deny)||[]).join(' / '):''}${r&&r.bottom_only&&r.bottom_only.length?'\n底钓只吃: '+r.bottom_only.join(' / '):''}${r&&r.condition&&r.condition!=='无'?'\n前置: '+r.condition:''}\n有证据的饵: ${total} 种 (T3 ${tier3} / T2 ${tier2})`;
-  const noRule=(r&&r.has_rule)?'':'<span class="pill" style="background:#5a3b1a;color:#f0d3a8" title="规则表无条目：严格模式下不套爱吃饵列表，按鱼种食谱放行（建议补规则）">无规则</span>';
-  // 轮换：优先用 /api/fish/config 的 bait_* 字段（与判鱼同源），
-  // 其次回退到 /api/bait/prefs 的 groups/rotation。
-  // 钓场页需要显示当前生效组，否则配置了轮换也看不出效果。
-  const fromCfg=row&&row.bait_source==='override';
-  const groups=(fromCfg?row.bait_groups:(r&&r.groups))||[];
-  const rotSec=fromCfg?row.bait_rotate_sec:((r&&r.rotate_sec)||0);
-  const modeRaw=fromCfg?row.bait_rotate_mode:((r&&r.rotation&&r.rotation.mode)||'soft');
-  const rotEnabled=fromCfg?!!row.bait_enabled:!!(r&&r.rotation&&r.rotation.enabled);
-  // 自动抽取是独立开关（不是 rotate_mode）：为真时手工组被忽略。
-  const autoOn=fromCfg?!!row.bait_auto:!!(r&&r.auto_rotation);
-  let rotateHTML='';
+  // 自动抽取：把「本期实际开口的饵」摆在最上面。这一列就是给管理员核对
+  // 「玩家拿 A 饵不咬，到底是没抽中还是规则没配」用的，只写一句「按稀有度重抽」
+  // 看不出版本期内开什么，还得跳去鱼饵偏好页对一遍。
+  const pick=(row&&row.bait_pick)||(autoOn&&r&&r.rotation)||{};
+  const picked=((pick.active_baits)||[]).filter(Boolean);
+  const quota=Number(pick.quota)||0, pool=Number(pick.pool_size)||0;
+  const pickNext=pick.next_switch?new Date(pick.next_switch*1000).toLocaleTimeString('zh-CN',{hour12:false}):'';
+  let pickHTML='';
   if(autoOn){
-    // 周期与未中系数取「游戏参数 → 自动轮换」的全局值，本期具体抽中哪几款
-    // 在「鱼饵偏好」页看（表格的「本期开口」列）。
-    rotateHTML=`<div class="muted" style="margin-top:2px"><span class="pill" style="background:#43356b;color:#d9c8ff">🎲 自动抽取</span>
-      按稀有度每期重抽（普通3/稀有2/超稀有1），未中降权</div>`;
-  }else if(groups.length>1&&rotSec>0){
-    const mode=modeRaw==='strict'?'严格':'软性';
-    // 当前组按时间桶算：idx = floor(now/interval) % 组数，与判鱼一致（重启不丢）。
-    let cur='',next='';
-    if(rotEnabled){
-      const idx=Math.floor(Date.now()/1000/rotSec)%groups.length;
-      cur=`当前第 ${idx+1}/${groups.length} 组：${esc((groups[idx]||[]).join(' / '))||'—'}`;
-      const nxt=(Math.floor(Date.now()/1000/rotSec)+1)*rotSec;
-      next=` · ${new Date(nxt*1000).toLocaleTimeString('zh-CN',{hour12:false})} 切换`;
+    if(pick.global_off){
+      pickHTML=`<div style="color:#ffd166;font-weight:600" title="「自动轮换」总开关在游戏参数里；关着时逐鱼勾选不生效"><span class="pill" style="background:#43356b;color:#d9c8ff">🎲 自动抽取</span> 总开关未开，抽签不生效</div>
+        ${picked.length?`<div class="muted" style="font-size:11px">开关打开后本期是：${picked.map(esc).join(' / ')}</div>`:''}`;
+    }else if(!pick.enabled&&pool){
+      pickHTML=`<div class="muted"><span class="pill" style="background:#43356b;color:#d9c8ff">🎲 自动抽取</span> 型号只有 ${pool} 种，不足配额${quota?` ${quota}`:''}，本期全开</div>`;
+    }else if(picked.length){
+      const every=Number(pick.interval_sec)>0?`每 ${Math.round(Number(pick.interval_sec)/60)} 分钟按稀有度重抽`:'';
+      pickHTML=`<div><span class="pill" style="background:#43356b;color:#d9c8ff" title="本期从 ${pool} 个型号里抽 ${quota} 个；${every}；同型号各规格/颜色通用，未抽中按低系数降权">🎲 本期开口 ${quota}/${pool}</span>${pickNext?`<span class="muted" style="margin-left:6px">${esc(pickNext)} 换饵</span>`:''}</div>
+        <div style="font-weight:600;color:#d9c8ff;line-height:1.5">${picked.map(esc).join(' / ')}</div>`;
     }else{
-      cur=`${groups.length} 组（覆盖未启用）`;
+      pickHTML=`<div class="muted"><span class="pill" style="background:#43356b;color:#d9c8ff">🎲 自动抽取</span> ${pool?'未取到本期名单（刷新重试）':'候选池为空，本期不抽签'}</div>`;
     }
-    const allGroups=groups.map((g,i)=>`第${i+1}组 ${(g||[]).join('/')}`).join('\n');
-    rotateHTML=`<div class="muted" style="margin-top:2px" title="${esc(allGroups)}\n轮换间隔 ${Math.round(rotSec/60)} 分钟 · 模式 ${mode}">
-      <span class="pill" style="background:#1f4f6f;color:#bfe4ff">🔁 轮换</span>
-      ${esc(cur)} · ${mode}${next}</div>`;
   }
+  const tip=`${autoOn?`本期开口: ${picked.join(' / ')||'—'}\n可选型号: ${pool} 组（配额 ${quota}）\n`:''}吃: ${allowList.join(' / ')||'—'}${deny?'\n不吃: '+((r&&r.deny)||[]).join(' / '):''}${r&&r.bottom_only&&r.bottom_only.length?'\n底钓只吃: '+r.bottom_only.join(' / '):''}${r&&r.condition&&r.condition!=='无'?'\n前置: '+r.condition:''}\n有证据的饵: ${total} 种 (T3 ${tier3} / T2 ${tier2})`;
+  const noRule=(r&&r.has_rule)?'':'<span class="pill" style="background:#5a3b1a;color:#f0d3a8" title="规则表无条目：无 allow 可遵守，降级为 companion 证据判定（建议补规则）">无规则</span>';
   const off=((r&&r.official)||[]).slice(0,3);
   const offHTML=off.length?`<div class="muted" style="color:#8fd0ff">官服占比（仅参考）：${off.map(o=>esc(o.bait_id)+' '+o.pct+'%').join(' / ')}</div>`:'';
   const verdict=(r&&r.bite_verdict)?`<div style="color:${(r.bite_ready||0)>0?'#7ee0b0':'#ffd166'};font-weight:600">${(r.bite_ready||0)>0?'✅':'🟡'} ${esc(r.bite_verdict)}</div>`:'';
   return `<div style="font-size:11px;line-height:1.5;max-width:340px" title="${esc(tip)}">
-    <div class="muted">规则：${esc(allow)}${deny?` <span style="color:#e0a">不吃 ${esc(deny)}</span>`:''} ${noRule}</div>
+    ${pickHTML}
+    <div class="muted">${autoOn?'候选池':'规则'}：${esc(allow)}${deny?` <span style="color:#e0a">不吃 ${esc(deny)}</span>`:''} ${noRule}</div>
     ${offHTML}
     ${verdict}
-    <div class="muted">证据 ${total} 种 · T3 ${tier3}${t3?` · ${esc(t3)}`:''}</div>${rotateHTML}</div>`;
+    ${r?`<div class="muted">证据 ${total} 种 · T3 ${tier3}${t3?` · ${esc(t3)}`:''}</div>`:''}</div>`;
 }
 async function loadFishAreas(){
   await loadFishRules();
@@ -1884,6 +1928,10 @@ async function loadFishAreas(){
     const orderOf=x=>{const i=FISH_AREA_ORDER.indexOf(x.loc);return i<0?FISH_AREA_ORDER.length:i};
     const first=[...FISH_AREAS].sort((a,b)=>orderOf(a)-orderOf(b))[0];
     await selectFishArea(first.loc,true);
+  }else if(FISH_AREA&&!FISH_DIRTY&&!ZONE_DIRTY){
+    // 重新进入页面或点「刷新」时重拉当前水域：自动轮换的本期开口饵每两小时翻页，
+    // 不重拉的话列里会一直停在上次加载的那一轮。有未保存改动时保持现状，不覆盖编辑。
+    await selectFishArea(FISH_AREA,true);
   }
   // 判鱼追踪是只读诊断，失败不阻塞页面主体
   loadRollTrace().catch(()=>null);
@@ -2072,7 +2120,7 @@ function dielBarHTML(c){
 function renderFishRows(){
   if(!FISH_CFG)return;const q=($('#fishFilter')?.value||'').toLowerCase();
   const rows=FISH_CFG.fish.map((f,i)=>({f,i})).filter(x=>!q||`${x.f.fish_key} ${x.f.name_zh}`.toLowerCase().includes(q));
-  $('#fishRows').innerHTML=`<div class="table-wrap"><table class="fish-table"><thead><tr><th>启用</th><th>鱼种</th><th>爱吃的饵（规则 / 官服占比 / 实证 · 轮换）</th><th>基础权重</th><th>当前权重</th><th>覆盖权重</th><th>生态</th><th>来源</th></tr></thead><tbody>${rows.map(({f,i})=>`<tr><td><input class="switch" type="checkbox" id="fe_${i}" ${f.enabled?'checked':''} onchange="syncFishRows()"></td><td><div class="item-cell"><img class="fish-icon" src="icons/fish/${encodeURIComponent(String(f.fish_key||'').toLowerCase().replace(/\./g,'_'))}.png" onerror="this.style.display='none'"><div><b>${esc(f.name_zh||f.fish_key)}</b><div class="muted mono">${esc(f.fish_key)}</div>${dielTagsHTML(f)}${rarityHintHTML(f)}</div></div></td><td>${baitSummaryHTML(f.fish_key,f)}</td><td>${Number(f.base_weight).toFixed(2)}</td><td>${effCellHTML(f,i)}</td><td><input class="mini-input" id="fw_${i}" type="number" min="0" step="0.1" value="${f.weight}" onchange="syncFishRows()"></td><td><button class="btn alt sm" data-key="${esc(f.fish_key)}" onclick="openEcoOverride(this.dataset.key)">生态</button></td><td>${f.has_override?'<span class="tag gold">覆盖</span>':'<span class="tag">静态</span>'}</td></tr>`).join('')||'<tr><td colspan="8" class="empty">没有匹配鱼种</td></tr>'}</tbody></table></div>`;
+  $('#fishRows').innerHTML=`<div class="table-wrap"><table class="fish-table"><thead><tr><th>启用</th><th>鱼种</th><th>爱吃的饵（本期开口 · 规则 / 官服占比 / 实证）</th><th>基础权重</th><th>当前权重</th><th>覆盖权重</th><th>生态</th><th>来源</th></tr></thead><tbody>${rows.map(({f,i})=>`<tr><td><input class="switch" type="checkbox" id="fe_${i}" ${f.enabled?'checked':''} onchange="syncFishRows()"></td><td><div class="item-cell"><img class="fish-icon" src="icons/fish/${encodeURIComponent(String(f.fish_key||'').toLowerCase().replace(/\./g,'_'))}.png" onerror="this.style.display='none'"><div><b>${esc(f.name_zh||f.fish_key)}</b><div class="muted mono">${esc(f.fish_key)}</div>${dielTagsHTML(f)}${rarityHintHTML(f)}</div></div></td><td>${baitSummaryHTML(f.fish_key,f)}</td><td>${Number(f.base_weight).toFixed(2)}</td><td>${effCellHTML(f,i)}</td><td><input class="mini-input" id="fw_${i}" type="number" min="0" step="0.1" value="${f.weight}" onchange="syncFishRows()"></td><td><button class="btn alt sm" data-key="${esc(f.fish_key)}" onclick="openEcoOverride(this.dataset.key)">生态</button></td><td>${f.has_override?'<span class="tag gold">覆盖</span>':'<span class="tag">静态</span>'}</td></tr>`).join('')||'<tr><td colspan="8" class="empty">没有匹配鱼种</td></tr>'}</tbody></table></div>`;
   const filtered=q.length>0;
   const on=$('#fishAllOn'),off=$('#fishAllOff');
   if(on)on.textContent=filtered?'启用筛选结果':'全部启用';
@@ -2151,7 +2199,7 @@ function addFishFromPool(key,name){syncFishRows();if(FISH_CFG.fish.some(f=>f.fis
 
 // ---- 判鱼追踪（fish_roll_trace，只读）：回答「为什么空军 / 为什么是这条鱼」----
 // 数据由 gameserver 的真实咬钩路径落库，后台只读展示；payload 是各层权重快照。
-const ROLL_STAGE_LABEL={roster:'名册',pool:'鱼池兜底',gate:'硬门',zone:'区域',bait:'饵规则',dist:'分布',ecology:'生态',spot:'钓点',groundbait:'窝料',bait_tier:'饵效',final:'抽签'};
+const ROLL_STAGE_LABEL={roster:'名册',pool:'鱼池兜底',gate:'水层',zone:'区域',bait:'饵规则',dist:'分布',ecology:'生态',spot:'钓点',groundbait:'窝料',bait_tier:'饵效',final:'抽签'};
 let ROLL_TRACE_ALL=false;
 async function loadRollTrace(force,all){
   if(all!==undefined)ROLL_TRACE_ALL=all;
@@ -3340,7 +3388,7 @@ async function saveHookProfile(){
 
 let MAIL_ATTACH=[];
 function addAttachment(){showModal('添加邮件附件','搜索物品目录',`<input id="attachSearch" placeholder="物品 ID / 名称" oninput="debounce('attachSearch',searchAttachItems)"><div class="results" id="attachResults"></div>`);searchAttachItems()}
-async function searchAttachItems(){const q=$('#attachSearch').value.trim();const list=await api('/api/catalog/items?q='+encodeURIComponent(q));$('#attachResults').innerHTML=list.map(x=>`<div class="result" data-id="${esc(x.item_id)}" data-name="${esc(x.name)}" onclick="pickAttachment(this.dataset.id,this.dataset.name)"><div class="item-cell"><img class="item-icon" src="icons/items/${encodeURIComponent(String(x.item_id||'').toLowerCase())}.webp" onerror="this.style.display='none'"><div><b>${esc(x.name||x.item_id)}</b><div class="muted mono">${esc(x.item_id)}</div></div></div><span class="tag">cat ${x.category}</span></div>`).join('')||'<div class="empty">无结果</div>'}
+async function searchAttachItems(){const q=$('#attachSearch').value.trim();const list=await api('/api/catalog/items?q='+encodeURIComponent(q));$('#attachResults').innerHTML=list.map(x=>`<div class="result" data-id="${esc(x.item_id)}" data-name="${esc(x.name)}" onclick="pickAttachment(this.dataset.id,this.dataset.name)"><div class="item-cell"><img class="item-icon" src="icons/items/${encodeURIComponent(String(x.item_id||'').toLowerCase())}.webp" onerror="this.style.display='none'"><div><b>${esc(x.name||x.item_id)}</b><div class="muted mono">${esc(x.item_id)}</div></div></div><span class="tag">${esc(catText(x.category))}</span></div>`).join('')||'<div class="empty">无结果</div>'}
 function pickAttachment(id,name){if(!MAIL_ATTACH.some(x=>x.item_id===id))MAIL_ATTACH.push({item_id:id,name,qty:1});closeModal();renderAttachments();toast('已添加 '+name)}
 function renderAttachments(){
   $('#attachments').innerHTML=MAIL_ATTACH.map((x,i)=>`<div class="attach-row"><div class="toolbar"><input value="${esc(x.name||x.item_id)}" disabled><div class="muted mono">${esc(x.item_id)}</div></div><input type="number" min="1" value="${x.qty}" onchange="MAIL_ATTACH[${i}].qty=+this.value"><button class="btn bad sm" aria-label="移除附件" onclick="MAIL_ATTACH.splice(${i},1);renderAttachments()">×</button></div>`).join('')||'<div class="muted">无附件</div>';

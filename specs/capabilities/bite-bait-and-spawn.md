@@ -66,25 +66,26 @@
   （`huntStateEnabled = fishHuntEnabled || twoStageHuntEnabled`），否则切回四阶段时进度凭空丢失。
   - ❌ 两档制下漏掉状态机门的替换 → pity/窝料进度停摆，打窝阶段永远不出现。
   - ❌ 两档制改写海钓/路亚权重表 → 路亚、海钓行为随淡水改动漂移。
+- ✅ 四阶段各自的四档占比由 `hunt_stage_{daily,gather,active,giant}_{below,qualified,trophy,super}`
+  16 个 tunable 提供，默认值即历史字面量；读取时负值按 0、四档全 0 回退默认、否则归一到 100。
+  三条分支（淡水/海钓/路亚）读同一张表，两档制开启时淡水改走 `two_stage_*`。
+  - ❌ 归一之前叠加 pity/幸运倍率 → 保底触发条件随表格数值漂移。
+  - ❌ 四档全 0 时返回全 0 → 该阶段不出鱼。
 
-## 7. 硬性鱼口门与空候选语义（bite_gate_enabled，默认关）
+## 7. 水层地板与空候选语义（bite_gate_enabled，默认关）
 
-- ✅ 门层（G1 拟饵食性硬剔 / G2 水层地板 / G-diet 食性资格）插在水域鱼种覆盖之后、
-  饵料规则之前；剔空候选时必须置 `fishRollContext.gateBlocked`，让
-  `rollFishWithRules` 跳过内置鱼池兜底——门拦下的杆就该空竿重排，不能从
-  鱼池捞出不属于本图的鱼。
+- ✅ 水层地板（G2）插在水域鱼种覆盖之后、饵料规则之前：目标水层超出
+  `[LayerMin−0.15, LayerMax+0.15]` 时权重乘 `bite_gate_layer_floor`，**只乘权重、不剔除**。
+  区域名册或名册权重把候选剔空时必须置 `fishRollContext.gateBlocked`，让
+  `rollFishWithRules` 跳过内置鱼池兜底——这种杆就该空竿重排，不能从鱼池捞出不属于本图的鱼。
   - ❌ 只 return nil 不置位 → 静默落到 defaultFishPool，外图鱼（拟鲤/河鲈）漏进本图。
-  - ❌ 用「本图有没有钓到过这个饵」的纪录当资格 → 攻略没覆盖的钓场整图空杆。
-  - ✅ 攻略「吃 X」的 `allow` 列表在饵料层给满分档；`companion_bait_fish` 实证
-    tier3 可在「本轮没有任何饵命中 allow」时越级满分，tier1~2 给低权重档；都不满足
-    时同食性大类按 `legalAlternative` 给保底档（用户 2026-11-19 口径）。
+- ✅ 吃口资格统一由饵料规则的 `allow` / `deny` 决定：有 `allow` 时名单外权重 0；
+  companion 证据只在鱼种没有 `allow` 规则时兜底（tier3 满档 / tier1~2 低权重）。
+  原 G1 拟饵食性硬剔与 G-diet 天然饵食性资格已删除（2026-11-21），不得再加回。
+  - ❌ 用 `diet_json`、本图渔获或官服占比二次否决 allow → 后台写了名单也不咬。
   - ❌ 拿本图渔获 `loc_bait_fish` / rf4records 官服占比给鱼口加权或放行 → 它们只说明
     「谁钓到过」；官服占比只在后台展示并标注仅参考，不参与判鱼。
-- ✅ 饵类别判定用 `cachedBaitDefinition` 读 item_def 类别（17 拟饵/27 天然饵），
-  读不到时门保持中性放行，不因数据缺失封鱼（与 `filterFishBaitSet` 同口径）。
-- ✅ 生态食性表 `diet_json` 只看「键存不存在」：有键就能吃（低值只是难钓），
-  没键才剔除。拟饵另有 `bite_gate_lure_diet_min`（默认 0.30）过滤不攻拟饵的鱼种。
-- ✅ GM 指定鱼（`arm_next_fish`）在更早分支绕过全部判鱼，门不拦截。
+- ✅ GM 指定鱼（`arm_next_fish`）在更早分支绕过全部判鱼，地板不拦截。
 
 ## 8. 区域固定鱼种名册（fish_zone / fish_zone_fish）
 

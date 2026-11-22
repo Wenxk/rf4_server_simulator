@@ -35,9 +35,9 @@ type fishRollContext struct {
 	runtime    *fishRollRuntime
 	hook       gearPhysicsSpec
 	query      *fishQueryCapture
-	// gateBlocked 由 rollFishWithRules 挂指针：硬性鱼口门把本图名册剔空时置位，
-	// 调用方据此跳过内置鱼池兜底——门拦下的杆就该空竿重排，不能从鱼池
-	// 捞出不属于本图的鱼。指针随值拷贝存活。
+	// gateBlocked 由 rollFishWithRules 挂指针：水层地板或区域名册把本图名册
+	// 剔空时置位，调用方据此跳过内置鱼池兜底——这种杆就该空竿重排，不能从
+	// 鱼池捞出不属于本图的鱼。指针随值拷贝存活。
 	gateBlocked *bool
 	// emptyReason 记录把候选滤空的那一层（诊断日志用，不进玩家提示）。
 	// 指针随值拷贝存活，与 gateBlocked 同款用法。
@@ -46,7 +46,7 @@ type fishRollContext struct {
 	trace *fishRollTrace
 	// pityEnv 是保底杂口标记：连续多轮空杆后由咬钩计时器置位，
 	// 只放宽环境类因素（分布散布归零→0.15、水层地板≥0.05），
-	// 食性硬门（G1 拟饵×非掠食鱼、明确禁饵）不放宽。
+	// 不放宽 allow/deny——规则说不能吃的饵仍是 0。
 	pityEnv bool
 }
 

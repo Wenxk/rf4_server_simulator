@@ -99,7 +99,7 @@ func TestFishBaitSwitchFiltersAndRestoresLegacy(t *testing.T) {
 	if s.rollFish("unknown-map", "rule_worm") == nil {
 		t.Fatal("bait-only rules must retain water-wide fallback")
 	}
-	// 实钓证据可补充未列出的搭配，但不能绕过明确不吃拟饵的规则。
+	// 严格 allow：红蚯蚓不在名单里，证据也不能绕过白名单。
 	for _, bait := range []string{"rule_lure", "rule_other"} {
 		if _, err := db.SQL.Exec(`INSERT INTO companion_bait_fish(bait_id,fish_key,tier,evidence) VALUES(?,'c.roach',1,1)`, bait); err != nil {
 			t.Fatal(err)
@@ -108,8 +108,8 @@ func TestFishBaitSwitchFiltersAndRestoresLegacy(t *testing.T) {
 	if s.rollFish("level_900_rules", "rule_lure") != nil {
 		t.Fatal("evidence bypassed explicit exclusion")
 	}
-	if f := s.rollFish("level_900_rules", "rule_other"); f == nil {
-		t.Fatalf("evidence ignored: %+v", f)
+	if f := s.rollFish("level_900_rules", "rule_other"); f != nil {
+		t.Fatalf("allow 之外的饵即使有证据也不该咬: %+v", f)
 	}
 	for _, q := range []string{
 		`INSERT INTO loc_alias(alias,loc) VALUES('level_901_rules','rules-added')`,
@@ -197,11 +197,11 @@ func TestFishBaitRulesWithReadOnlyStaticAndExistingDatabase(t *testing.T) {
 			db.Close()
 			t.Fatal("restart lost tunables")
 		}
-		// 本地已有 1275 条证据的搭配，附件未列出也可生效。
-		keys, _ := s.filterFishBaits("惟有诺克河", "muckworm", []string{"c_nase"}, []float64{1})
+		// 只读静态库上，allow 命中的蚯蚓仍能出鱼。
+		keys, _ := s.filterFishBaits("惟有诺克河", "worm_01", []string{"c_nase"}, []float64{1})
 		if len(keys) != 1 {
 			db.Close()
-			t.Fatal("read-only evidence not applied")
+			t.Fatal("read-only allow rule not applied")
 		}
 		keys, _ = s.filterFishBaits("克马羚诺也湖", "spinnerbaits_1244", []string{"c.roach"}, []float64{1})
 		if len(keys) != 0 {

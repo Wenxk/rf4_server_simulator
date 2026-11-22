@@ -202,36 +202,35 @@ func TestBottomSimpleFullMaskPersistsMountSelection(t *testing.T) {
 	}
 }
 
-func TestBaitMountBiteConsumesSingleUnitKeepsHookBaited(t *testing.T) {
+// 成束挂法也按整份扣：钩上 10 份蛆，一口吃掉 10 份，不留半束。
+func TestBaitMountBiteEatsWholeBunch(t *testing.T) {
 	t.Parallel()
 	s, db := newRigTestServer(t)
 	rod, err := s.CreateItem(t.Context(), 1000001, "tele_10112_5", "backpack", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	mountHookForBaitTest(t, s, rod.GUID, 0)
 	saveMountTypeForTest(t, s, rod.GUID, 131072) // 玉米浮+蛆10
 	_, child := mountBaitForCountTest(t, s, rod.GUID, "bloodworm", 30)
-
-	for i := 1; i <= 3; i++ {
-		if _, err := s.consumeBaitEvent(t.Context(), 1000001, rod.GUID,
-			"bite-mc-"+string(rune('0'+i)), []string{child}, false); err != nil {
-			t.Fatal(err)
-		}
-	}
 	mounted, _ := s.DB.GetItemByGUID(t.Context(), child)
-	if mounted == nil {
-		t.Fatal("三次咬口后钩上饵不应消失")
+	if mounted == nil || baitQuantity(mounted) != 10 {
+		t.Fatalf("玉米浮+蛆10 应挂 10 份: %+v", mounted)
 	}
-	if got := baitQuantity(mounted); got != 7 {
-		t.Fatalf("10 份上钩三次咬口后应剩 7，实得 %d", got)
+	if _, err := s.consumeBaitEvent(t.Context(), 1000001, rod.GUID,
+		"bite-bunch", []string{child}, false); err != nil {
+		t.Fatal(err)
+	}
+	if row, _ := s.DB.GetItemByGUID(t.Context(), child); row != nil {
+		t.Fatalf("一口应吃掉整束 10 份，挂载实例应删除: %+v", row)
 	}
 	var n int
 	if err := db.SQL.QueryRow(`SELECT COUNT(*) FROM rod_setting WHERE guid=? AND key LIKE 'rebait:%'`,
 		rod.GUID).Scan(&n); err != nil {
 		t.Fatal(err)
 	}
-	if n != 0 {
-		t.Fatalf("钩上还有饵时不应写补饵记录，实得 %d 条", n)
+	if n != 1 {
+		t.Fatalf("整束吃光后应写补饵记录，实得 %d 条", n)
 	}
 }
 
@@ -250,11 +249,10 @@ func TestBaitMountExhaustWritesRebaitAndAutoRemountsSameCount(t *testing.T) {
 	mountHookForBaitTest(t, s, rod.GUID, 0)
 	saveMountTypeForTest(t, s, rod.GUID, 65536) // 玉米浮+蛆5
 	_, child := mountBaitForCountTest(t, s, rod.GUID, "bloodworm", 5)
-	for i := 1; i <= 5; i++ {
-		if _, err := s.consumeBaitEvent(t.Context(), 1000001, rod.GUID,
-			"bite-ex-"+string(rune('0'+i)), []string{child}, false); err != nil {
-			t.Fatal(err)
-		}
+	// 整束一口吃光，用尽后写补饵记录。
+	if _, err := s.consumeBaitEvent(t.Context(), 1000001, rod.GUID,
+		"bite-ex-1", []string{child}, false); err != nil {
+		t.Fatal(err)
 	}
 	if row, _ := s.DB.GetItemByGUID(t.Context(), child); row != nil {
 		t.Fatalf("5 份用完后挂载实例应删除: %+v", row)
@@ -301,12 +299,8 @@ func TestBaitMountUnmountRefundsRemainder(t *testing.T) {
 	}
 	saveMountTypeForTest(t, s, rod.GUID, 262144) // 玉米浮+蛆15
 	src, child := mountBaitForCountTest(t, s, rod.GUID, "maggot", 20)
-	for i := 1; i <= 3; i++ {
-		if _, err := s.consumeBaitEvent(t.Context(), 1000001, rod.GUID,
-			"bite-um-"+string(rune('0'+i)), []string{child}, false); err != nil {
-			t.Fatal(err)
-		}
-	}
+	// 咬口按整份扣（一口吃光 15 份），所以「吃剩再拆」的中间态不存在了：
+	// 这里验证未咬过就拆卸时，整份 15 颗原样退回来源堆。
 	res := s.rigRemoveComponentInstance(t.Context(), 1000001, rod.GUID, catBait, child, 350)
 	if res == nil || res.CompGUID == "" {
 		t.Fatalf("拆卸失败: %+v", res)
@@ -315,9 +309,9 @@ func TestBaitMountUnmountRefundsRemainder(t *testing.T) {
 		t.Fatalf("拆卸后拆分子实例应删除: %+v", row)
 	}
 	back, _ := s.DB.GetItemByGUID(t.Context(), src)
-	// 拆出 15（源堆剩 5）+ 咬口吃掉 3（钩上剩 12）→ 退回后源堆 5+12=17。
-	if back == nil || back.Container != "backpack" || baitQuantity(back) != 17 {
-		t.Fatalf("拆卸应把钩上剩余 12 份退回来源堆（5+12=17），实得: %+v", back)
+	// 拆出 15（源堆剩 5）→ 拆卸全退 → 源堆 5+15=20。
+	if back == nil || back.Container != "backpack" || baitQuantity(back) != 20 {
+		t.Fatalf("拆卸应把钩上 15 份退回来源堆（5+15=20），实得: %+v", back)
 	}
 	if baits := s.currentBaits(t.Context(), rod.GUID); len(baits) != 0 {
 		t.Fatalf("拆卸后钩上饵=%v，期望为空", baits)
@@ -331,16 +325,65 @@ func TestBaitMountFullTakeUnmountReturnsWholeStack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	saveMountTypeForTest(t, s, rod.GUID, 2048) // 玉米浮×4
-	_, child := mountBaitForCountTest(t, s, rod.GUID, "crn_cb_bfc", 4)
+	saveMountTypeForTest(t, s, rod.GUID, 2048) // 玉米浮×2+玉米浮×2，每个饵槽 2 颗
+	_, child := mountBaitForCountTest(t, s, rod.GUID, "crn_cb_bfc", 2)
 
 	res := s.rigRemoveComponentInstance(t.Context(), 1000001, rod.GUID, catBait, child, 350)
 	if res == nil || res.CompGUID == "" {
 		t.Fatalf("拆卸失败: %+v", res)
 	}
 	back, _ := s.DB.GetItemByGUID(t.Context(), child)
-	if back == nil || back.Container != "backpack" || baitQuantity(back) != 4 {
-		t.Fatalf("整堆上钩拆卸后应整体回到背包 4 份: %+v", back)
+	if back == nil || back.Container != "backpack" || baitQuantity(back) != 2 {
+		t.Fatalf("整堆上钩拆卸后应整体回到背包 2 份: %+v", back)
+	}
+}
+
+// 玉米浮按钓组设置整份扣：挂 2 颗就是一口 2 颗，不会剩 1 颗在钩上。
+func TestArtificialCornEatsWholePortionPerBite(t *testing.T) {
+	t.Parallel()
+	s, db := newRigTestServer(t)
+	rod, err := s.CreateItem(t.Context(), 1000001, "tele_10112_5", "backpack", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// 补饵以钓组仍有钩为前提。
+	mountHookForBaitTest(t, s, rod.GUID, 0)
+	saveMountTypeForTest(t, s, rod.GUID, 1024) // 玉米浮×2
+	_, child := mountBaitForCountTest(t, s, rod.GUID, "crn_cb_bfc", 6)
+	mounted, _ := s.DB.GetItemByGUID(t.Context(), child)
+	if mounted == nil || baitQuantity(mounted) != 2 {
+		t.Fatalf("玉米浮×2 应挂 2 颗: %+v", mounted)
+	}
+	if _, err := s.consumeBaitEvent(t.Context(), 1000001, rod.GUID, "bite-corn",
+		[]string{child}, false); err != nil {
+		t.Fatal(err)
+	}
+	if row, _ := s.DB.GetItemByGUID(t.Context(), child); row != nil {
+		t.Fatalf("一口应吃掉整份 2 颗，挂载实例应删除: %+v", row)
+	}
+	var n int
+	if err := db.SQL.QueryRow(`SELECT COUNT(*) FROM rod_setting WHERE guid=? AND key='rebait:0'`,
+		rod.GUID).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	if n != 1 {
+		t.Fatalf("整份吃光后应写 rebait:0，实得 %d 条", n)
+	}
+}
+
+// 2048 是「玉米浮×2+玉米浮×2」：每个饵槽 2 颗（合计 4 颗），不是每槽 4 颗。
+func TestCornTwoPlusTwoMountsTwoPerSlot(t *testing.T) {
+	t.Parallel()
+	s, _ := newRigTestServer(t)
+	rod, err := s.CreateItem(t.Context(), 1000001, "tele_10112_5", "backpack", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saveMountTypeForTest(t, s, rod.GUID, 2048)
+	_, child := mountBaitForCountTest(t, s, rod.GUID, "crn_cb_bfc", 8)
+	mounted, _ := s.DB.GetItemByGUID(t.Context(), child)
+	if mounted == nil || baitQuantity(mounted) != 2 {
+		t.Fatalf("2+2 挂法每个饵槽应 2 颗: %+v", mounted)
 	}
 }
 

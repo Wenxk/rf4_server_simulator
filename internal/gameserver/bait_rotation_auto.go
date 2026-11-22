@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"rf4server/internal/store"
@@ -18,12 +19,11 @@ import (
 // 自动轮换：按鱼种固有稀有度，从「爱吃饵」展开池里抽本期开口的饵，
 // **把抽中的饵替换成该鱼本期的 allow**。
 //
-// 不改判鱼主循环：allow 命中本来就是满分档，没抽中的饵自然落到「allow 之外」，
-// 由现有证据档位（bait_evidence_low_scale，默认 0.10）降权。auto 只是 allow
-// 的一个动态来源，与手工轮换组（soft/strict）互斥。
+// 不改判鱼主循环：allow 命中本来就是满分档，没抽中的饵直接不在 allow 内（权重 0）。
+// auto 是 allow 的唯一动态来源；手工轮换组（soft/strict）已删除。
 //
 // 参与资格存在独立的 fish_bait_auto_rotation 表（逐鱼开关，键为 fish_key），
-// 不写进 fish_bait_override.rotate_mode——那样给没覆盖的鱼开开关就得把内置
+// 不写进 fish_bait_override——那样给没覆盖的鱼开开关就得把内置
 // 规则整行复制成覆盖，从此跟不上内置规则表更新。
 //
 // **抽样单位是「型号 × 形态」而不是单个 item**：客户端里同一款饵有多条 item_def
@@ -113,8 +113,36 @@ type baitGroup struct {
 // groupKey 是分组键：基础名 + 品类 + 饵型/拟饵型。
 // 饵型进键是为了把「活红虫 / 红虫味沉底煮饵 / 红虫味 Pop-up」分成不同组。
 func groupKey(b ruleBait) string {
-	return baitBaseName(b.name) + "|" + strconv.FormatInt(b.category, 10) + "|" +
+	return groupKeyWithBase(baitBaseName(b.name), b)
+}
+
+// groupKeyWithBase 与 groupKey 相同，但基础名由调用方给出（已缓存时免去重算）。
+func groupKeyWithBase(base string, b ruleBait) string {
+	return base + "|" + strconv.FormatInt(b.category, 10) + "|" +
 		strconv.FormatInt(b.baitType, 10) + "|" + strconv.FormatInt(b.lureType, 10)
+}
+
+// baitDerived 是单款饵的「名字派生字段」：两种归一化名 + 型号基础名。
+// buildBaitGroups 每条鱼各调一次，一次要过 4000+ 个名字，后台一页几十条鱼
+// 就是几十万次 strings.Map 与正则。饵名来自静态库、基本不变，缓存这三样
+// 不改变任何判定结果（同样的输入仍然得到同样的输出），只是别重复算。
+type baitDerived struct {
+	rname string // ruleName(name)：规则词匹配用
+	rkey  string // ruleKey(name)：型号词匹配用
+	base  string // baitBaseName(name)：分组与折叠显示用
+}
+
+// baitDerivedCache 的键带上 id 与原始名：直接改库换了名字会自动重算。
+var baitDerivedCache sync.Map // "id\x00name" -> baitDerived
+
+func baitDerivedOf(b ruleBait) baitDerived {
+	ck := b.id + "\x00" + b.name
+	if v, ok := baitDerivedCache.Load(ck); ok {
+		return v.(baitDerived)
+	}
+	d := baitDerived{rname: ruleName(b.name), rkey: ruleKey(b.name), base: baitBaseName(b.name)}
+	baitDerivedCache.Store(ck, d)
+	return d
 }
 
 // autoQuota 稀有度 -> 本期开口饵数。
@@ -191,15 +219,16 @@ func buildBaitGroups(baits []ruleBait, r fishBaitRule) []baitGroup {
 	hit := make(map[string]bool, 256) // 组是否被 allow 命中
 	seen := make(map[string]bool, 256)
 	for _, b := range baits {
-		if len(r.deny) > 0 && b.matchesPre(denyPre) {
+		d := baitDerivedOf(b)
+		if len(r.deny) > 0 && b.matchesPreNorm(denyPre, d.rname, d.rkey) {
 			continue // 禁饵不进组：进了也会被 baitBlockedByRule 剔除
 		}
-		k := groupKey(b)
+		k := groupKeyWithBase(d.base, b)
 		// 同名去重：客户端里同一款饵常有多条 item_def（不同 numeric_id）。
 		// 去重键必须带上组键：同一个中文名可能是两种产品（「河螯虾 24」既有
 		// Pop-up 煮饵也有颗粒），只按名字去重会把其中一个形态整条吃掉。
-		dupKey := k + "\x00" + ruleName(b.name)
-		if ruleName(b.name) == "" {
+		dupKey := k + "\x00" + d.rname
+		if d.rname == "" {
 			dupKey = k + "\x00\x00" + b.id
 		}
 		if seen[dupKey] {
@@ -211,7 +240,7 @@ func buildBaitGroups(baits []ruleBait, r fishBaitRule) []baitGroup {
 			order = append(order, k)
 		}
 		buckets[k] = append(buckets[k], b)
-		if !hit[k] && b.matchesPre(allowPre) {
+		if !hit[k] && b.matchesPreNorm(allowPre, d.rname, d.rkey) {
 			hit[k] = true
 		}
 	}
@@ -223,7 +252,7 @@ func buildBaitGroups(baits []ruleBait, r fishBaitRule) []baitGroup {
 		}
 		members := buckets[k]
 		sort.Slice(members, func(i, j int) bool { return members[i].id < members[j].id })
-		g := baitGroup{base: baitBaseName(members[0].name), baits: members}
+		g := baitGroup{base: baitDerivedOf(members[0]).base, baits: members}
 		g.shape = baitShapeWord(members[0])
 		out = append(out, g)
 	}

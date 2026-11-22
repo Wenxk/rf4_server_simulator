@@ -34,7 +34,7 @@ import (
 const paceDietTTL = 30 * time.Second
 
 // paceRosterDiet 一个水域名册的食性聚合：拟饵取 diet_json.lure 的最大权重，
-// 天然饵按食性键（biteGateDietKeys 映射）取各键最大权重。
+// 天然饵按食性键（baitDietKeys 映射）取各键最大权重。
 type paceRosterDiet struct {
 	lureMax float64
 	dietMax map[string]float64
@@ -269,7 +269,7 @@ func (s *Server) baitPaceScore(ctx context.Context, c fishRollContext, loc strin
 		case 17:
 			// 拟饵：companion 档位证据 + 无证据基线，
 			// 再与生态食性票取最大——lure 权重 2 左右即顶级掠食
-			//（狗鱼 2.07），/2 归一到 0~1。biteGateDietKeys 对拟饵返回
+			//（狗鱼 2.07），/2 归一到 0~1。baitDietKeys 对拟饵返回
 			// nil，paceNaturalScore 的天然饵食性票不会误入。
 			sc := s.paceNaturalScore(ctx, c, roster, b, diet)
 			if lureDiet := math.Min(1, diet.lureMax/2); lureDiet > sc {
@@ -355,7 +355,7 @@ func (s *Server) paceNaturalScore(ctx context.Context, c fishRollContext,
 		// legalAlternative 长尾语义对齐。
 		best = 0.30
 	}
-	for _, dk := range biteGateDietKeys(b) {
+	for _, dk := range baitDietKeys(b) {
 		if v := diet.dietMax[dk]; v > 0 {
 			// 食性票封顶 0.6：家族对口只保证「不差」（mid 档），不配「好」——
 			// 「好」必须由证据票（companion/本图/rf4）给出。名册内任何鱼吃这一口

@@ -6,28 +6,18 @@ import (
 	"time"
 )
 
-// 轮换参数：当前生效组的饵加权，其余组的饵降权（soft）；strict 时只认当前组。
 const (
-	baitRotationBoost   = 3.0
-	baitRotationPenalty = 0.5
-	minBaitRotateSec    = 60
-	baitOverrideTTL     = 15 * time.Second
+	// 自动轮换的最小间隔；手工轮换组已删除，这里只约束自动抽取。
+	minBaitRotateSec = 60
+	baitOverrideTTL  = 15 * time.Second
 )
 
-// baitRotation 描述一个鱼种的饵料轮换配置。
-type baitRotation struct {
-	groups    [][]string
-	rotateSec int64
-	mode      string // soft | strict
-}
-
-// baitOverrideEntry 是运行时生效的覆盖：规则本体 + 轮换配置。
+// baitOverrideEntry 是运行时生效的覆盖：只保留规则本体。
 type baitOverrideEntry struct {
 	rule fishBaitRule
-	rot  baitRotation
 }
 
-// RotationState 是轮换在某一时刻的可读状态，供后台展示与判鱼共用。
+// RotationState 是自动轮换在某一时刻的可读状态，供后台展示与判鱼共用。
 type RotationState struct {
 	Enabled     bool     `json:"enabled"`
 	Mode        string   `json:"mode"`
@@ -36,7 +26,7 @@ type RotationState struct {
 	ActiveBaits []string `json:"active_baits"`
 	IntervalSec int64    `json:"interval_sec"`
 	NextSwitch  int64    `json:"next_switch"`
-	// 自动轮换（mode=auto）专用：本期配额、展开后的池子大小、未抽中系数。
+	// 自动轮换专用：本期配额、展开后的池子大小、未抽中系数。
 	Quota    int     `json:"quota,omitempty"`
 	PoolSize int     `json:"pool_size,omitempty"`
 	OffScale float64 `json:"off_scale,omitempty"`
@@ -45,54 +35,19 @@ type RotationState struct {
 	GlobalOff bool `json:"global_off,omitempty"`
 }
 
-// ExportedRotationState 供管理后台展示用的轮换状态（与判鱼同一套计算）。
-func ExportedRotationState(groups [][]string, rotateSec int64, mode string, now time.Time) RotationState {
-	return rotationState(baitRotation{groups: groups, rotateSec: rotateSec, mode: mode}, now)
-}
-
-// rotationState 按时间桶确定当前生效组：idx = floor(now/interval) % 组数。
-// 用时间桶而不是定时器，重启不丢状态，后台展示与判鱼天然一致。
-func rotationState(rot baitRotation, now time.Time) RotationState {
-	state := RotationState{Mode: rot.mode, Total: len(rot.groups), Active: -1}
-	// 手工模式只有软性/严格两种；自动抽取的状态由 ExportedAutoRotation
-	// 单独计算（开关在 fish_bait_auto_rotation，不在轮换模式里）。
-	if state.Mode != "strict" {
-		state.Mode = "soft"
-	}
-	state.IntervalSec = rot.rotateSec
-	if len(rot.groups) <= 1 || rot.rotateSec < minBaitRotateSec {
-		return state
-	}
-	bucket := now.Unix() / rot.rotateSec
-	idx := int(bucket % int64(len(rot.groups)))
-	state.Enabled = true
-	state.Active = idx
-	state.ActiveBaits = rot.groups[idx]
-	state.NextSwitch = (bucket + 1) * rot.rotateSec
-	return state
-}
-
-// activeBaitGroup 返回当前生效组；未启用轮换返回 nil。
-func activeBaitGroup(rot baitRotation, now time.Time) []string {
-	if state := rotationState(rot, now); state.Enabled {
-		return state.ActiveBaits
-	}
-	return nil
-}
-
-// resolveBaitRule 取该鱼种当前生效的规则与轮换配置：
+// resolveBaitRule 取该鱼种当前生效的规则：
 // 有后台覆盖用覆盖，否则回落到编译期内置规则表。
-func (s *Server) resolveBaitRule(ctx context.Context, fishZh string) (fishBaitRule, baitRotation) {
+func (s *Server) resolveBaitRule(ctx context.Context, fishZh string) fishBaitRule {
 	key := ruleName(fishZh)
 	if ov, ok := s.baitOverrides(ctx)[key]; ok {
-		return ov.rule, ov.rot
+		return ov.rule
 	}
 	// 库里的鱼名并不统一（泥鳅鱼/泥鳅、大西洋鲑/大西洋鲑鱼），必须走归一查找，
 	// 否则同一条鱼会因为名字取到哪一版而时有时无地丢掉整条规则。
 	if r, ok := lookupFishBaitRule(fishZh); ok {
-		return r, baitRotation{}
+		return r
 	}
-	return fishBaitRule{}, baitRotation{}
+	return fishBaitRule{}
 }
 
 // baitOverrides 读取后台覆盖并缓存；写操作会主动清缓存，这里再兜一层 TTL。
@@ -127,14 +82,7 @@ func (s *Server) baitOverrides(ctx context.Context) map[string]baitOverrideEntry
 				condition:  o.Condition,
 			}
 			rule.deriveConditionFlags()
-			m[ruleName(o.FishZh)] = baitOverrideEntry{
-				rule: rule,
-				rot: baitRotation{
-					groups:    o.Groups,
-					rotateSec: o.RotateSec,
-					mode:      o.RotateMode,
-				},
-			}
+			m[ruleName(o.FishZh)] = baitOverrideEntry{rule: rule}
 		}
 	}
 	s.baitOvCache = m
@@ -161,24 +109,4 @@ func cleanRuleTerms(in []string) []string {
 		}
 	}
 	return out
-}
-
-// rotationScoreMultiplier 返回该饵在本轮的权重系数：
-// 组内 ×3；启用轮换但不在组内 ×0.5；未启用轮换 ×1。
-func rotationScoreMultiplier(active []string, b ruleBait) float64 {
-	if active == nil {
-		return 1
-	}
-	if b.matchesAny(active) {
-		return baitRotationBoost
-	}
-	return baitRotationPenalty
-}
-
-// rotationKeepsBait 判断 strict 模式下该饵是否还允许使用。
-func rotationKeepsBait(active []string, strict bool, b ruleBait) bool {
-	if active == nil || !strict {
-		return true
-	}
-	return b.matchesAny(active)
 }

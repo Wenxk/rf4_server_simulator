@@ -107,17 +107,30 @@ type FishConfigRow struct {
 	RarityLabel string  `json:"rarity_label"`
 	TierWeight  float64 `json:"tier_weight"`
 
-	// 鱼饵规则覆盖带来的轮换信息（来自 fish_bait_override）。
-	// 钓场鱼口页需要看出"这个鱼种配了轮换、当前生效哪一组"，
-	// 否则在鱼饵偏好页设好的轮换在钓场页完全不可见。
-	BaitSource  string     `json:"bait_source"`  // default | override
-	BaitEnabled bool       `json:"bait_enabled"` // 覆盖是否启用
-	BaitGroups  [][]string `json:"bait_groups"`  // 轮换组
-	BaitRotSec  int64      `json:"bait_rotate_sec"`
-	BaitRotMode string     `json:"bait_rotate_mode"`
+	// 鱼饵规则覆盖带来的展示信息（来自 fish_bait_override）。
+	// 钓场鱼口页需要看出「这个鱼种是否被后台覆盖」。
+	BaitSource  string `json:"bait_source"`  // default | override
+	BaitEnabled bool   `json:"bait_enabled"` // 覆盖是否启用
 	// BaitAuto 是独立的逐鱼自动轮换开关（fish_bait_auto_rotation，按 fish_key）。
-	// 它与上面 override 里的手工组互斥：为真时轮换按稀有度现抽，忽略 BaitGroups。
+	// 为真时轮换按稀有度现抽本期开口饵；手工轮换组已删除。
 	BaitAuto bool `json:"bait_auto"`
+	// BaitPick 是自动轮换「本期抽到哪几款饵」的展示快照。抽签要用判鱼侧的
+	// hash 逻辑，store 只负责承载结果：admin 层取完配置后填进来（见
+	// applyFishConfigBaitPick），前端据此把当前开口饵直接画在鱼种行里。
+	BaitPick *BaitAutoPick `json:"bait_pick,omitempty"`
+}
+
+// BaitAutoPick 是一条鱼本期自动轮换的抽签结果，字段与
+// gameserver.RotationState 的 auto 部分一一对应，只是换成 store 自己的类型，
+// 避免 store 反向依赖 gameserver。
+type BaitAutoPick struct {
+	Enabled     bool     `json:"enabled"`      // false = 型号不足配额，本期全开
+	GlobalOff   bool     `json:"global_off"`   // 总开关没开，抽签结果游戏内不生效
+	Quota       int      `json:"quota"`        // 本期配额（普通 3 / 稀有 2 / 超稀有 1）
+	PoolSize    int      `json:"pool_size"`    // 可选「型号 × 形态」组数
+	ActiveBaits []string `json:"active_baits"` // 抽中的型号（折叠显示名）
+	NextSwitch  int64    `json:"next_switch"`  // 下次切换的 Unix 秒
+	IntervalSec int64    `json:"interval_sec"` // 轮换周期（秒）
 }
 
 type FishBiteSetting struct {
@@ -726,7 +739,7 @@ func (d *DB) GetAdminFishConfig(ctx context.Context, loc string) (*AdminFishConf
 	return cfg, nil
 }
 
-// applyBaitRotation 把鱼饵规则覆盖里的轮换信息填进行，供钓场页展示。
+// applyBaitRotation 把鱼饵规则覆盖的来源与启停填进行，供钓场页展示。
 func applyBaitRotation(row *FishConfigRow, o FishBaitOverride) {
 	row.BaitSource = "default"
 	if o.FishZh == "" {
@@ -734,9 +747,6 @@ func applyBaitRotation(row *FishConfigRow, o FishBaitOverride) {
 	}
 	row.BaitSource = "override"
 	row.BaitEnabled = o.Enabled
-	row.BaitGroups = o.Groups
-	row.BaitRotSec = o.RotateSec
-	row.BaitRotMode = o.RotateMode
 }
 
 func (d *DB) SaveAdminFishConfig(ctx context.Context, in FishConfigSave, updatedBy string) error {

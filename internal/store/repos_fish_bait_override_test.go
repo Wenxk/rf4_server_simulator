@@ -23,9 +23,6 @@ func TestFishBaitOverrideRoundTrip(t *testing.T) {
 		Deny:       []string{"拟饵"},
 		BottomOnly: []string{"蚯蚓"},
 		Condition:  "出现 jig 阶梯",
-		Groups:     [][]string{{"蚯蚓"}, {"红虫", "玉米"}},
-		RotateSec:  600,
-		RotateMode: "strict",
 		Enabled:    true,
 	}
 	if err := db.SaveFishBaitOverride(ctx, want, "tester"); err != nil {
@@ -39,27 +36,23 @@ func TestFishBaitOverrideRoundTrip(t *testing.T) {
 		t.Fatalf("rows=%d", len(list))
 	}
 	got := list[0]
-	if got.FishZh != want.FishZh || got.Condition != want.Condition || got.RotateSec != want.RotateSec {
+	if got.FishZh != want.FishZh || got.Condition != want.Condition {
 		t.Fatalf("scalar mismatch: %+v", got)
 	}
-	if got.RotateMode != "strict" || !got.Enabled || got.UpdatedBy != "tester" {
+	if !got.Enabled || got.UpdatedBy != "tester" {
 		t.Fatalf("meta mismatch: %+v", got)
 	}
 	if len(got.Allow) != 2 || got.Allow[0] != "蚯蚓" || got.Allow[1] != "红虫" {
 		t.Fatalf("allow=%v", got.Allow)
 	}
-	if len(got.Groups) != 2 || len(got.Groups[1]) != 2 || got.Groups[1][1] != "玉米" {
-		t.Fatalf("groups=%v", got.Groups)
-	}
 
 	// 覆盖写入：同一条鱼再次保存应更新而不是新增。
 	want.Allow = []string{"玉米"}
-	want.RotateMode = "soft"
 	if err := db.SaveFishBaitOverride(ctx, want, "tester2"); err != nil {
 		t.Fatal(err)
 	}
 	list, _ = db.ListFishBaitOverrides(ctx)
-	if len(list) != 1 || len(list[0].Allow) != 1 || list[0].Allow[0] != "玉米" || list[0].RotateMode != "soft" {
+	if len(list) != 1 || len(list[0].Allow) != 1 || list[0].Allow[0] != "玉米" {
 		t.Fatalf("upsert mismatch: %+v", list)
 	}
 
@@ -96,14 +89,11 @@ func TestFishBaitOverrideSanitizesInput(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
-	// 空串、未知模式、负数间隔都应被规范化，避免脏数据进判鱼路径。
+	// 空串应被清理，避免脏数据进判鱼路径。
 	o := FishBaitOverride{
-		FishZh:     "青蛙",
-		Allow:      []string{"", "  ", "青蛙"},
-		Groups:     [][]string{{"", " "}, {"青蛙"}},
-		RotateSec:  -5,
-		RotateMode: "weird",
-		Enabled:    false,
+		FishZh:  "青蛙",
+		Allow:   []string{"", "  ", "青蛙"},
+		Enabled: false,
 	}
 	if err := db.SaveFishBaitOverride(ctx, o, "tester"); err != nil {
 		t.Fatal(err)
@@ -116,10 +106,7 @@ func TestFishBaitOverrideSanitizesInput(t *testing.T) {
 	if len(got.Allow) != 1 || got.Allow[0] != "青蛙" {
 		t.Fatalf("allow not cleaned: %v", got.Allow)
 	}
-	if got.RotateMode != "soft" || got.RotateSec != 0 || got.Enabled {
-		t.Fatalf("mode/sec/enabled not normalized: %+v", got)
-	}
-	if len(got.Groups) != 1 || len(got.Groups[0]) != 1 {
-		t.Fatalf("empty groups not dropped: %v", got.Groups)
+	if got.Enabled {
+		t.Fatalf("enabled should stay false: %+v", got)
 	}
 }

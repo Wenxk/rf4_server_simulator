@@ -59,6 +59,10 @@ const (
 // defaultRigDepthCM 是 153.f4 的默认钓棚深度，单位为厘米。
 const defaultRigDepthCM = 100
 
+// baitTypeArtificialCorn 是鱼饵属性 fopbhlmkcpe（饵型）里「人造玉米」的取值。
+// 同族取值：8=煮饵 9=颗粒 10=人造玉米 17=Zig 泡沫。形态不合并，别按前缀猜。
+const baitTypeArtificialCorn = int64(10)
+
 // rigNameLure 是路亚钓组资源名；路亚钓组的 f4 固定为 0。
 const (
 	rigTypeLure = int64(5)

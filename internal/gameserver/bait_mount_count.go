@@ -5,6 +5,9 @@ package gameserver
 // 枚举按位命名，「玉米浮+蛆15」= 一根发丝上 15 份蛆 + 1 颗玉米浮；
 // 「沉+沉」「颗+颗」是两个饵槽各一份（玩家分两次挂载），不是一份挂两个。
 // 计件规则：带 ×N 后缀的成束挂法才多份，其余一钩一份。
+// 玉米浮的 1024 / 2048 都是「每根发丝 2 颗」：1024 是单饵槽 2 颗，
+// 2048 是「2 颗+2 颗」两个饵槽各 2 颗（合计 4 颗），不是一根发丝 4 颗。
+// 2026-11-20 玩家实测纠正：按 ×4 拆会让两槽各挂 4 颗、显示 4+4，与所选挂法不符。
 
 import (
 	"context"
@@ -33,8 +36,8 @@ const (
 // 未列出的挂法（含未选择 f8=0）一律一份；组合挂法只写多份的那一族
 // （玉米浮+蛆15 里玉米浮仍是一颗），单份族不进表。
 var baitMountHookCounts = map[int64]map[baitMountKind]int64{
-	1024:    {baitKindCorn: 2},    // 玉米浮×2
-	2048:    {baitKindCorn: 4},    // 玉米浮×4
+	1024:    {baitKindCorn: 2},    // 玉米浮×2（一份 2 颗）
+	2048:    {baitKindCorn: 2},    // 玉米浮×2+玉米浮×2（两个饵槽各 2 颗，合计 4 颗）
 	8192:    {baitKindCorn: 2},    // Pop-up 煮饵+玉米浮×2
 	65536:   {baitKindInsect: 5},  // 玉米浮+蛆5
 	131072:  {baitKindInsect: 10}, // 玉米浮+蛆10
@@ -70,7 +73,7 @@ func (s *Server) baitMountKindOf(ctx context.Context, row *store.Item) baitMount
 				return baitKindPopup
 			case 9:
 				return baitKindPellets
-			case 10:
+			case baitTypeArtificialCorn:
 				return baitKindCorn
 			}
 		}

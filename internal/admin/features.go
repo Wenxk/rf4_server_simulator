@@ -15,14 +15,15 @@ import (
 )
 
 type catalogItem struct {
-	ItemID    string `json:"item_id"`
-	NumericID int64  `json:"numeric_id"`
-	Name      string `json:"name"`
-	Category  int64  `json:"category"`
-	Kind      string `json:"kind"`
-	Brand     string `json:"brand"`
-	Group     string `json:"group"`
-	GroupKey  string `json:"group_key"`
+	ItemID       string `json:"item_id"`
+	NumericID    int64  `json:"numeric_id"`
+	Name         string `json:"name"`
+	Category     int64  `json:"category"`
+	CategoryText string `json:"category_text"`
+	Kind         string `json:"kind"`
+	Brand        string `json:"brand"`
+	Group        string `json:"group"`
+	GroupKey     string `json:"group_key"`
 }
 
 type catalogGroup struct {
@@ -194,6 +195,7 @@ func (s *Server) handleCatalogItems(w http.ResponseWriter, r *http.Request) {
 			catalogKind = v.Kind
 		}
 		v.GroupKey, v.Group, _ = catalogGroupFor(catalogKind, v.Category)
+		v.CategoryText = itemCategoryText(v.Category)
 		out = append(out, v)
 	}
 	writeJSON(w, out)
@@ -421,6 +423,8 @@ func (s *Server) handleFishConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	applyDielWeightView(cfg, s.dielWeightTunables(r.Context()))
+	// 自动轮换本期的开口饵：钓场页直接显示，不用再跳到鱼饵偏好页核对。
+	s.applyFishConfigBaitPick(r.Context(), cfg)
 	writeJSON(w, cfg)
 }
 

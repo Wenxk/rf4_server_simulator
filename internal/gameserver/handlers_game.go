@@ -1479,6 +1479,10 @@ func finishNibbleHook(ctx *Ctx, st *FishState, pending *RolledFish, gear string,
 		if err := srv.consumeNibbleBait(ctx.Sess, pending, gear); err != nil {
 			ctx.Log.Warn("嘬饵扣饵失败", "fish", pending.FishGUID, "err", err)
 		}
+		// 嘬掉的那份饵同样要立刻补回钩上：杆还在水里等下一口。
+		if castActive && !resolved {
+			srv.autoReloadBaitSlots(ctx.Sess, gear, "嘬饵")
+		}
 		// 14/11 的客户端语义是"鱼实体已进搏鱼态"，服务端单方面否决必须让客户端
 		// 知情：推送鱼离场（14/15 = 鱼离场分支，args[1]=鱼 GUID），
 		// 客户端走与自然脱钩相同的离场状态机放鱼游走，否则它会一直搏到岸边凭空消失。
@@ -1675,6 +1679,11 @@ func hFishingLeft(ctx *Ctx) ([]byte, bool) {
 		if hooked && pending != nil {
 			if err := srv.consumeHookedBait(ctx.Sess, pending, rodGUID); err != nil {
 				ctx.Log.Warn("脱钩后鱼饵扣减失败", "fish", pending.FishGUID, "err", err)
+			}
+			// 钩饵刚被这尾鱼吃掉，而杆还插在水里：立刻补挂同款再继续钓。
+			// 不补的话客户端根本看不到空钩，这一杆会静默卡在 canFishWithBait 上空转。
+			if castActive && inWater {
+				srv.autoReloadBaitSlots(ctx.Sess, rodGUID, "鱼离场")
 			}
 		}
 		// 这一尾鱼的渔轮账到此为止，先落库再排下一尾。

@@ -469,6 +469,13 @@ func (s *Server) fishBiteEnvironmentWeight(ctx context.Context, key string, c fi
 	// 四段曲线只做乘性压制（峰值 1.0 / 最低 0.08），不再有「专性鱼翻倍」那套加成：
 	// 鱼种之间的差异交给曲线本身的分段形状表达。
 	diel := fishDielWeight(p, hour)
+	// 非活跃时段禁口（fish_diel_inactive_block，默认开）：位图 diel_mask 由曲线 ≥0.5
+	// 派生，所以「曲线值 <0.5」就是玩家在鱼种卡上看到的活跃时段之外。此时这条鱼直接
+	// 不参与抽签（权重 0），而不是只乘一个 0.3~0.4 的系数——曲线边缘段的平滑值压不住，
+	// 会出现「卡片写夜行、凌晨照样连竿」。
+	if dielOn && s.tunableF(tunableFishDielInactiveBlock, 1) >= 0.5 && diel < dielActiveThreshold {
+		return 0
+	}
 	if !ecologyOn {
 		// 只开昼夜层时直接返回该系数：不牵连水层、水温、天气、清澈度。
 		return clampFloat(diel, fishDielCurveMin, 1)
@@ -567,6 +574,13 @@ func dielCurveWeights(raw string) []float64 {
 //
 // 没有曲线时回退旧位图：命中 1.0、未命中 0.35（与上游同口径，供旧档案、
 // 手工清空曲线或回滚使用）。
+// tunableFishDielInactiveBlock 是「非活跃时段禁口」总开关（默认开）。
+const tunableFishDielInactiveBlock = "fish_diel_inactive_block"
+
+// dielActiveThreshold 是「活跃段」判定线：diel_mask 由 tools/genfishdata 按曲线 ≥0.5
+// 置位，这里必须用同一个阈值，否则卡片上的活跃时段和判鱼口径会打架。
+const dielActiveThreshold = 0.5
+
 func fishDielWeight(profile fishEcologyProfile, hour int64) float64 {
 	bit := int(fishActivityForHour(hour))
 	if curve := dielCurveWeights(profile.DielCurve); curve != nil {

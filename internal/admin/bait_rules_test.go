@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -12,7 +13,7 @@ import (
 	"rf4server/internal/logging"
 )
 
-// 后台规则覆盖：保存 → 列表反映覆盖与轮换状态 → 恢复默认回到内置规则。
+// 后台规则覆盖：保存 → 列表反映覆盖 → 恢复默认回到内置规则。
 func TestBaitRuleSaveAndReset(t *testing.T) {
 	db := testDB(t)
 	ctx := context.Background()
@@ -83,10 +84,9 @@ func TestBaitRuleSaveAndReset(t *testing.T) {
 		return nil
 	}
 
-	// 保存一条覆盖 + 两组轮换（strict）。
+	// 保存一条覆盖。
 	payload := `{"fish_zh":"常见拟鲤","allow":["测试蚯蚓"],"deny":["拟饵"],
-		"bottom_only":[],"condition":"","groups":[["测试蚯蚓"],["红虫"]],
-		"rotate_sec":600,"rotate_mode":"strict","enabled":true}`
+		"bottom_only":[],"condition":"","enabled":true}`
 	if code, out := doAuth("PUT", "/api/bait/rules", payload); code != 200 {
 		t.Fatalf("保存失败: %d %v", code, out)
 	}
@@ -105,18 +105,8 @@ func TestBaitRuleSaveAndReset(t *testing.T) {
 	if allow, _ := row["allow"].([]any); len(allow) != 1 || allow[0] != "测试蚯蚓" {
 		t.Fatalf("allow=%v", row["allow"])
 	}
-	rot, _ := row["rotation"].(map[string]any)
-	if rot == nil || rot["enabled"] != true || rot["mode"] != "strict" {
-		t.Fatalf("rotation=%v", row["rotation"])
-	}
-	if active, _ := rot["active_baits"].([]any); len(active) != 1 {
-		t.Fatalf("当前组应有 1 个饵: %v", rot["active_baits"])
-	}
-
-	// 非法间隔应被拒绝。
-	bad := `{"fish_zh":"常见拟鲤","allow":["测试蚯蚓"],"groups":[["测试蚯蚓"]],"rotate_sec":30,"rotate_mode":"soft","enabled":true}`
-	if code, _ := doAuth("PUT", "/api/bait/rules", bad); code != 400 {
-		t.Fatalf("间隔 30 秒应返回 400，实得 %d", code)
+	if rot, _ := row["rotation"].(map[string]any); rot != nil && rot["enabled"] == true {
+		t.Fatalf("未开自动轮换时不应有轮换状态: %v", rot)
 	}
 
 	// 恢复默认。
@@ -131,10 +121,6 @@ func TestBaitRuleSaveAndReset(t *testing.T) {
 	allow, _ := row["allow"].([]any)
 	if len(allow) < 2 {
 		t.Fatalf("恢复后应回到内置允许列表，实得 %v", row["allow"])
-	}
-	rot, _ = row["rotation"].(map[string]any)
-	if rot != nil && rot["enabled"] == true {
-		t.Fatalf("恢复后不应再有轮换: %v", rot)
 	}
 }
 
@@ -200,5 +186,90 @@ func TestBaitAutoRerollBumpsRound(t *testing.T) {
 	}
 	if stored != "2" {
 		t.Fatalf("库里的偏移应为 2，实得 %q", stored)
+	}
+}
+
+// 分类接口要把「整类规则词」一起返回：后台的「按大类加入」按钮直接用
+// 这个 term 写进规则，必须与判鱼匹配表同一份，不能前端另猜。
+func TestBaitCategoriesCarryTypeTerms(t *testing.T) {
+	db := testDB(t)
+	for _, q := range []string{
+		`INSERT INTO item_def(numeric_id,item_id,category,attrs_json) VALUES(900801,'plt_a',27,'{"fopbhlmkcpe":9}')`,
+		`INSERT INTO item_catalog(item_id,name_zh) VALUES('plt_a','奇特颗粒 14')`,
+		`INSERT INTO item_def(numeric_id,item_id,category,attrs_json) VALUES(900802,'pop_a',27,'{"fopbhlmkcpe":8}')`,
+		`INSERT INTO item_catalog(item_id,name_zh) VALUES('pop_a','甜奶油 PopUp 16')`,
+		`INSERT INTO item_def(numeric_id,item_id,category,attrs_json) VALUES(900803,'lure_a',17,'{"mbemakijdeh":6}')`,
+		`INSERT INTO item_catalog(item_id,name_zh) VALUES('lure_a','Bond 125-01')`,
+	} {
+		if _, err := db.SQL.Exec(q); err != nil {
+			t.Fatalf("seed: %v", err)
+		}
+	}
+	srv := NewServer(config.Admin{JWTSecret: "test"}, db, logging.Discard(), WebFS())
+	rec := httptest.NewRecorder()
+	srv.handleBaitCategories(rec, httptest.NewRequest("GET", "/api/bait/categories", nil))
+	if rec.Code != 200 {
+		t.Fatalf("状态=%d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		Categories []struct {
+			Key      int64  `json:"key"`
+			Term     string `json:"term"`
+			Children []struct {
+				Sub   int64  `json:"sub"`
+				Label string `json:"label"`
+				Term  string `json:"term"`
+				Count int    `json:"count"`
+			} `json:"children"`
+		} `json:"categories"`
+		Terms []struct {
+			Term  string `json:"term"`
+			Label string `json:"label"`
+			Cat   int64  `json:"cat"`
+			Sub   int64  `json:"sub"`
+			Count int    `json:"count"`
+		} `json:"terms"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	byCat := map[int64]string{}
+	for _, c := range body.Categories {
+		byCat[c.Key] = c.Term
+	}
+	if byCat[27] != "饵料" || byCat[17] != "拟饵" {
+		t.Fatalf("大类规则词=%v，期望 27→饵料 / 17→拟饵", byCat)
+	}
+	subTerm := map[int64]string{}
+	subLabel := map[int64]string{}
+	for _, c := range body.Categories {
+		for _, ch := range c.Children {
+			subTerm[ch.Sub] = ch.Term
+			subLabel[ch.Sub] = ch.Label
+		}
+	}
+	if subTerm[9] != "颗粒" {
+		t.Fatalf("baitType 9 的规则词=%q，期望 颗粒", subTerm[9])
+	}
+	if subLabel[9] != "颗粒" {
+		t.Fatalf("baitType 9 的标签=%q，期望 颗粒（旧的「鱼子 / 虾类」是错标）", subLabel[9])
+	}
+	if subTerm[8] != "浮水饵" || subLabel[8] != "Pop-up 浮水饵" {
+		t.Fatalf("baitType 8 → term=%q label=%q", subTerm[8], subLabel[8])
+	}
+	if subTerm[6] != "Pilker铁板" {
+		t.Fatalf("lureType 6 的规则词=%q，期望 Pilker铁板", subTerm[6])
+	}
+	termCount := map[string]int{}
+	for _, term := range body.Terms {
+		termCount[term.Term] = term.Count
+		if term.Term == "颗粒" && term.Count != 1 {
+			t.Fatalf("颗粒数量=%d，期望 1", term.Count)
+		}
+	}
+	for _, want := range []string{"各类饵", "饵料", "拟饵", "颗粒", "浮水饵"} {
+		if _, ok := termCount[want]; !ok {
+			t.Fatalf("大类清单里缺 %q：%v", want, termCount)
+		}
 	}
 }

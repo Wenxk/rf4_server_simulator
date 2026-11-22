@@ -40,7 +40,7 @@ func TestLookupFishBaitRuleToleratesNameVariants(t *testing.T) {
 func TestResolveBaitRuleUsesNameVariants(t *testing.T) {
 	s, _ := seedBaitRuleTest(t)
 	for _, name := range []string{"泥鳅鱼", "泥鳅"} {
-		r, _ := s.resolveBaitRule(context.Background(), name)
+		r := s.resolveBaitRule(context.Background(), name)
 		if len(r.allow) == 0 {
 			t.Fatalf("%s：resolveBaitRule 丢了规则（allow 为空）", name)
 		}

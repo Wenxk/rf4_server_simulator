@@ -9,30 +9,23 @@ import (
 	"strings"
 	"time"
 
+	"rf4server/internal/gameserver"
 	"rf4server/internal/store"
 )
 
 // 覆盖写入上限：避免一次提交过大把判鱼路径拖慢。
-const (
-	maxBaitRuleTerms  = 40
-	maxBaitRuleGroups = 20
-	maxBaitGroupTerms = 20
-	minBaitRotateSec  = 60
-)
+const maxBaitRuleTerms = 40
 
 type baitRuleSaveReq struct {
-	FishZh     string     `json:"fish_zh"`
-	Allow      []string   `json:"allow"`
-	Deny       []string   `json:"deny"`
-	BottomOnly []string   `json:"bottom_only"`
-	Condition  string     `json:"condition"`
-	Groups     [][]string `json:"groups"`
-	RotateSec  int64      `json:"rotate_sec"`
-	RotateMode string     `json:"rotate_mode"`
-	Enabled    bool       `json:"enabled"`
+	FishZh     string   `json:"fish_zh"`
+	Allow      []string `json:"allow"`
+	Deny       []string `json:"deny"`
+	BottomOnly []string `json:"bottom_only"`
+	Condition  string   `json:"condition"`
+	Enabled    bool     `json:"enabled"`
 }
 
-// handleBaitRuleSave 保存一个鱼种的饵料规则覆盖（含多组轮换配置）。
+// handleBaitRuleSave 保存一个鱼种的饵料规则覆盖。
 func (s *Server) handleBaitRuleSave(w http.ResponseWriter, r *http.Request) {
 	var req baitRuleSaveReq
 	if err := readJSON(r, &req); err != nil {
@@ -48,39 +41,12 @@ func (s *Server) handleBaitRuleSave(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 400, "鱼种名过长")
 		return
 	}
-	mode := strings.TrimSpace(req.RotateMode)
-	if mode == "" {
-		mode = "soft"
-	}
-	if mode != "soft" && mode != "strict" {
-		// 自动抽取在表格里是独立开关（/api/bait/auto-rotation），不再是轮换模式。
-		httpError(w, 400, "轮换模式只能是 soft 或 strict")
-		return
-	}
-	groups := cleanGroups(req.Groups)
-	if len(groups) > maxBaitRuleGroups {
-		httpError(w, 400, "轮换组最多 "+strconv.Itoa(maxBaitRuleGroups)+" 组")
-		return
-	}
-	if len(groups) > 0 {
-		if req.RotateSec <= 0 {
-			httpError(w, 400, "配置了轮换组时必须填写轮换间隔")
-			return
-		}
-		if req.RotateSec < minBaitRotateSec {
-			httpError(w, 400, "轮换间隔至少 60 秒")
-			return
-		}
-	}
 	ov := store.FishBaitOverride{
 		FishZh:     fishZh,
 		Allow:      cleanTerms(req.Allow),
 		Deny:       cleanTerms(req.Deny),
 		BottomOnly: cleanTerms(req.BottomOnly),
 		Condition:  strings.TrimSpace(req.Condition),
-		Groups:     groups,
-		RotateSec:  req.RotateSec,
-		RotateMode: mode,
 		Enabled:    req.Enabled,
 	}
 	if len(ov.Allow) > maxBaitRuleTerms || len(ov.Deny) > maxBaitRuleTerms || len(ov.BottomOnly) > maxBaitRuleTerms {
@@ -95,8 +61,7 @@ func (s *Server) handleBaitRuleSave(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = s.db.AuditLogWrite(ctx, adminOf(r), "bait_rule_save", fishZh,
 		"allow="+strconv.Itoa(len(ov.Allow))+" deny="+strconv.Itoa(len(ov.Deny))+
-			" groups="+strconv.Itoa(len(groups))+" interval="+strconv.FormatInt(ov.RotateSec, 10)+
-			" mode="+mode+" enabled="+strconv.FormatBool(ov.Enabled))
+			" enabled="+strconv.FormatBool(ov.Enabled))
 	_ = s.db.QueuePush(ctx, mustJSON(map[string]any{"op": "reload_bait_rules"}))
 	writeJSON(w, map[string]any{"ok": true})
 }
@@ -138,33 +103,12 @@ func (s *Server) handleBaitRuleReset(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"ok": true, "removed": n})
 }
 
-// 饵料/拟饵的二级分类：直接取客户端枚举（饵料 baitType、拟饵 lureType），
-// 中文名按静态库里该枚举的代表物品归纳，用于后台「先选分类再选饵」。
-var baitTypeLabels = map[int64]string{
-	1: "香煮饵 / 贻贝", 2: "虫类", 3: "蛙类", 4: "活饵 / 饵鱼",
-	6: "蚯蚓类", 7: "昆虫类", 8: "Pop-up 浮水饵", 9: "鱼子 / 虾类",
-	10: "水果 / 蟹类", 11: "坚果", 12: "钩虾", 13: "面团类",
-	14: "鱼片", 15: "死饵鱼", 16: "海钓饵", 17: "Zig 浮水球",
-}
-
-var lureTypeLabels = map[int64]string{
-	1: "旋转亮片", 2: "莫斯科路亚", 3: "泡沫 / 软饵", 4: "Crank 摇摆",
-	5: "Popper 波扒", 6: "Pilker 铁板", 7: "Jerk 抽停", 8: "Tube 软管",
-	9: "W-Stick 软虫", 10: "Mouse 鼠型", 11: "Fly 飞蝇", 12: "大号软饵",
-	13: "Gummi 软鳗", 14: "Octopus 软饵", 15: "虾型", 16: "Flying worm 飞虫",
-	17: "鱼卵珠", 18: "Jig 铅头", 19: "Flip Jig 铁板", 20: "Vibra 震动",
-}
-
+// 饵料/拟饵的二级分类：直接取客户端枚举（饵料 baitType、拟饵 lureType）。
+// 展示名与「大类规则词」统一由 gameserver 的 baitTypeTerms 表提供：后台按钮上
+// 写「颗粒」，写进规则的就是「颗粒」，不会再出现两套叫法。
 func baitSubLabel(category, sub int64) string {
-	switch category {
-	case 27:
-		if s, ok := baitTypeLabels[sub]; ok {
-			return s
-		}
-	case 17:
-		if s, ok := lureTypeLabels[sub]; ok {
-			return s
-		}
+	if s, ok := gameserver.ExportedBaitTypeLabel(category, sub); ok {
+		return s
 	}
 	return "其他"
 }
@@ -233,11 +177,14 @@ func (s *Server) handleBaitCategories(w http.ResponseWriter, r *http.Request) {
 		Sub   int64  `json:"sub"`
 		Label string `json:"label"`
 		Count int    `json:"count"`
+		// Term 是「整类加入」时写进规则的词（如「颗粒」），前端按钮直接用它。
+		Term string `json:"term"`
 	}
 	type node struct {
 		Key      int64   `json:"key"`
 		Label    string  `json:"label"`
 		Count    int     `json:"count"`
+		Term     string  `json:"term"`
 		Children []child `json:"children"`
 	}
 	counts := map[int64]map[int64]int{}
@@ -251,18 +198,51 @@ func (s *Server) handleBaitCategories(w http.ResponseWriter, r *http.Request) {
 	}
 	nodes := make([]node, 0, 2)
 	for _, cat := range []int64{27, 17} {
-		n := node{Key: cat, Label: baitCategoryLabel(cat), Count: totals[cat]}
+		catTerm, _ := gameserver.ExportedBaitCategoryTerm(cat)
+		n := node{Key: cat, Label: baitCategoryLabel(cat), Count: totals[cat], Term: catTerm}
 		subs := make([]int64, 0, len(counts[cat]))
 		for sub := range counts[cat] {
 			subs = append(subs, sub)
 		}
 		sort.Slice(subs, func(i, j int) bool { return subs[i] < subs[j] })
 		for _, sub := range subs {
-			n.Children = append(n.Children, child{Sub: sub, Label: baitSubLabel(cat, sub), Count: counts[cat][sub]})
+			term, _ := gameserver.ExportedBaitTypeTermOf(cat, sub)
+			n.Children = append(n.Children, child{
+				Sub: sub, Label: baitSubLabel(cat, sub), Count: counts[cat][sub], Term: term,
+			})
 		}
 		nodes = append(nodes, n)
 	}
-	writeJSON(w, map[string]any{"categories": nodes})
+	// terms 是「按大类加入」按钮的完整清单：顺序、标签、规则词都由 gameserver 定，
+	// 前端不再硬编码（以前硬编码 4 个通配词，删改一次就要改两处）。
+	terms := make([]map[string]any, 0, 40)
+	for _, t := range gameserver.ExportedBaitTypeTerms() {
+		cnt := 0
+		switch {
+		case t.Cat == 0:
+			cnt = totals[27] + totals[17]
+		case len(t.Subs) == 0:
+			cnt = totals[t.Cat]
+		default:
+			for _, sub := range t.Subs {
+				cnt += counts[t.Cat][sub]
+			}
+		}
+		terms = append(terms, map[string]any{
+			"term": t.Term, "label": t.Label, "cat": t.Cat, "sub": baitTermSub(t),
+			"count": cnt, "alias": t.Alias,
+		})
+	}
+	writeJSON(w, map[string]any{"categories": nodes, "terms": terms})
+}
+
+// baitTermSub 返回该大类词对应的二级类型（0=整个大类）；前端据此决定
+// 「选了这个分类时该显示哪些整类按钮」。
+func baitTermSub(t gameserver.BaitTypeTerm) int64 {
+	if len(t.Subs) == 0 {
+		return 0
+	}
+	return t.Subs[0]
 }
 
 // handleBaitItems 给规则编辑器提供可选饵料清单（只读），支持按大类/二级分类/关键字过滤。
@@ -410,6 +390,73 @@ func (s *Server) handleBaitAutoReroll(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"ok": true, "round": next})
 }
 
+// applyFishConfigBaitPick 给开了自动轮换的鱼种补上「本期抽到哪几款饵」。
+//
+// 钓场页原先只写一句「按稀有度每期重抽」，看不出版本期内到底开什么饵。
+// 抽签必须与判鱼完全一致（同一份规则、同一份池子、同一个时间桶 + 人工偏移），
+// 所以这里直接调 gameserver 的导出函数，而不是让前端自己再算一遍。
+// 只对 BaitAuto 的行构池，单个水域几十条，成本与「鱼饵偏好」页同一套逻辑。
+func (s *Server) applyFishConfigBaitPick(ctx context.Context, cfg *store.AdminFishConfig) {
+	if cfg == nil || len(cfg.Fish) == 0 {
+		return
+	}
+	anyAuto := false
+	for i := range cfg.Fish {
+		if cfg.Fish[i].BaitAuto {
+			anyAuto = true
+			break
+		}
+	}
+	if !anyAuto {
+		return
+	}
+	baits := gameserver.LoadAllRuleBaits(ctx, s.db)
+	// 覆盖按归一后的鱼名建表（与判鱼 resolveBaitRule 的查法一致）；
+	// 停用的覆盖不参与判鱼，这里也不能拿来算抽签。
+	overrides := map[string]store.FishBaitOverride{}
+	if list, err := s.db.ListFishBaitOverrides(ctx); err == nil {
+		for _, o := range list {
+			if o.Enabled {
+				overrides[gameserver.ExportedBaitRuleKey(o.FishZh)] = o
+			}
+		}
+	}
+	sec := s.autoRotationSec(ctx)
+	round := s.autoRotationRound(ctx)
+	globalOn := s.autoRotationGlobalOn(ctx)
+	now := time.Now()
+	for i := range cfg.Fish {
+		row := &cfg.Fish[i]
+		if !row.BaitAuto {
+			continue
+		}
+		allow, deny, bottom := baitRuleTerms(row.NameZh, overrides)
+		st := gameserver.ExportedAutoRotation(row.FishKey, baits, allow, deny, bottom,
+			row.RarityTier, sec, round, now)
+		row.BaitPick = &store.BaitAutoPick{
+			Enabled:     st.Enabled,
+			GlobalOff:   !globalOn,
+			Quota:       st.Quota,
+			PoolSize:    st.PoolSize,
+			ActiveBaits: st.ActiveBaits,
+			NextSwitch:  st.NextSwitch,
+			IntervalSec: sec,
+		}
+	}
+}
+
+// baitRuleTerms 取该鱼种当前生效的 allow/deny/bottom：启用的覆盖优先，
+// 否则回落内置规则表（与判鱼 resolveBaitRule 同口径）。
+func baitRuleTerms(nameZh string, overrides map[string]store.FishBaitOverride) (allow, deny, bottom []string) {
+	if o, ok := overrides[gameserver.ExportedBaitRuleKey(nameZh)]; ok {
+		return o.Allow, o.Deny, o.BottomOnly
+	}
+	if info, ok := gameserver.ExportedBaitRules(nameZh); ok {
+		return info.Allow, info.Deny, info.BottomOnly
+	}
+	return nil, nil, nil
+}
+
 // fishRarity 取鱼种固有稀有度（0 普通 / 1 稀有 / 2 超稀有）。
 // fish_ecology 以 fish_key 为主键（水域覆盖在 fish_ecology_loc），一行即可。
 func (s *Server) fishRarity(ctx context.Context, fishKey string) int {
@@ -431,20 +478,6 @@ func cleanTerms(in []string) []string {
 		}
 		seen[s] = true
 		out = append(out, s)
-	}
-	return out
-}
-
-func cleanGroups(in [][]string) [][]string {
-	out := make([][]string, 0, len(in))
-	for _, g := range in {
-		row := cleanTerms(g)
-		if len(row) > maxBaitGroupTerms {
-			row = row[:maxBaitGroupTerms]
-		}
-		if len(row) > 0 {
-			out = append(out, row)
-		}
 	}
 	return out
 }

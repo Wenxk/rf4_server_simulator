@@ -100,8 +100,72 @@ def parse_rules(path):
     return rules
 
 
+# 与 internal/gameserver/bait_type_terms.go 对齐：整类词 → (品类, 二级类型集合)。
+# 品类 0 = 不限；二级类型在饵料里是 baitType、在拟饵里是 lureType。
+# 这张表决定「这款饵是否已被整类词覆盖」——漏一个词，工具就会把整类的每一款饵
+# 重复补进 allow，名单立刻膨胀几十条。改 Go 表时同步这里。
+_CATEGORY_TERMS = {
+    "各类饵": (0, set()),
+    "饵料": (27, set()),
+    "拟饵": (17, set()),
+    "沉底饵": (27, {1}),
+    "虫类": (27, {2}),
+    "蛙类": (27, {3}),
+    "活饵类": (27, {4}),
+    "蚯蚓类": (27, {6}),
+    "昆虫类": (27, {7}),
+    "浮水饵": (27, {8}),
+    "颗粒": (27, {9}),
+    "玉米浮": (27, {10}),
+    "坚果": (27, {11}),
+    "钩虾类": (27, {12}),
+    "面团类": (27, {13}),
+    "鱼片类": (27, {14}),
+    "死饵鱼类": (27, {15}),
+    "海钓饵": (27, {16}),
+    "Zig浮水球": (27, {17}),
+    "旋转亮片": (17, {1}),
+    "莫斯科路亚": (17, {2}),
+    "软饵类": (17, {3}),
+    "Crank摇摆": (17, {4}),
+    "Popper波扒": (17, {5}),
+    "Pilker铁板": (17, {6}),
+    "Jerk抽停": (17, {7}),
+    "Tube软管": (17, {8}),
+    "W-Stick软虫": (17, {9}),
+    "Mouse鼠型": (17, {10}),
+    "Fly飞蝇": (17, {11}),
+    "大号软饵": (17, {12}),
+    "Gummi软鳗": (17, {13}),
+    "Octopus软饵": (17, {14}),
+    "虾型": (17, {15}),
+    "Flyingworm飞虫": (17, {16}),
+    "鱼卵珠": (17, {17}),
+    "Jig铅头": (17, {18}),
+    "FlipJig铁板": (17, {19}),
+    "Vibra震动": (17, {20}),
+    # 历史写法（内置规则表在用）
+    "昆虫幼虫": (27, {2}),
+    "蠕虫": (27, {6}),
+    "蠕虫类": (27, {6}),
+    "昆虫": (27, {7}),
+    "饵鱼": (27, {4, 15}),
+    "饵鱼类": (27, {4, 15}),
+    "各类饵鱼": (27, {4, 15}),
+    "鱼肉类": (27, {14}),
+    "亮片": (17, {1, 2}),
+    "亮片类": (17, {1, 2}),
+    "亮片系列饵": (17, {1, 2}),
+    "旋转饵": (17, {1}),
+    "旋转饵类": (17, {1}),
+    "旋转亮片路亚": (17, {1}),
+    "拟真软饵": (17, {3}),
+}
+CATEGORY_TERMS = {rule_key(k): v for k, v in _CATEGORY_TERMS.items()}
+
+
 def bait_covers(term, bait, id2zh):
-    """复刻 ruleBait.matches：判断类目词 / 别名 / 精确名 / 前缀是否覆盖该饵。
+    """复刻 ruleBait.matches：判断整类词 / 别名 / 精确名 / 前缀是否覆盖该饵。
     bait = (item_id, name_zh, category, lure_type, bait_type)
     """
     bid, name_zh, cat, lure, btype = bait
@@ -113,30 +177,18 @@ def bait_covers(term, bait, id2zh):
     for alias in ALIASES.get(bid, []):
         if rule_name(alias) == t:
             return True
-    if t == "各类饵":
-        return True
-    if t == "拟饵":
-        return cat == 17
-    if t == "活饵类":
-        return cat == 27 and btype == 4
-    if t in ("饵鱼类", "饵鱼", "各类饵鱼"):
-        return cat == 27 and btype in (4, 15)
-    if cat == 27:
-        if t in ("蠕虫", "蠕虫类"):
-            return btype == 6
-        if t == "昆虫幼虫":
-            return btype == 2
-        if t == "昆虫":
-            return btype == 7
-        if t == "鱼肉类":
-            return btype == 14 or bid == "fish_flesh"
-    if cat == 17:
-        if t in ("亮片", "亮片类", "亮片系列饵"):
-            return lure in (1, 2)
-        if t in ("旋转饵", "旋转饵类", "旋转亮片路亚"):
-            return lure == 1
-        if t in ("软饵类", "拟真软饵"):
-            return lure == 3
+    if tk in CATEGORY_TERMS:
+        tcat, tsubs = CATEGORY_TERMS[tk]
+        if tcat and cat != tcat:
+            return False
+        if not tsubs:
+            return True
+        sub = lure if cat == 17 else btype
+        if sub in tsubs:
+            return True
+        # 规则表里的「鱼肉类」历史上还点名了 fish_flesh——它今天已是 baitType 14，
+        # 这条兜底只为兼容旧数据。
+        return tk == rule_key("鱼肉类") and bid == "fish_flesh"
     for suffix in ("系列饵", "系列", "类"):
         if t.endswith(suffix) and len(t) > len(suffix):
             stem = t[: -len(suffix)]
