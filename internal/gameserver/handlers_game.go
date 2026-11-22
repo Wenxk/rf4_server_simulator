@@ -819,11 +819,13 @@ func hCastPrepare(ctx *Ctx) ([]byte, bool) {
 	st.RigType = newRigType
 	// 新一杆无条件清上一杆拟饵状态：换竿/换饵/同竿换钓组后旧 LureDive 不得
 	// 钳制新饵，旧 LureLayer 不得压过 runtime DiveDepth 兜底，旧 LureAction/
-	// LureMotionMask 也不得漏进非路亚判鱼（评审 P1/P2-1）。
+	// LureMotionMask/LureType 也不得漏进非路亚判鱼（评审 P1/P2-1）。
 	st.LureMotionMask = 0
 	st.LureAction = ""
 	st.LureLayer = 0 // 0=未知：无运动证据时判鱼走 runtime DiveDepth 兜底，不再恒走 .5
 	st.LureDive = 0
+	st.LureType = ""
+	st.PaceRearmAt = time.Time{}
 	st.LurePulseCount = 0
 	st.LurePulseAt = time.Time{}
 	st.LureToggleCount = 0
@@ -839,13 +841,18 @@ func hCastPrepare(ctx *Ctx) ([]byte, bool) {
 	}
 	// 路亚抛竿：按补饵后的实际装配取拟饵名义泳层，种子进实时水层——
 	// 落水瞬间饵在设计泳层，之后由 14/7 运动位动态修正并受该值钳制。
+	// 路亚抛竿：按补饵后的实际装配取拟饵名义泳层与类型名，种子进实时水层与
+	// pace 复合分——落水瞬间饵在设计泳层，之后由 14/7 运动位动态修正并受该值
+	// 钳制；动作权重按主导拟饵（最深）的类型计。
 	if rigTypeLureFamily[rigType] {
-		if dive := srv.lureDiveForGear(ctx.Sess.pushCtx(), gear); dive > 0 {
-			st.mu.Lock()
+		dive, lureType := srv.lureCoreForGear(ctx.Sess.pushCtx(), gear)
+		st.mu.Lock()
+		if dive > 0 {
 			st.LureDive = dive
 			st.LureLayer = dive
-			st.mu.Unlock()
 		}
+		st.LureType = lureType
+		st.mu.Unlock()
 	}
 	// 收敛钓组数据：补齐 f5、rig 行、组件和尖梢。
 	// 尖梢有更新时推送 4/22 全量竿树，因为客户端抛竿前会校验实例 f8。
@@ -1210,6 +1217,12 @@ func hFishingStep(ctx *Ctx) ([]byte, bool) {
 				}
 			}
 			st.mu.Unlock()
+			// pace 开启时动作复合档位升高 → 立即按新档重排咬钩（只升不降，
+			// 内部自持锁与守卫复核；好动作一出来即进对应等待窗，见
+			// specs/changes/lure-action-pace/spec.md）。
+			if rigTypeLureFamily[st.RigType] {
+				ctx.Sess.Srv.paceLureActionRearm(ctx.Sess, st)
+			}
 			if enterWater {
 				if err := ctx.Sess.Srv.consumeCastBait(ctx.Sess, st); err != nil {
 					ctx.Log.Warn("入水窝料扣减失败", "err", err)
@@ -1318,6 +1331,12 @@ func hFishingPull(ctx *Ctx) ([]byte, bool) {
 		hookedFish, announce = st.takeHookedChatFishLocked()
 	}
 	st.mu.Unlock()
+	// pace 开启时动作复合档位升高 → 立即按新档重排咬钩（只升不降，内部自持
+	// 锁与守卫复核；海钓铁板的垂直抖法同样走这里）。已中钩的轮次被
+	// !Hooked 守卫挡掉，不会把正在搏鱼的杆重新排期。
+	if rigTypeLureFamily[rigType] {
+		srv.paceLureActionRearm(ctx.Sess, st)
+	}
 	if needsConfirmation && nibble {
 		finishNibbleHook(ctx, st, pending, gear, castActive, resolved)
 		ctx.Log.Info("14/9 海钓嘬饵未中钩，重新排鱼", "rod", shortGUID(gear),

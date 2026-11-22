@@ -37,12 +37,12 @@ func TestPaceTierForMapping(t *testing.T) {
 		factor, prob, lureProb float64
 		tier                   int
 	}{
-		{0.90, 1.0, 1.0, 0.30, 2},
-		{0.75, 1.0, 1.0, 0.30, 2},
-		{0.50, 1.6, 0.5, 0.10, 1},
-		{0.45, 1.6, 0.5, 0.10, 1},
-		{0.30, 3.0, 0.12, 0.02, 0},
-		{0.0, 3.0, 0.12, 0.02, 0},
+		{0.90, 1.0, 1.0, 1.0, 2},
+		{0.75, 1.0, 1.0, 1.0, 2},
+		{0.50, 1.6, 0.5, 0.5, 1},
+		{0.45, 1.6, 0.5, 0.5, 1},
+		{0.30, 3.0, 0.12, 0.12, 0},
+		{0.0, 3.0, 0.12, 0.12, 0},
 	}
 	for _, tc := range cases {
 		factor, prob, lureProb, tier := s.paceTierFor(tc.score)
@@ -170,12 +170,28 @@ func TestPaceDelayBoundsAndLureUnchanged(t *testing.T) {
 			t.Fatalf("海底钓上限应为 30s，实得 %g", got)
 		}
 	}
-	// 路亚族在 pace 模式下延迟链零改动：×3 因子也不放大，仍是 1.5~6s 窗。
-	lure := &FishState{RigType: 5, PaceKnown: true, PaceFactor: 3, PaceGround: 1, PaceLureProb: 0.02}
+	// 路亚族按「饵分 × 动作分」复合档位取窗：好档仍在 1.5~6 秒收线短窗内，
+	// 中/差档拉长到底钓量级且不再受 bite_delay_lure_max 封顶。
+	good := &FishState{RigType: 5, PaceKnown: true, PaceScore: 1, PaceGround: 1,
+		LureType: "jerkbait", LureAction: "jerk"}
 	for i := 0; i < 50; i++ {
-		got := s.biteDelayInWeather(lure, fishingWeather{}, now)
-		if got > 6+1e-9 {
-			t.Fatalf("路亚窗口被 pace 放大：got %g", got)
+		if got := s.biteDelayInWeather(good, fishingWeather{}, now); got > 6+1e-9 {
+			t.Fatalf("好档路亚窗口应留在 1.5~6s：got %g", got)
+		}
+	}
+	// 饵对口但还没做出动作（中性 0.45）→ 复合 0.67 → 中档 10~60。
+	mid := &FishState{RigType: 5, PaceKnown: true, PaceScore: 1, PaceGround: 1}
+	for i := 0; i < 50; i++ {
+		if got := s.biteDelayInWeather(mid, fishingWeather{}, now); got < 10-1e-9 || got > 60+1e-9 {
+			t.Fatalf("中档路亚窗口应为 10~60s：got %g", got)
+		}
+	}
+	// 差饵（对口分 0.2）即使动作再好也到不了好档 → 差档 20~60。
+	badLure := &FishState{RigType: 5, PaceKnown: true, PaceScore: 0.2, PaceGround: 1,
+		LureType: "jerkbait", LureAction: "jerk"}
+	for i := 0; i < 50; i++ {
+		if got := s.biteDelayInWeather(badLure, fishingWeather{}, now); got < 20-1e-9 || got > 60+1e-9 {
+			t.Fatalf("差档路亚窗口应为 20~60s：got %g", got)
 		}
 	}
 }

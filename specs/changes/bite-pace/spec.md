@@ -30,9 +30,10 @@ Status: done
    `groundPace = clamp(1 - pace_groundbait_gain × S × overdoseP, 0.35, 1)`，
    延迟再乘它，clamp 下限降为 3 秒；死窝（overdoseP→0）不加速。
    满窝好饵 ≈ 6.48~46.6 × 0.38 ≈ **3~18 秒**。
-5. **路亚**：1.5~6 秒窗口、上限、落水保护全部不动（保住「14/14 不晚于收线窗口」
-   的既有约束），只把单轮判定按档位概率掷骰：对口 p=0.3（平均 ~12 秒）、
-   中 p=0.1、不对口 p=0.02（分钟级无口）。
+5. **路亚**：窗口与落水保护沿用原版收线短窗（保住「14/14 不晚于收线窗口」约束），
+   单轮判定按档位概率掷骰。2026-11-22 起路亚的档位改由「饵分 × 动作分」复合分决定、
+   等待窗也随档位拉长（好 1.5~6 / 中 10~60 / 差 20~60），详见
+   `specs/changes/lure-action-pace/spec.md`。
 
 ## User Stories
 
@@ -74,10 +75,11 @@ Status: done
 - 档位（tunable 可调）：good ≥`pace_score_good`(0.75)、mid ≥`pace_score_mid`(0.45)、
   其余为 bad。乘数 `pace_factor_mid`=1.6 / `pace_factor_bad`=3.0（good 恒 1.0）；
   底层杆概率 `pace_prob_good/mid/bad`=1.0/0.5/0.12；路亚轮概率
-  `pace_lure_prob_good/mid/bad`=0.3/0.1/0.02。
+  `pace_lure_prob_good/mid/bad`=1.0/0.5/0.12（2026-11-22 由 0.3/0.1/0.02 上调，
+  配合随档位拉长的等待窗；旧库若已有这三行仍按旧值生效）。
 - 延迟链：pace 分支只替换**非路亚族**的采样后处理（乘数 + clamp），采样分布、
-  天气系数、技能、钩型倍率、`bite_delay_scale` 全部沿用；路亚族在 pace 模式下
-  走原分支（零差异）。
+  天气系数、技能、钩型倍率、`bite_delay_scale` 全部沿用；路亚族的窗口改由复合档位
+  决定（见 `lure-action-pace`），其余因子同样沿用。
 - 概率合成：`onRodBiteTimerTicket` 里 `probability ×= st.PaceProb`，
   位于 `groundbaitBiteGate` 之后；失败空轮走既有 `emptyWeatherBiteLocked` 重排，
   重排延迟乘同一组 pace 因子（存 `FishState`，同 `st.Bonus` 先例）。

@@ -86,7 +86,10 @@
 | `pace_score_good` / `pace_score_mid` | `0.75` / `0.45` | 饵效对口分的两档阈值：≥好、≥中，其余为差 |
 | `pace_factor_mid` / `pace_factor_bad` | `1.6` / `3.0` | 底层杆（非路亚）延迟乘数；好档为 1.0 |
 | `pace_prob_good` / `pace_prob_mid` / `pace_prob_bad` | `1.0` / `0.5` / `0.12` | 底层杆单轮判定概率 |
-| `pace_lure_prob_good` / `_mid` / `_bad` | `0.30` / `0.10` / `0.02` | 路亚（含铁板）单轮概率；**延迟窗口不动**，保住收线窗口约束 |
+| `pace_lure_prob_good` / `_mid` / `_bad` | `1.0` / `0.5` / `0.12` | 路亚 fire 开口率，按复合档位（饵分 × 动作分）动态取 |
+| `pace_lure_min` / `pace_lure_max` | `1.5` / `6` | 路亚**好档**等待窗；再受 `bite_delay_lure_max` 封顶，不会被放大 |
+| `pace_lure_mid_min` / `_max` | `10` / `60` | 路亚中档等待窗（饵对口但动作一般），不封顶 |
+| `pace_lure_bad_min` / `_max` | `20` / `60` | 路亚差档等待窗（饵不对口），不封顶 |
 | `pace_bottom_max` / `pace_marine_max` / `pace_marine_min` | `60` / `30` / `3` | 延迟 clamp：底/浮 `[6,60]`，海底钓族 `[3,30]` |
 | `pace_groundbait_gain` / `_floor` / `_min_factor` | `0.62` / `3.0` / `0.35` | 打窝压缩：`1−gain×窝强度×死窝闸门`，下限降到 3 秒；死窝不加速 |
 
