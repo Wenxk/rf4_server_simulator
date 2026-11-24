@@ -3,14 +3,15 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),os=require('node:os');
 const {chromium}=require('playwright');
 
-// 「参数同步」页：预演 → 导入两步走。
-// 三条必须守住的：
-//   1. 预演必须打 dry_run=1，且不能发真导请求；
-//   2. 确认框取消后不能写库；
-//   3. 确认后要提示缓存已重载（否则用户以为生效了，实际还在用旧值）。
+// 「参数同步」页：导出 + 预演 → 导入。
+// 四条必须守住的：
+//   1. 导出必须真发请求并落成文件（文件名取 Content-Disposition，不能靠猜）；
+//   2. 预演必须打 dry_run=1，且不能发真导请求；
+//   3. 确认框取消后不能写库；
+//   4. 确认后要提示缓存已重载（否则用户以为生效了，实际还在用旧值）。
 test('playstyle sync page previews then imports with confirmation',async()=>{
  const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
- const previewCalls=[],importCalls=[];
+ const previewCalls=[],importCalls=[],exportCalls=[];
  const pkg={format:'rf4-playstyle',format_version:1,digest:'abc123',
   tables:{tunables:[{key:'bite_probability',value:'0.5'}]}};
  const preview={ok:true,dry_run:true,digest:'abc123',
@@ -26,6 +27,15 @@ test('playstyle sync page previews then imports with confirmation',async()=>{
   const url=new URL(req.url,'http://fixture'),key=url.pathname.replace(/^\/admin/,'');
   const json=(v,status=200)=>{res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(v));};
   if(key==='/api/me')return json({username:'admin',item_categories:{}});
+  // 导出端点：必须带 Content-Disposition，前端靠它取文件名。
+  if(key==='/api/playstyle/export'){
+   exportCalls.push(url.pathname);
+   res.writeHead(200,{
+    'Content-Type':'application/json; charset=utf-8',
+    'Content-Disposition':'attachment; filename="playstyle-20261124-1935.json"',
+   });
+   return res.end(JSON.stringify(pkg));
+  }
   if(key==='/api/playstyle/import'&&req.method==='POST'){
    let body='';req.on('data',c=>body+=c);
    req.on('end',()=>{
@@ -54,6 +64,21 @@ test('playstyle sync page previews then imports with confirmation',async()=>{
   await page.locator('#view-sync').waitFor({state:'attached',timeout:8000});
   await page.locator('#view-sync').scrollIntoViewIfNeeded();
   assert.match(await page.locator('#pageTitle').innerText(),/参数同步/);
+
+  // 导出：真发请求 + 文件名取自 Content-Disposition + 内容就是包本体。
+  // 这条以前完全没测——导出按钮是新增 UI，坏了也不会有人发现。
+  const dl=page.waitForEvent('download',{timeout:8000});
+  await page.locator('#syncExportBtn').click();
+  const download=await dl;
+  assert.equal(exportCalls.length,1,'导出未请求 /api/playstyle/export');
+  assert.equal(download.suggestedFilename(),'playstyle-20261124-1935.json',
+   '导出文件名没取 Content-Disposition');
+  const saved=path.join(os.tmpdir(),`ps_dl_${process.pid}.json`);
+  await download.saveAs(saved);
+  const roundtrip=JSON.parse(fs.readFileSync(saved,'utf8'));
+  assert.equal(roundtrip.format,'rf4-playstyle','导出的不是本工具包');
+  fs.unlinkSync(saved);
+  assert.match(await page.locator('#syncExportStatus').innerText(),/已导出/,'导出后缺少完成提示');
 
   // 选一份包
   const file=path.join(os.tmpdir(),`ps_ui_${process.pid}.json`);
