@@ -431,10 +431,12 @@ func TestBrokenHandRodDeletesFloat(t *testing.T) {
 	}
 }
 
-// 钩已进承力链：客户端上报钩断后由服务端按最弱环裁决，只有钩确实最弱时
-// 才摘钩。这里用 3.15kg 弱钩 + 4.09kg 竿 + 13.6kg 强线构造该场景，验证
-// 裁决为断钩时组件耐久归零并离竿，竿本体与承力线不受影响。
-// （回归：旧的"无条件采信钩断"实现会跳过这条物理裁决。）
+// 客户端上报钩断后服务端摘钩：钩的耐久归零、离竿，竿本体与主线不动。
+// 这里用 3.15kg 弱钩 + 4.09kg 竿 + 13.6kg 强线构造，钩本来就是最弱环。
+//
+// 注意这条用例**不**验证最弱环裁决：服务端不重算最弱环，只按上报件落库
+// （见 breakLineOrRodWithLineOut）。要验证"上报件强于最弱环时仍按上报件处理"，
+// 见 TestReportedHookBreakIsTrustedOverWeakerLine。
 func TestHookBreakDetachesComponentKeepsRod(t *testing.T) {
 	t.Parallel()
 	srv, db := newRigTestServer(t)

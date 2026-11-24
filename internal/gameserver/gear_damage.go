@@ -180,10 +180,17 @@ var sourceLineCategories = map[int64]bool{
 	gearCatLeadcore: true,
 }
 
-// terminalBreakCategories 是不承力的终端消耗件：拟饵、饵、浮漂。
+// terminalBreakCategories 是不参与最弱环裁决的终端消耗件：拟饵、饵、浮漂。
 // 这类件由客户端在打斗中直接上报断裂，上报可以采信：没有作弊收益，误判
-// 成本也只是消耗件本身。钩已经进入承力链，不能在物理裁决前无条件采信，
-// 否则强钩配弱线只会丢钩、不会判弱线。
+// 成本也只是消耗件本身。
+//
+// 钩不在这个集合里，也不该在：钩是承力件，但它同样不重算最弱环。断件裁决
+// 的唯一权威是客户端——客户端遍历渔具链，每个部件各自报上限，取 limit 最小
+// 的那件塞进 17/9（FishingSet.cs:6017）。服务端再算一遍最弱环属于重复计算，
+// 而且算不干净：自由出线时客户端对线强度 ×0.5（dgmaokfcpke.cs:270-280），
+// 服务端没有这个折算，两边一旦分歧就会判成不同的件。
+// 因此 17/9 一律按上报件落库（见 breakLineOrRodWithLineOut），resolveGearBreak
+// 只在上报件缺失/出厂内嵌/未知类型时兜底。
 var terminalBreakCategories = map[int64]bool{
 	catLure: true, catBait: true, catFloat: true,
 }
@@ -289,6 +296,10 @@ func (s *Server) breakLineOrRodWithLineOut(ctx context.Context, uid int64, rodGU
 			s.log.Info("17/9 按客户端上报断件", "rod", guidShort(rodGUID),
 				"reported", guidShort(reportedGUID), "category", report.category)
 		}
+		// 断件裁决的唯一权威是客户端：它遍历渔具链、逐件比上限，
+		// 取 limit 最小的那件上报（FishingSet.cs:6017）。服务端按上报件
+		// 落库即可，不重算最弱环——服务端缺自由出线 ×0.5 折算、也只看
+		// 得到主钩，重算只会制造与客户端不一致的断件。
 		switch {
 		case report.category == catHook:
 			return s.breakComponentTx(ctx, uid, rodGUID, reportedGUID, catHook)
@@ -364,9 +375,10 @@ func (s *Server) validateBreakReport(ctx context.Context, uid int64, rodGUID, re
 		return validatedBreakReport{}, sql.ErrNoRows
 	}
 	terminal := terminalBreakCategories[def.Category]
-	// 钩不再是无条件采信的终端件，但仍是客户端会主动上报的合法断件：
-	// 只允许终端件和承力链上可判定的品类。已确认挂在该竿上的其他品类
-	// 不能冒充断件，否则任意背包/装饰物品都可能触发真实损坏。
+	// 只允许客户端会上报的三类断件：终端消耗件、承力链上的线类、钩、渔轮。
+	// 已确认挂在该竿上的其他品类不能冒充断件，否则任意背包/装饰物品都能
+	// 触发真实损坏。放行到这里只说明"品类合法"，具体断哪一件仍以客户端
+	// 上报的 GUID 为准，不再重算最弱环。
 	if !terminal && !sourceLineCategories[def.Category] &&
 		def.Category != catHook && def.Category != gearCatReel {
 		return validatedBreakReport{}, errors.New("断件类型不支持")
@@ -843,21 +855,45 @@ func (s *Server) resolveGearBreak(ctx context.Context, uid int64, rodGUID, repor
 	if leaderGUID == "" {
 		leaderGUID = s.rigComponentGuidOf(ctx, rodGUID, gearCatLeader)
 	}
-	// 钩也承力：大鱼吃小钩时，断的是钩而不是主线。有独立物品行就断钩；
-	// 拟饵出厂钩没有物品行，退而断整个拟饵（客户端看到的是拟饵没了）。
-	hookGUID := ""
-	hookCat := int64(0)
-	if g := s.mountedHookGuid(ctx, rodGUID); g != "" {
-		if row, rerr := s.DB.GetItemByGUID(ctx, g); rerr == nil && row != nil && row.UID == uid {
-			hookGUID, hookCat = g, catHook
-		}
+	// 钩也承力：大鱼吃小钩时，断的是钩而不是主线。
+	// 多钩钓组（rig 59 的 250/251/252、倒钓臂展开后的多条 catHook）里每一枚
+	// 钩都是独立承力件——客户端遍历渔具链时逐个报上限、取最小的那件上报
+	// （jbipdjaplgk.cs:253），只认主钩会让支线弱钩在裁决里不可见。
+	type hookCandidate struct {
+		guid     string
+		category int64
+		kg       float64
 	}
-	if hookGUID == "" {
-		if lure := s.mountedLureGUID(ctx, rodGUID); lure != "" {
-			if row, rerr := s.DB.GetItemByGUID(ctx, lure); rerr == nil && row != nil && row.UID == uid {
-				hookGUID, hookCat = lure, catLure
+	var hooks []hookCandidate
+	for _, g := range s.mountedHookCandidates(ctx, rodGUID) {
+		row, rerr := s.DB.GetItemByGUID(ctx, g)
+		if errors.Is(rerr, sql.ErrNoRows) {
+			// 拟饵出厂钩装在拟饵树里，没有独立 item 行。它的承力就是
+			// spec.HookStrengthKg（mountedHookDef 会深扫钩树拿到真实上限），
+			// 而"断这一件"在客户端表现为整个拟饵消失，所以记成 catLure。
+			if spec.HookPresent && spec.HookStrengthKg > 0 {
+				if lure := s.mountedLureGUID(ctx, rodGUID); lure != "" {
+					hooks = append(hooks, hookCandidate{guid: lure, category: catLure, kg: spec.HookStrengthKg})
+				}
 			}
+			continue
 		}
+		if rerr != nil || row == nil || row.UID != uid {
+			continue
+		}
+		def, derr := s.itemDefForRow(ctx, row)
+		if derr != nil || def == nil {
+			continue
+		}
+		cat := def.Category
+		if cat != catHook && cat != catLure {
+			continue
+		}
+		kg := itemDefF32(def, gearAttrMaxLoad) * clampUnit(row.Durability)
+		if kg <= 0 {
+			continue
+		}
+		hooks = append(hooks, hookCandidate{guid: g, category: cat, kg: kg})
 	}
 
 	type candidate struct {
@@ -894,10 +930,10 @@ func (s *Server) resolveGearBreak(ctx context.Context, uid int64, rodGUID, repor
 	if spec.RodPowerKg > 0 {
 		cs = append(cs, candidate{part: "rod", guid: rodGUID, category: gearCatRod, kg: spec.RodPowerKg, priority: 3})
 	}
-	// 钩与线组同级：同强度时先断子线，再断钩。
-	if hookGUID != "" && spec.HookStrengthKg > 0 {
-		cs = append(cs, candidate{part: "hook", guid: hookGUID, category: hookCat,
-			kg: spec.HookStrengthKg, priority: 1})
+	// 钩与线组同级：同强度时先断子线，再断钩。多钩按各自承力分别入列。
+	for _, h := range hooks {
+		cs = append(cs, candidate{part: "hook", guid: h.guid, category: h.category,
+			kg: h.kg, priority: 1})
 	}
 
 	// 17/9 是客户端明确上报的"断件"事件：只要来了就必须断，摩擦档位不能把

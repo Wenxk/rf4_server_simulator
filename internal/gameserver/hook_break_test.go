@@ -79,7 +79,12 @@ func TestHookStrengthBreaksHookNotRod(t *testing.T) {
 }
 
 // TestStrongHookLeavesLineAsWeakestLink 换成 33 号钩（拉力 660kg）后，
-// 最弱环回到主线，超载仍然断线，不会因为"有钩"就把钩当替罪羊。
+// 最弱环回到主线：gearWeakestPart 与 gearBreakLimitKg 都应指向线/竿，
+// 不会因为"有钩"就把钩算成最弱件。
+//
+// 这条只覆盖承力链计算本身。服务端在 17/9 上不重算最弱环（客户端才是裁决方）：
+// 即使这里判出主线最弱，只要客户端上报断钩，服务端仍然断钩——
+// 见 TestReportedHookBreakIsTrustedOverWeakerLine。
 func TestStrongHookLeavesLineAsWeakestLink(t *testing.T) {
 	srv, _ := newRigTestServer(t)
 	ctx := context.Background()

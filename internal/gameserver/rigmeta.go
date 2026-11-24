@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"sort"
 	"strings"
 
 	"rf4server/internal/proto"
@@ -177,6 +178,60 @@ func (s *Server) mountedHookGuid(ctx context.Context, rodGUID string) string {
 		return g
 	}
 	return s.mountedLureHookFallback(ctx, rodGUID)
+}
+
+// mountedHookCandidates 返回竿上全部鱼钩的 GUID，主钩排在最前。
+//
+// 多钩钓组（rig 59 的 250/251/252、rig 57 的 250~252、倒钓臂展开后的
+// 250/1001/1005/1009）同品类都落 slot=12，靠 ordinal 区分；mountedHookGuid
+// 只取 ordinal 最小的那一枚。承力裁决必须看到每一枚：客户端遍历渔具链时
+// 每个钩各自报告自己的上限（jbipdjaplgk.cs:253），取最小者上报 17/9，
+// 只认主钩会让支线弱钩在服务端不可见。
+//
+// 路亚拟饵的出厂钩没有独立 item 行，装在拟饵树里，作为末位候选补入。
+func (s *Server) mountedHookCandidates(ctx context.Context, rodGUID string) []string {
+	if rodGUID == "" {
+		return nil
+	}
+	seen := map[string]bool{}
+	var out []string
+	add := func(g string) {
+		g = strings.TrimSpace(g)
+		if g == "" || g == zeroGUID || seen[g] {
+			return
+		}
+		seen[g] = true
+		out = append(out, g)
+	}
+	// 装配索引按 ordinal 升序，主钩自然在最前。
+	if rows, err := s.DB.ListRigComponents(ctx, rodGUID); err == nil {
+		var hooks []*store.RigComponent
+		for _, r := range rows {
+			if r.Slot == catHook {
+				hooks = append(hooks, r)
+			}
+		}
+		sort.SliceStable(hooks, func(i, j int) bool { return hooks[i].Ordinal < hooks[j].Ordinal })
+		for _, r := range hooks {
+			add(r.GUID)
+		}
+	}
+	// 装配索引可能落后于竿实例 f5，补一遍组件表。
+	if row, err := s.DB.GetItemByGUID(ctx, rodGUID); err == nil && row != nil {
+		if fields, ferr := FieldsFromJSON(row.FieldsJSON); ferr == nil {
+			if idx := fieldIdxByCS(row.WireClass, csRigObject); idx >= 0 && idx < len(fields) {
+				comps := rigCompsOf(fields[idx].Val)
+				for _, key := range rigCompKeysOfCategory(comps, catHook) {
+					add(comps[key].GUID)
+				}
+			}
+		}
+	}
+	add(s.mountedLureHookFallback(ctx, rodGUID))
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // rigComponentGuidOf 从竿实例的钓组组件表中按品类查找 GUID。
