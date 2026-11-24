@@ -17,6 +17,7 @@ import (
 const maxBaitRuleTerms = 40
 
 type baitRuleSaveReq struct {
+	FishKey    string   `json:"fish_key"`
 	FishZh     string   `json:"fish_zh"`
 	Allow      []string `json:"allow"`
 	Deny       []string `json:"deny"`
@@ -26,15 +27,17 @@ type baitRuleSaveReq struct {
 }
 
 // handleBaitRuleSave 保存一个鱼种的饵料规则覆盖。
+// 主键是 fish_key（00083 迁移）；只传 fish_zh 时由 store 层反查补齐。
 func (s *Server) handleBaitRuleSave(w http.ResponseWriter, r *http.Request) {
 	var req baitRuleSaveReq
 	if err := readJSON(r, &req); err != nil {
 		httpError(w, 400, "参数错误")
 		return
 	}
+	fishKey := strings.TrimSpace(req.FishKey)
 	fishZh := strings.TrimSpace(req.FishZh)
-	if fishZh == "" {
-		httpError(w, 400, "缺少鱼种中文名")
+	if fishKey == "" && fishZh == "" {
+		httpError(w, 400, "缺少鱼种")
 		return
 	}
 	if len([]rune(fishZh)) > 40 {
@@ -42,6 +45,7 @@ func (s *Server) handleBaitRuleSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ov := store.FishBaitOverride{
+		FishKey:    fishKey,
 		FishZh:     fishZh,
 		Allow:      cleanTerms(req.Allow),
 		Deny:       cleanTerms(req.Deny),
@@ -56,39 +60,47 @@ func (s *Server) handleBaitRuleSave(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 	if err := s.db.SaveFishBaitOverride(ctx, ov, adminOf(r)); err != nil {
-		httpError(w, 500, err.Error())
+		httpError(w, 400, err.Error())
 		return
 	}
-	_ = s.db.AuditLogWrite(ctx, adminOf(r), "bait_rule_save", fishZh,
+	_ = s.db.AuditLogWrite(ctx, adminOf(r), "bait_rule_save", ov.FishKey,
 		"allow="+strconv.Itoa(len(ov.Allow))+" deny="+strconv.Itoa(len(ov.Deny))+
 			" enabled="+strconv.FormatBool(ov.Enabled))
 	_ = s.db.QueuePush(ctx, mustJSON(map[string]any{"op": "reload_bait_rules"}))
-	writeJSON(w, map[string]any{"ok": true})
+	writeJSON(w, map[string]any{"ok": true, "fish_key": ov.FishKey})
 }
 
-// handleBaitRuleReset 恢复默认：body 带 fish_zh 删单条，带 all=true 清整表。
+// handleBaitRuleReset 恢复默认：body 带 fish_key（或 fish_zh）删单条，带 all=true 清整表。
 func (s *Server) handleBaitRuleReset(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		FishZh string `json:"fish_zh"`
-		All    bool   `json:"all"`
+		FishKey string `json:"fish_key"`
+		FishZh  string `json:"fish_zh"`
+		All     bool   `json:"all"`
 	}
 	if err := readJSON(r, &req); err != nil {
 		req = struct {
-			FishZh string `json:"fish_zh"`
-			All    bool   `json:"all"`
+			FishKey string `json:"fish_key"`
+			FishZh  string `json:"fish_zh"`
+			All     bool   `json:"all"`
 		}{}
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 	var n int64
 	var err error
-	target := strings.TrimSpace(req.FishZh)
+	target := strings.TrimSpace(req.FishKey)
 	if req.All {
 		n, err = s.db.DeleteAllFishBaitOverrides(ctx)
 		target = "*"
 	} else {
+		if target == "" && strings.TrimSpace(req.FishZh) != "" {
+			// 兼容只传中文名的旧调用方：先反查 fish_key。
+			if key, _, rerr := s.db.LookupFishKeyByName(ctx, req.FishZh); rerr == nil {
+				target = key
+			}
+		}
 		if target == "" {
-			httpError(w, 400, "缺少鱼种中文名")
+			httpError(w, 400, "缺少鱼种")
 			return
 		}
 		n, err = s.db.DeleteFishBaitOverride(ctx, target)

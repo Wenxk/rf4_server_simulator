@@ -116,8 +116,13 @@ func TestBaitPrefsAPI(t *testing.T) {
 	if deny, _ := roach["deny"].([]any); len(deny) == 0 {
 		t.Fatal("规则应含'不吃拟饵/饵鱼类'")
 	}
-	if t3, _ := roach["tier3"].(float64); t3 != 1 {
-		t.Fatalf("c.roach tier3 应为 1，实得 %v", roach["tier3"])
+	// 2026-11-24：「偏好口 / 饵效证据 / 吃不吃」三列已从响应里移除，
+	// 这里改为守住「字段确实不再下发」，免得将来又被顺手加回来。
+	for _, gone := range []string{"tier3", "tier2", "total", "baits", "diet", "bite_ready",
+		"bite_fallback", "bite_blocked", "bite_verdict"} {
+		if _, still := roach[gone]; still {
+			t.Fatalf("字段 %s 已从鱼饵偏好移除，不应再下发", gone)
+		}
 	}
 	if off, _ := roach["official"].([]any); len(off) == 0 {
 		t.Fatal("应带出官方占比")
@@ -135,11 +140,8 @@ func TestBaitPrefsAPI(t *testing.T) {
 	if cod["has_rule"] != false {
 		t.Fatalf("虚构鱼名不应命中规则表，实得 allow=%v", cod["allow"])
 	}
-	if t3, _ := cod["tier3"].(float64); t3 != 1 {
-		t.Fatalf("atl_cod tier3 应为 1，实得 %v", cod["tier3"])
-	}
-	if cod["in_strict"] != true {
-		t.Fatal("无规则但有 tier 证据的鱼也应标记为有资料")
+	if cod["in_strict"] != false {
+		t.Fatal("无规则也没 allow 的鱼不应标记为在严格模式池内")
 	}
 
 	// 搜索过滤

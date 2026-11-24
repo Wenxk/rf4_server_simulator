@@ -505,7 +505,12 @@ func (s *Server) loadFishNames(ctx context.Context) (map[string]string, bool) {
 				continue
 			}
 			// 后台新增规则覆盖的鱼种同样参与严格模式判鱼。
-			if _, ok := overrides[ruleName(name)]; ok {
+			// 覆盖以 fish_key 为主键，先按 key 命中，再退回规范化中文名。
+			if _, ok := overrides.byKey[key]; ok {
+				names[key] = name
+				continue
+			}
+			if _, ok := overrides.byName[ruleName(name)]; ok {
 				names[key] = name
 			}
 		}
@@ -562,7 +567,9 @@ func (s *Server) filterFishBaitSet(loc string, ids []string, keys []string, weig
 		if weights[i] <= 0 {
 			continue
 		}
-		r := s.resolveBaitRule(ctx, names[key])
+		// 覆盖表主键是 fish_key，中文名只作兜底：names[key] 可能取到同名变体，
+		// 单靠名字查会漏掉覆盖。
+		r := s.resolveBaitRule(ctx, key, names[key])
 		// 自动轮换：把本期的开口饵替换成 allow。吃口资格只认这份 allow，
 		// 不再有 companion 越级或食性硬门兜底。
 		r, _ = s.applyAutoRotation(ctx, c, key, r, now)

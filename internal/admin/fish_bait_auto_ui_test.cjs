@@ -17,12 +17,11 @@ test('fish page shows the auto-rotated bait pick in the bait column',async()=>{
   if(key==='/api/fish/bite_mode')return json({mode:'legacy'});
   if(key==='/api/fish/zones')return json({zones:[]});
   if(key==='/api/bait/prefs')return json({rows:[
-   {fish_key:'carp',name_zh:'普通鲤鱼',has_rule:true,allow:['甜奶油','玉米粒','红蚯蚓','比目鱼煮饵','奶酪块'],deny:[],bottom_only:[],
-    tier3:2,tier2:1,total:6,baits:[{bait_id:'甜奶油 PopUp 16',tier:3,evidence:9}],official:[],auto_rotation:true,
+   {fish_key:'carp',name_zh:'普通鲤鱼',has_rule:true,allow:['甜奶油','玉米粒','红蚯蚓','比目鱼煮饵','奶酪块'],deny:[],bottom_only:[],official:[],auto_rotation:true,
     rotation:{enabled:true,mode:'auto',total:47,active:3,quota:3,pool_size:47,active_baits:['甜奶油 PopUp（16/20）','玉米粒（8/14）','红蚯蚓（10/14/18）'],next_switch:0}},
-   {fish_key:'beluga',name_zh:'欧洲鳇',has_rule:true,allow:['比目鱼煮饵'],deny:[],bottom_only:[],tier3:1,tier2:0,total:1,baits:[],official:[],auto_rotation:true,
+   {fish_key:'beluga',name_zh:'欧洲鳇',has_rule:true,allow:['比目鱼煮饵'],deny:[],bottom_only:[],official:[],auto_rotation:true,
     rotation:{enabled:false,mode:'auto',total:1,active:-1,quota:1,pool_size:1,active_baits:[],next_switch:0}},
-   {fish_key:'zander',name_zh:'梭鲈',has_rule:true,allow:['红蚯蚓'],deny:[],bottom_only:[],tier3:1,tier2:0,total:1,baits:[],official:[],auto_rotation:true,
+   {fish_key:'zander',name_zh:'梭鲈',has_rule:true,allow:['红蚯蚓'],deny:[],bottom_only:[],official:[],auto_rotation:true,
     rotation:{enabled:true,mode:'auto',total:20,active:2,quota:2,pool_size:20,active_baits:['红蚯蚓（14/18）'],next_switch:0}}
   ]});
   if(key==='/api/fish/areas')return json([{loc:'琥珀湖',fish_count:3,level:'level_014_carp_lake',map_kind:'none',texture:'',calibration:null}]);

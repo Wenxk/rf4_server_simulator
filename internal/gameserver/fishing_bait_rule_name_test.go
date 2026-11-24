@@ -3,6 +3,8 @@ package gameserver
 import (
 	"context"
 	"testing"
+
+	"rf4server/internal/store"
 )
 
 // 客户端鱼名与规则表长期存在同物异写，差一个码位就整条规则失效：
@@ -40,9 +42,30 @@ func TestLookupFishBaitRuleToleratesNameVariants(t *testing.T) {
 func TestResolveBaitRuleUsesNameVariants(t *testing.T) {
 	s, _ := seedBaitRuleTest(t)
 	for _, name := range []string{"泥鳅鱼", "泥鳅"} {
-		r := s.resolveBaitRule(context.Background(), name)
+		// fishKey 传空 = 只靠中文名兜底，正是这条测试要守的路径。
+		r := s.resolveBaitRule(context.Background(), "", name)
 		if len(r.allow) == 0 {
 			t.Fatalf("%s：resolveBaitRule 丢了规则（allow 为空）", name)
 		}
+	}
+}
+
+// 覆盖表主键换成 fish_key 后，按 key 必须优先于按名命中：
+// 「大西洋鲑 / 大西洋鲑鱼」这类变体让名字查不可靠，key 才是权威。
+func TestResolveBaitRulePrefersFishKey(t *testing.T) {
+	s, _ := seedBaitRuleTest(t)
+	if err := s.DB.SaveFishBaitOverride(context.Background(), store.FishBaitOverride{
+		FishKey: "key_only_fish", FishZh: "仅键鱼",
+		Allow: []string{"专属饵甲"}, Enabled: true,
+	}, "test"); err != nil {
+		t.Fatalf("写入覆盖: %v", err)
+	}
+	s.invalidateBaitOverrides()
+	r := s.resolveBaitRule(context.Background(), "key_only_fish", "")
+	if len(r.allow) != 1 || r.allow[0] != "专属饵甲" {
+		t.Fatalf("按 fish_key 没取到覆盖，allow=%v", r.allow)
+	}
+	if lookup := s.resolveBaitRule(context.Background(), "key_only_fish", "完全不存在的名字"); len(lookup.allow) != 1 {
+		t.Fatalf("key 命中时不应再看中文名，allow=%v", lookup.allow)
 	}
 }

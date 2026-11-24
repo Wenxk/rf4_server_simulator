@@ -106,7 +106,7 @@ type Server struct {
 
 	// 鱼饵规则覆盖缓存（后台可编辑，TTL 兜底 + 写操作主动失效）
 	baitOvMu    sync.RWMutex
-	baitOvCache map[string]baitOverrideEntry
+	baitOvCache baitOverrideIndex
 	baitOvAt    time.Time
 
 	// 自动轮换：全量饵定义与「按规则展开后的池子」缓存。

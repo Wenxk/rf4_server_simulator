@@ -18,10 +18,10 @@ test('bait rule editor supports cascade, whole-category terms and unsaved close 
    if(url.pathname==='/api/me')return route.fulfill({contentType:'application/json',body:JSON.stringify({username:'admin'})});
    if(url.pathname==='/api/bait/prefs')return route.fulfill({contentType:'application/json',body:JSON.stringify({rules_enabled:true,rule_count:1,rows:[{
     fish_key:'c.roach',name_zh:'常见拟鲤',has_rule:true,source:'override',enabled:true,
-    allow:['测试蚯蚓'],deny:[],bottom_only:[],condition:'',tier3:0,tier2:1,total:1,baits:[],in_strict:true
+    allow:['测试蚯蚓'],deny:[],bottom_only:[],condition:''
    },{
     fish_key:'c.perch',name_zh:'河鲈',has_rule:true,source:'override',enabled:true,
-    allow:['测试蚯蚓'],deny:[],bottom_only:[],condition:'海图120号区域',tier3:0,tier2:1,total:1,baits:[],in_strict:true
+    allow:['测试蚯蚓'],deny:[],bottom_only:[],condition:'海图120号区域'
    }]})});
    if(url.pathname==='/api/bait/categories')return route.fulfill({contentType:'application/json',body:JSON.stringify({categories:[
     {key:27,label:'饵料',count:1,term:'饵料',children:[{sub:6,label:'测试饵',count:1,term:'虫类'}]},
@@ -48,9 +48,16 @@ test('bait rule editor supports cascade, whole-category terms and unsaved close 
    }
    return route.fulfill({contentType:'application/json',body:'{}'});
   });
-  await page.goto('http://127.0.0.1:19214/#bait',{waitUntil:'networkidle'});
+  await page.goto('http://127.0.0.1:19214/#ecology',{waitUntil:'networkidle'});
+  // 鱼饵偏好已并入「鱼种档案」的第 2 个页签。
+  await page.locator('#ecoTabs button[data-etab="bait"]').click();
+  await page.locator('#baitTable thead th').first().waitFor();
   const heads=await page.locator('#baitTable thead th').allInnerTexts();
   assert.deepEqual(heads.slice(0,3),['鱼种','自动抽取','本期开口']);
+  // 2026-11-24 按用户要求删掉「偏好口（按类）」「饵效证据」「吃不吃」三列。
+  for(const gone of ['偏好口（按类）','饵效证据','吃不吃']){
+   assert.ok(!heads.some(h=>h.includes(gone)),`已删列仍在表头：${gone} → ${heads.join('|')}`);
+  }
 
   const [rerollReq]=await Promise.all([
    page.waitForRequest(r=>r.url().includes('/api/bait/auto-rotation/reroll')),

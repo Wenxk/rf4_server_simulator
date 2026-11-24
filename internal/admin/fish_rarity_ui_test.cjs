@@ -77,9 +77,12 @@ test('fish rarity bar shows intrinsic tiers and preset posts three tiers',async(
   assert.match(rowText,/档位权重 5/);
   assert.doesNotMatch(rowText,/本图 \d+ 条|全服 \d+|图内常见|本图少见/);
 
-  // 重设权重弹窗：三档，没有第四档输入框。
+  // 「按稀有度重设权重」已迁到「鱼种档案 → 权重档位」页签（影响全部水域，不属于某张图）；
+  // 钓场页只留跳转入口，点了要落到鱼种档案的权重页签。
   await page.locator('button:has-text("按稀有度重设权重")').click();
-  await page.locator('#tp_0').waitFor();
+  await page.locator('#ecoWeightBox #tp_0').waitFor();
+  assert.equal(await page.locator('#ecoTabs button[data-etab="weight"]').evaluate(e=>e.classList.contains('on')),true,
+   '应切到「权重档位」页签');
   assert.equal(await page.locator('#tp_0').inputValue(),'100');
   assert.equal(await page.locator('#tp_1').inputValue(),'30');
   assert.equal(await page.locator('#tp_2').inputValue(),'5');

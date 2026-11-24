@@ -18,6 +18,7 @@ func TestFishBaitOverrideRoundTrip(t *testing.T) {
 	ctx := context.Background()
 
 	want := FishBaitOverride{
+		FishKey:    "c.roach",
 		FishZh:     "常见拟鲤",
 		Allow:      []string{"蚯蚓", "红虫"},
 		Deny:       []string{"拟饵"},
@@ -36,7 +37,7 @@ func TestFishBaitOverrideRoundTrip(t *testing.T) {
 		t.Fatalf("rows=%d", len(list))
 	}
 	got := list[0]
-	if got.FishZh != want.FishZh || got.Condition != want.Condition {
+	if got.FishKey != want.FishKey || got.FishZh != want.FishZh || got.Condition != want.Condition {
 		t.Fatalf("scalar mismatch: %+v", got)
 	}
 	if !got.Enabled || got.UpdatedBy != "tester" {
@@ -46,7 +47,7 @@ func TestFishBaitOverrideRoundTrip(t *testing.T) {
 		t.Fatalf("allow=%v", got.Allow)
 	}
 
-	// 覆盖写入：同一条鱼再次保存应更新而不是新增。
+	// 覆盖写入：同一个 fish_key 再次保存应更新而不是新增。
 	want.Allow = []string{"玉米"}
 	if err := db.SaveFishBaitOverride(ctx, want, "tester2"); err != nil {
 		t.Fatal(err)
@@ -57,7 +58,7 @@ func TestFishBaitOverrideRoundTrip(t *testing.T) {
 	}
 
 	// 删除即恢复默认。
-	if n, err := db.DeleteFishBaitOverride(ctx, "常见拟鲤"); err != nil || n != 1 {
+	if n, err := db.DeleteFishBaitOverride(ctx, "c.roach"); err != nil || n != 1 {
 		t.Fatalf("delete n=%d err=%v", n, err)
 	}
 	if list, _ = db.ListFishBaitOverrides(ctx); len(list) != 0 {
@@ -65,8 +66,8 @@ func TestFishBaitOverrideRoundTrip(t *testing.T) {
 	}
 
 	// 整表清空。
-	for _, name := range []string{"A", "B", "C"} {
-		o := FishBaitOverride{FishZh: name, Allow: []string{"蚯蚓"}, Enabled: true}
+	for _, key := range []string{"a", "b", "c"} {
+		o := FishBaitOverride{FishKey: key, FishZh: key, Allow: []string{"蚯蚓"}, Enabled: true}
 		if err := db.SaveFishBaitOverride(ctx, o, "tester"); err != nil {
 			t.Fatal(err)
 		}
@@ -91,6 +92,7 @@ func TestFishBaitOverrideSanitizesInput(t *testing.T) {
 	ctx := context.Background()
 	// 空串应被清理，避免脏数据进判鱼路径。
 	o := FishBaitOverride{
+		FishKey: "frog",
 		FishZh:  "青蛙",
 		Allow:   []string{"", "  ", "青蛙"},
 		Enabled: false,

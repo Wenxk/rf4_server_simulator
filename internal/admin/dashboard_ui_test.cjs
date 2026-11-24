@@ -20,11 +20,12 @@ test('params tabs preserve edits and upstream embedded API routing',async()=>{
    await page.clock.install();
    await page.goto('http://127.0.0.1:19214'+prefix+'/#params');
    await page.locator('button[data-page="gameplay"]').waitFor();
-   // 10 组：玩法手感/自动轮换/钩型与咬口/判鱼追踪/昼夜权重/电轮/摩擦片/受力磨损/负载节拍/角色状态条
-   assert.equal(await page.locator('#paramsBody .tunable-group[data-page="gameplay"]').count(),10);
+   // 11 组：玩法手感/自动轮换/钩型与咬口/咬钩节奏/判鱼追踪/昼夜权重/电轮/摩擦片/受力磨损/负载节拍/角色状态条
+   assert.equal(await page.locator('#paramsBody .tunable-group[data-page="gameplay"]').count(),11);
    assert.equal(await page.locator('#tun_condition_health_enabled').innerText(),'健康动态（饥寒掉血）：开（点击关闭）');
    assert.equal(await page.locator('#tun_condition_fishing_pause_enabled').innerText(),'垂钓中精力停摆：开（点击关闭）');
-   assert.equal(await page.locator('#paramsBody .tunable-group[data-page="reward"]').count(),5);
+   // 7 个分组 = 5 个普通组（经验结算/技能成长/掉卡/礼包/聊天）+ 技能成长一键模式卡 + 发鱼模式卡
+   assert.equal(await page.locator('#paramsBody .tunable-group[data-page="reward"]').count(),7);
    assert.equal(await page.locator('#paramsBody .tunable-group[data-page="event"]').count(),2);
    assert.equal(await page.locator('#tun_fish_weight_cap').getAttribute('placeholder'),'未设置');
    assert.ok((await page.locator('label[for="tun_fish_weight_cap"]').locator('..').innerText()).includes('默认 0'));

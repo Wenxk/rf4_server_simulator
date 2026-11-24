@@ -22,8 +22,9 @@ func TestBaitOverrideReplacesDefaultAndResets(t *testing.T) {
 	if got, _ := roll("rule_lure"); len(got) != 0 {
 		t.Fatalf("内置规则应拒绝拟饵，实得 %v", got)
 	}
-	// 覆盖成允许 Hunter 1-001（拟饵类名）。
-	ov := store.FishBaitOverride{FishZh: "常见拟鲤", Allow: []string{"Hunter 1-001"}, Enabled: true}
+	// 覆盖成允许 Hunter 1-001（拟饵类名）。主键是 fish_key（00083），
+	// FishZh 只用来建「按名字兜底」的第二索引。
+	ov := store.FishBaitOverride{FishKey: "c.roach", FishZh: "常见拟鲤", Allow: []string{"Hunter 1-001"}, Enabled: true}
 	if err := db.SaveFishBaitOverride(ctx, ov, "test"); err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +33,7 @@ func TestBaitOverrideReplacesDefaultAndResets(t *testing.T) {
 		t.Fatalf("覆盖后应允许 Hunter 1-001，实得 %v", got)
 	}
 	// 恢复默认。
-	if _, err := db.DeleteFishBaitOverride(ctx, "常见拟鲤"); err != nil {
+	if _, err := db.DeleteFishBaitOverride(ctx, "c.roach"); err != nil {
 		t.Fatal(err)
 	}
 	s.invalidateBaitOverrides()
