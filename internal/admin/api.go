@@ -153,6 +153,10 @@ func NewServer(cfg config.Admin, db *store.DB, log logger, webFS fs.FS) *Server 
 	mux.HandleFunc("GET /api/audit", auth(s.handleAudit))
 	mux.HandleFunc("GET /api/about", auth(s.handleAbout))
 	mux.HandleFunc("GET /api/release-notes", auth(s.handleReleaseNotes))
+	// 玩法参数导出/导入：跨机同步手感。包体是几百 KB 的小 JSON，
+	// 不含玩家存档与会话态（排除清单见 playstyle.go）。
+	mux.HandleFunc("GET /api/playstyle/export", auth(s.handlePlaystyleExport))
+	mux.HandleFunc("POST /api/playstyle/import", auth(s.handlePlaystyleImport))
 
 	// 纸地图贴图运行时加载（素材不入仓库，见 paper_maps.go）：
 	// 先于 SPA FileServer 注册，web/ 内已不再内嵌 maps 目录。

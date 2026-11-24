@@ -321,6 +321,7 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
       <button data-view="release" onclick="go('release')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></span><span class="txt"><b>发布说明</b><small>版本更新 · 修复内容</small></span></button>
       <button data-view="about" onclick="go('about')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v5.5M12 7.5h.01"/></svg></span><span class="txt"><b>关于</b><small>项目说明 · README</small></span></button>
 <button data-view="audit" onclick="go('audit')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></span><span class="txt"><b>审计日志</b><small>后台每次操作的留痕</small></span></button>
+      <button data-view="sync" onclick="go('sync')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span><span class="txt"><b>参数同步</b><small>导出到别的机器 · 导入同一套手感</small></span></button>
     </nav>
     <div class="side-foot"><div class="u" id="who">admin</div><div class="m"><span class="status-dot"></span> 服务在线</div><button class="btn alt sm" onclick="logout()">退出登录</button></div>
   </aside>
@@ -391,6 +392,27 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
     <section class="view" id="view-params"><div class="card"><div class="section-head"><h2>游戏参数</h2><small>保存后按参数类型生效；部分服务端参数约 30 秒生效，活动奖励必须重启游戏客户端并重新登录</small></div><div class="params-tabs" id="paramsTabs"></div><div id="paramsBody"></div></div></section>
     <section class="view" id="view-release"><div class="card release-card"><div class="section-head"><div><h2>发布说明</h2><p class="muted">读取发布包内的 发布说明.md</p></div><button class="btn alt sm" onclick="loadReleaseNotes()">刷新</button></div><div class="markdown-body release-markdown" id="releaseBody"><div class="empty">读取中…</div></div></div></section>
     <section class="view" id="view-about"><div class="card about-card"><div class="about-head"><div><h2>关于本项目</h2><p>内容来自 README.md · 优先读取本地文件</p></div><a class="btn alt sm" href="https://github.com/OpenFisherCommunity/rf4_server_simulator" target="_blank" rel="noreferrer">在 GitHub 查看</a></div><div class="markdown-body" id="aboutReadme"><div class="empty">读取中…</div></div></div></section>
+    <section class="view" id="view-sync">
+      <div class="card">
+        <div class="section-head"><div><h2>导出当前玩法参数</h2><small>把后台所有可调项打成一个 JSON 包，拿到另一台机器导入即可复现同一套手感</small></div><button class="btn good" id="syncExportBtn" onclick="exportPlaystyle()">下载参数包</button></div>
+        <div class="muted" style="margin-top:10px;line-height:1.7">
+          包里含 <b>13 张表</b>：游戏参数（89 条开关与数值）、鱼种生态覆盖、饵料规则、自动抽取开关、权重档位、经济四档、咬口缩放、区域名册、货架覆盖。
+          共约 750 行 / 550 KB。<br>
+          <b>不含</b>玩家存档、后台账号密码、网关登录令牌，也不含<b>派生表</b>（`fish_ecology` 会按资产重灌、`hook_bite_profile` 从静态库派生）——那几张导过去会被服务重新覆盖，反而造成半应用。
+        </div>
+        <div id="syncExportStatus" class="muted" style="margin-top:10px"></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="section-head"><div><h2>导入参数包</h2><small>按业务主键覆盖，单事务提交；先预演再导入</small></div></div>
+        <div class="toolbar" style="margin-top:10px">
+          <input type="file" id="syncFile" accept=".json,application/json" class="grow">
+          <button class="btn alt" id="syncPreviewBtn" onclick="previewPlaystyle()">预演</button>
+          <button class="btn good" id="syncImportBtn" onclick="importPlaystyle()">导入</button>
+        </div>
+        <div id="syncImportStatus" style="margin-top:12px"></div>
+        <div class="table-wrap" id="syncPreview"></div>
+      </div>
+    </section>
 <section class="view" id="view-audit"><div class="card"><div class="section-head"><h2>最近操作</h2><small>最新 200 条</small></div><div class="table-wrap" id="auditTable"></div></div></section>
   </main>
 </div>
@@ -476,7 +498,7 @@ async function boot(){
     const initial=location.hash.slice(1);go(titles[initial]?initial:'dashboard',true);if(!REFRESH_TIMER)REFRESH_TIMER=setInterval(()=>{if(!TOKEN)return;if(VIEW==='dashboard')loadDashboard(false).catch(()=>{});else if(VIEW==='players')loadPlayers(true).catch(()=>{})},8000);
   }catch(e){logout()}
 }
-const titles={dashboard:['总览','服务器正常吗 · 谁在玩 · 最近改了什么'],players:['玩家管理','档案 · 资产 · 背包 · 护鱼网 · 技能'],stores:['商店与库存','覆盖货架价格与库存，即时生效'],fish:['钓场与鱼口','玩法开关 · 各水域出什么鱼 · 咬钩快慢'],ecology:['鱼种档案','生态基线 · 饵料规则 · 经济四档 · 权重档位，一页维护'],weather:['天气预览','每张图的温度区间与逐时天气，效果贴近游戏内天气预报'],hooks:['钩子手感','真实型号 · 入口容量 · 咬口概率'],mail:['邮件','给玩家发消息和物品附件'],params:['游戏参数','玩法手感与经验结算倍率，随时可调回默认'],audit:['审计日志','后台每次操作的留痕'],release:['发布说明','发布包内的版本更新 · 修复内容'],about:['关于','项目说明 · README.md']};
+const titles={dashboard:['总览','服务器正常吗 · 谁在玩 · 最近改了什么'],players:['玩家管理','档案 · 资产 · 背包 · 护鱼网 · 技能'],stores:['商店与库存','覆盖货架价格与库存，即时生效'],fish:['钓场与鱼口','玩法开关 · 各水域出什么鱼 · 咬钩快慢'],ecology:['鱼种档案','生态基线 · 饵料规则 · 经济四档 · 权重档位，一页维护'],weather:['天气预览','每张图的温度区间与逐时天气，效果贴近游戏内天气预报'],hooks:['钩子手感','真实型号 · 入口容量 · 咬口概率'],mail:['邮件','给玩家发消息和物品附件'],params:['游戏参数','玩法手感与经验结算倍率，随时可调回默认'],audit:['审计日志','后台每次操作的留痕'],release:['发布说明','发布包内的版本更新 · 修复内容'],about:['关于','项目说明 · README.md'],sync:['参数同步','导出当前手感 · 在另一台机器导入']};
 function go(name,fromHash=false){
   if(!titles[name])name='dashboard';
   VIEW=name;document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===name));
@@ -487,8 +509,13 @@ function go(name,fromHash=false){
 }
 window.addEventListener('hashchange',()=>go(location.hash.slice(1),true));
 function refreshCurrent(){
-  const jobs={dashboard:loadDashboard,players:()=>loadPlayers(false),stores:loadStores,fish:loadFishAreas,ecology:loadEcoTab,weather:loadWeather,hooks:loadHookProfiles,mail:()=>{},params:loadTunables,audit:loadAudit,release:loadReleaseNotes,about:loadAbout};
-  (jobs[VIEW]||(()=>{}))().catch(e=>toast(e.message,'bad'));
+  const jobs={dashboard:loadDashboard,players:()=>loadPlayers(false),stores:loadStores,fish:loadFishAreas,ecology:loadEcoTab,weather:loadWeather,hooks:loadHookProfiles,mail:null,params:loadTunables,audit:loadAudit,release:loadReleaseNotes,about:loadAbout,sync:null};
+  // 注意：这里的 loader 必须是 async 函数。写成 ()=>{} 会返回 undefined，
+  // 下面直接 .catch 就抛 TypeError；而 go() 是在 boot() 里同步调用的，
+  // 这个异常会被 boot 的 catch 接住并登出——表现是「页面标题对、但整页空白」。
+  const job=jobs[VIEW];
+  if(typeof job!=='function')return;
+  Promise.resolve().then(job).catch(e=>toast(e.message,'bad'));
 }
 // ---- 鱼种档案：四个标签页共用一页 ----
 // 生态基线 / 饵料规则 / 经济四档 / 权重档位，原来分属三个独立页面。
@@ -2450,6 +2477,90 @@ async function loadReleaseNotes(){
   }catch(e){
     $('#releaseBody').innerHTML='<div class="empty">未找到或无法读取 发布说明.md<br><small>请从完整发布包启动</small></div>';
     throw e;
+  }
+}
+// ---- 参数同步：导出/导入玩法参数包 ----
+// 导入走两步：先 ?dry_run=1 预演拿到「将更新/将新增」，用户确认后再真导。
+// 后端按业务主键 UPSERT、单事务提交，失败整体回滚（见 internal/admin/playstyle.go）。
+async function exportPlaystyle(){
+  const st=$('#syncExportStatus');
+  st.textContent='正在打包…';
+  try{
+    const r=await fetch(apiURL('/api/playstyle/export'),{headers:{'Authorization':'Bearer '+TOKEN}});
+    if(!r.ok){
+      let msg='HTTP '+r.status;
+      try{const j=await r.json();if(j.error)msg=j.error}catch{}
+      if(r.status===401)logout();
+      throw new Error(msg);
+    }
+    const blob=await r.blob();
+    const cd=r.headers.get('Content-Disposition')||'';
+    const m=/filename="([^"]+)"/.exec(cd);
+    const name=m?m[1]:('playstyle-'+new Date().toISOString().slice(0,10)+'.json');
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=name;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    st.innerHTML=`已导出 <b>${esc(name)}</b>（${(blob.size/1024).toFixed(0)} KB）。拿到目标机器后进本页「导入参数包」。`;
+    toast('参数包已下载');
+  }catch(e){
+    st.textContent='导出失败：'+e.message;
+    toast('导出失败：'+e.message,'bad');
+  }
+}
+async function readPlaystyleFile(){
+  const f=$('#syncFile')?.files?.[0];
+  if(!f)throw new Error('先选择一个 .json 参数包');
+  const text=await f.text();
+  let pkg;
+  try{pkg=JSON.parse(text)}catch{throw new Error('文件不是合法 JSON')}
+  if(pkg.format!=='rf4-playstyle')throw new Error('不是参数包（format='+(pkg.format||'空')+'）');
+  return {pkg,name:f.name};
+}
+function playstylePreviewHTML(data){
+  const rows=(data.tables||[]).map(t=>{
+    const n=t.rows||0,u=t.updated||0,i=t.inserted||0;
+    return `<tr><td>${esc(t.table)}</td><td style="text-align:right">${n}</td><td style="text-align:right">${u?`<b style="color:#ffcf7a">${u}</b>`:0}</td><td style="text-align:right">${i?`<b style="color:#7dd3a0">${i}</b>`:0}</td></tr>`;
+  }).join('');
+  const warn=(data.warnings||[]).map(w=>`<div class="muted" style="color:#ffcf7a;margin-top:6px">⚠ ${esc(w)}</div>`).join('');
+  const note=(data.notes||[]).map(w=>`<div class="muted" style="margin-top:4px">· ${esc(w)}</div>`).join('');
+  return `<table><thead><tr><th>表</th><th style="text-align:right">包内</th><th style="text-align:right">将更新</th><th style="text-align:right">将新增</th></tr></thead><tbody>${rows}</tbody></table>${note}${warn}`;
+}
+async function previewPlaystyle(){
+  const st=$('#syncImportStatus'),box=$('#syncPreview');
+  st.textContent='正在预演…';box.innerHTML='';
+  try{
+    const {pkg,name}=await readPlaystyleFile();
+    const data=await api('/api/playstyle/import?dry_run=1',{method:'POST',body:JSON.stringify(pkg)});
+    box.innerHTML=playstylePreviewHTML(data);
+    st.innerHTML=`<b>${esc(name)}</b> 预演完成（digest ${esc(data.digest||'')}）。确认无误再点「导入」。<br><span class="muted">预演不会写入任何数据。</span>`;
+    toast('预演完成，未写入');
+  }catch(e){
+    st.textContent='预演失败：'+e.message;
+    toast('预演失败：'+e.message,'bad');
+  }
+}
+async function importPlaystyle(){
+  const st=$('#syncImportStatus'),box=$('#syncPreview');
+  try{
+    const {pkg,name}=await readPlaystyleFile();
+    // 先预演，把影响面摆给用户看；真导还要再点一次确认。
+    const pre=await api('/api/playstyle/import?dry_run=1',{method:'POST',body:JSON.stringify(pkg)});
+    box.innerHTML=playstylePreviewHTML(pre);
+    const upd=(pre.tables||[]).reduce((a,t)=>a+(t.updated||0),0);
+    const ins=(pre.tables||[]).reduce((a,t)=>a+(t.inserted||0),0);
+    if(!confirm(`即将导入 ${name}\n\n将更新 ${upd} 行、新增 ${ins} 行，覆盖当前参数配置。\n（玩家存档、后台账号、登录令牌不受影响）\n\n确定继续？`)){
+      st.textContent='已取消，未写入。';return;
+    }
+    st.textContent='正在导入…';
+    const data=await api('/api/playstyle/import',{method:'POST',body:JSON.stringify(pkg)});
+    box.innerHTML=playstylePreviewHTML(data);
+    st.innerHTML=`<b style="color:#7dd3a0">导入完成</b>（digest ${esc(data.digest||'')}）。${data.reloaded?'已通知主服重建配置缓存，约 1 秒后生效。':'未推送重载指令，请重启主服或等缓存过期。'}`;
+    toast('导入完成');
+  }catch(e){
+    st.textContent='导入失败：'+e.message;
+    toast('导入失败：'+e.message,'bad');
   }
 }
 let playerCache=[],ITEM_FILTER='';

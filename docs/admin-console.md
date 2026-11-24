@@ -337,6 +337,53 @@ E 值（`fish_hunt.go:611`，tier3→1.0 / 2→0.75 / 1→0.5 / 无→0.35，`E<
     7 天预览窗口正好越界到客户端没下发的日号上，测试立刻报
     「面板第 N 天在客户端预报里不存在」。
 
+## 参数导出与跨机同步
+
+后台调出来的手感全在本地 SQLite 里（`data/rf4server.db`），不进 git。要在另一台机器复现同一套
+玩法，用 `tools/config_sync.py` 打包搬运，不要直接拷库——主库里混着玩家存档、后台账号密码哈希
+和网关登录令牌，整库搬过去等于把账号一起送人。
+
+```bash
+# 源机器导出（服务开着也能跑，只读快照）
+python tools/config_sync.py export --out my-playstyle.json
+
+# 看包里有什么（不连库）
+python tools/config_sync.py show my-playstyle.json
+
+# 目标机器：先预演，再导入
+python tools/config_sync.py import my-playstyle.json --dry-run
+python tools/config_sync.py import my-playstyle.json
+```
+
+包里是 **13 张表 / 约 750 行 / 550 KB**，覆盖后台所有可改项：`tunables`（89 条开关与数值）、
+`fish_ecology_species`（253 条鱼种生态覆盖）、`fish_bait_override`（207 条饵料规则）、
+`fish_bait_auto_rotation`、`fish_weight_preset` / `fish_weight_override`、`species_econ`、
+`fish_bite_setting`、`fish_zone` / `fish_zone_fish`、`shop_item_override`，外加可选的
+`craft_template`（`--no-player-scope` 可排除）。
+
+**不导三类表**，理由都写进了包里的 `excluded_tables` 字段：
+
+- **派生表**：`fish_ecology` 由 `ensureFishEcology` 从资产 JSON 按 `profile_version` 重灌，
+  `hook_bite_profile` 由 `syncHookBiteProfiles` 从静态库 `item_def` 派生，`fish_grade_lines`
+  由迁移灌入。导过去看似覆盖成功，服务下次启动又被重新派生，或行数对不上而静默半应用。
+- **玩家存档**：`profile` / `item` / `rig` / `txn` / `mail` / `catch_log` 等。
+- **会话态与凭据**：`gw_token`（网关登录令牌）、`gw_handoff`、`admin_user`（含 bcrypt 密码哈希）、
+  `request_receipts`、`audit_log`、`kv`、`schema_migrations`。
+
+导入的行为约定：
+
+- 按**业务主键 UPSERT**，不是清表重灌——目标机自己加过、包里没有的行会保留。
+- `fish_zone.id` 是自增主键、`fish_zone_fish.zone_id` 引用它，导入时**原样保留 id**，
+  否则区域与鱼种的关联会整体错位。
+- **单事务，全成或全败**。导入后逐表核对新增行数，与预演不符就整体回滚。
+- 目标库缺列（比如还在 00083 之前，`fish_bait_override` 用 `fish_zh` 主键）会**直接拒绝**，
+  列出缺哪些列，不写任何数据。目标库版本更高则只警告（多出的列保持现值）。
+- 成功后在 `audit_log` 记一条 `import_playstyle`，带包 digest 与每表增减数。
+
+生效时间与后台保存一致：多数参数 30 秒内生效，涉及静态资产的改动需重启主服。
+验证过的口径：把源库参数清空后导入，13 张表**逐字段一致**；篡改几个值再导入能还原；
+旧结构库被正确拒绝且未写入。
+
 ## 邮件
 
 向玩家发送一条文本邮件，并可附带零个或多个目录物品。每项附件单独设置数量。邮件投递由 gameserver 执行。
