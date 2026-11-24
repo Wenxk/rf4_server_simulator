@@ -17,6 +17,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode/utf8"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -74,7 +75,7 @@ func NewLoginServer(cfg config.Gateway, store Store, log *slog.Logger, obs *metr
 	// 登录服务本来就接受任意路径，因此直接使用 HandlerFunc，保留 RequestURI。
 	s.handler = http.HandlerFunc(s.handleLogin)
 	if storage, ok := store.(*SQLiteStore); ok {
-		accountPortal := portal.New(storage.DB, s.useridForRemote)
+		accountPortal := portal.New(storage.DB, s.portalUserid)
 		s.handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if strings.HasPrefix(r.URL.Path, "/portal/") {
 				accountPortal.ServeHTTP(w, r)
@@ -174,15 +175,20 @@ func (s *LoginServer) Shutdown(ctx context.Context) error {
 func (s *LoginServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 	loginRequests.Inc()
 	_ = r.Body.Close()
-	// 客户端登录不发送账号凭据；本机固定 userid，其他来源 IP 分配独立 userid，
-	// 这样同一台机器重登档案连续，Radmin/局域网多客户端也能各自有账号。
-	userid := s.useridForRemote(r.RemoteAddr)
+	// 身份优先级：登录名（后台已建档的同名玩家）→ token 自带 uid → 来源 IP。
+	// 登录名存在时不再看 IP，这样同一台机器可以靠输入不同名字切换账号；
+	// 名字没建档则回落到 IP 账号，保持旧客户端与「只认本机固定号」的行为。
+	userid, accountSource := s.resolveLoginUserid(r.Context(), r)
 	if userid <= 0 {
 		userid, _ = s.nextUserid(r.Context())
+		accountSource = "seq"
 	}
 	info := TokenInfo{Userid: userid, IssuedAt: time.Now().Unix(), Region: s.cfg.Region}
 	ttl := time.Duration(s.cfg.TokenTTL) * 24 * time.Hour
 	expires := time.Now().Add(ttl).Unix()
+	// 给个人中心留一条「该来源 IP 最近登录的账号」：同一台机器用多个登录名时，
+	// /portal/ 跟随最近玩的号，不再固定落到该 IP 的默认账号。
+	s.rememberLoginUID(r.Context(), r.RemoteAddr, userid)
 	var token, logintoken, xml string
 	if r.TLS == nil {
 		// 旧版 CN 客户端会把 token 当 URI 片段使用，不能包含 '|' 或 '/'。
@@ -234,7 +240,91 @@ func (s *LoginServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 	s.log.Info("登录",
 		"method", r.Method, "request_uri", r.RequestURI, "path", r.URL.Path,
 		"raw_path", r.URL.RawPath, "remote", r.RemoteAddr,
-		"userid", userid, "region", s.cfg.Region, "realtime", s.cfg.AdvertiseHost)
+		"userid", userid, "account", accountSource, "region", s.cfg.Region, "realtime", s.cfg.AdvertiseHost)
+}
+
+// loginNameMaxRunes 与后台「新建玩家」的昵称上限一致：登录名即档案昵称。
+const loginNameMaxRunes = 32
+
+// normalizeLoginName 清洗客户端登录名：去首尾空白；超长或含控制字符按未填处理
+// （返回空串，调用方回落到下一级身份来源），避免异常名字在库里留下脏键。
+func normalizeLoginName(raw string) string {
+	name := strings.TrimSpace(raw)
+	if name == "" || utf8.RuneCountInString(name) > loginNameMaxRunes {
+		return ""
+	}
+	for _, r := range name {
+		if r < 0x20 || r == 0x7f {
+			return ""
+		}
+	}
+	return name
+}
+
+// resolveLoginUserid 决定本次登录的 uid，并把取值来源一并返回供日志排查：
+//
+//	login=  → 后台已建档的同名玩家（或已登记的映射），ASCII 大小写不敏感；
+//	token=  → token 自带的 uid（先查登记表，未登记按 local|…|uid|… 解析，与实时通道一致）；
+//	其余    → 沿用来源 IP 分配（本机固定 userid_start，局域网按来源 IP 递增）。
+//
+// 登录名没建档时既不新建也不报错：新号必须先在后台登记，输错名字只会回到 IP 账号，
+// 不会凭空多出一个空档案。
+func (s *LoginServer) resolveLoginUserid(ctx context.Context, r *http.Request) (int64, string) {
+	q := r.URL.Query()
+	if name := normalizeLoginName(q.Get("login")); name != "" {
+		if storage, ok := s.store.(*SQLiteStore); ok {
+			uid, found, err := storage.ResolveLoginUID(ctx, name)
+			switch {
+			case err != nil:
+				s.log.Warn("登录名解析失败，回落到来源 IP", "login", name, "err", err)
+			case found:
+				return uid, "login"
+			default:
+				s.log.Warn("登录名未建档，回落到来源 IP", "login", name)
+			}
+		}
+	}
+	if token := strings.TrimSpace(q.Get("token")); token != "" {
+		if info, ok, err := s.store.LookupToken(ctx, token); err == nil && ok && info.Userid > 0 {
+			return info.Userid, "token"
+		}
+		if uid := useridFromTokenStr(token); uid > 0 {
+			return uid, "token-uid"
+		}
+	}
+	return s.useridForRemote(r.RemoteAddr), "remote-ip"
+}
+
+// hostOfRemote 取出来源主机（去掉端口）。
+func hostOfRemote(remote string) string {
+	if host, _, err := net.SplitHostPort(remote); err == nil {
+		return host
+	}
+	return remote
+}
+
+// rememberLoginUID 记录该来源 IP 最近一次成功登录的 uid，供 /portal/ 跟随。
+func (s *LoginServer) rememberLoginUID(ctx context.Context, remote string, uid int64) {
+	storage, ok := s.store.(*SQLiteStore)
+	if !ok || uid <= 0 {
+		return
+	}
+	_ = storage.DB.KVSet(ctx, "last_login_uid:"+hostOfRemote(remote), strconv.FormatInt(uid, 10))
+}
+
+// portalUserid 给个人中心解析角色：优先取该来源 IP 最近一次登录的 uid，
+// 没有记录时沿用来源 IP 分配（与旧行为一致）。同一台机器换登录名后，
+// 个人中心不会继续显示上一个号的资料与余额。
+func (s *LoginServer) portalUserid(remote string) int64 {
+	if storage, ok := s.store.(*SQLiteStore); ok {
+		raw, found, err := storage.DB.KVGet(context.Background(), "last_login_uid:"+hostOfRemote(remote))
+		if err == nil && found {
+			if uid, perr := strconv.ParseInt(strings.TrimSpace(raw), 10, 64); perr == nil && uid > 0 {
+				return uid
+			}
+		}
+	}
+	return s.useridForRemote(remote)
 }
 
 func (s *LoginServer) nextUserid(ctx context.Context) (int64, error) {

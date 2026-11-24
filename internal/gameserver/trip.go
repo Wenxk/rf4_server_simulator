@@ -104,7 +104,7 @@ func (s *Server) startTripTimers(ctx context.Context, uid int64, level string) b
 // gcepbaokfie.pioghgjeelp 按 剩余 = 时长 + min(start, W+3) − W 计算。
 // f13.f0（日内分钟）只承担昼夜显示校准，与钓鱼游锚点无关。
 func worldTotalGameMin(now time.Time) int64 {
-	return int64(float64(now.Unix()-worldDayEpochUnix) * gameMinutesPerRealSecond)
+	return int64(float64(now.Unix()-worldProtocolEpochUnix) * gameMinutesPerRealSecond)
 }
 
 // consumeTripTimes 消费该会话玩家所有钓鱼游的在线时长。

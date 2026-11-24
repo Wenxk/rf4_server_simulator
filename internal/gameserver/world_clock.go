@@ -13,7 +13,7 @@ const (
 // gameMinuteOfDayAt 返回客户端世界时钟采用的游戏日内分钟。
 // 游戏时间以 24 倍速运行，因此 150 秒现实时间正好是一游戏小时。
 func gameMinuteOfDayAt(now time.Time) uint32 {
-	gameMinutes := float64(now.Unix()-worldDayEpochUnix) * gameMinutesPerRealSecond
+	gameMinutes := float64(now.Unix()-worldProtocolEpochUnix) * gameMinutesPerRealSecond
 	minute := int64(math.Floor(gameMinutes)) % gameMinutesPerDay
 	if minute < 0 {
 		minute += gameMinutesPerDay

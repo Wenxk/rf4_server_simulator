@@ -557,7 +557,7 @@ func (s *Server) filterFishBaitSet(loc string, ids []string, keys []string, weig
 	}
 	outKeys := make([]string, 0, len(keys))
 	outWeights := make([]float64, 0, len(keys))
-	period := (now.Unix() - worldDayEpochUnix) / (4 * realSecPerGameHour)
+	period := (now.Unix() - worldProtocolEpochUnix) / (4 * realSecPerGameHour)
 	for i, key := range keys {
 		if weights[i] <= 0 {
 			continue

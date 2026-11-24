@@ -339,59 +339,91 @@ type fishXPAnchorEntry struct {
 	c     float64
 }
 
-// fishXPGradeFactor 档位乘子（相对 g2），多种实测比例取中位。
-// g1=0.3063（观测: a_char=0.43, atl_cod=0.17, carp=0.31, coalfish=0.49, din_l_carp=0.19, gc_smelt=0.47, m_carp=0.30, m_scorpius=0.37, merlang=0.30, n_carp=0.15）；g3=6.25（观测: b_carp=6.25, c.carp=3.08, c.roach=9.97, carp=6.25, crucian=4.00, g_carp=5.83, m_carp=4.61, m_scorpius=6.25, makrel=10.71, piksha=12.00）。
-// 无 g4 观测，沿用 g3 乘子（保守，spec 开放项）
-
+// fishXPGradeFactor 全表统一档位阶梯（相对未达标 g1）= 1 : 3.265 : 20.40 : 40.81。
+// 这是**定稿基准**（2026-11-23 用户确认）：游戏内所有经验结算都以本表为准，
+// 不再等待官服 g4 实测、也不再逐档贴合个别样本。
+//
+// 数值来源：g1 中位 0.3063×g2、g3 中位 6.25×g2（各 10 种成档实测取中位）；g4 取 2×g3（12.5）。
+// 官服实测只用于确定各鱼种的「未达标基数」，档位形状一律由本表给出。
+// 改动本表等于改游戏经济数值，必须先过 `specs/changes/unified-grade-ladder` 与一致性测试。
 var fishXPGradeFactor = [4]float64{
-	0.3063, 1, 6.25, 6.25,
+	1, 1 / 0.3063, 6.25 / 0.3063, 12.5 / 0.3063,
 }
 
-// fishXPGroupC 亲缘组锚，仅零实测种兜底：组内实测成员按档中位，缺档=锚×乘子外推。
-var fishXPGroupC = map[string][4]float64{
-	"apex":           {3.734, 12.19, 76.187, 76.187},          // 实测成员 2/7，g1=外推,g3=外推,g4=外推
-	"carp_mid":       {0.5335, 7.8333, 48.9581, 2.6667},       // 实测成员 12/12，g3=外推
-	"catfish":        {0.3676, 1.1999, 7.4995, 7.4995},        // 实测成员 3/6，g1=外推,g3=外推,g4=外推
-	"flatfish":       {0.5468, 9.9991, 21.4282, 62.494},       // 实测成员 5/6，g4=外推
-	"herb_carp":      {1.7609, 5.7485, 5.5466, 35.9279},       // 实测成员 6/8，g1=外推,g4=外推
-	"marine_gadid":   {1.9909, 6.4996, 40.6222, 40.6222},      // 实测成员 5/6，g1=外推,g3=外推,g4=外推
-	"marine_pelagic": {41.3417, 134.9637, 170.9928, 843.5178}, // 实测成员 2/9，g1=外推,g4=外推
-	"marine_rock":    {2.5, 11.1107, 99.9988, 69.4414},        // 实测成员 9/22，g4=外推
-	"predator":       {0.8429, 3.1997, 11.9966, 19.9977},      // 实测成员 14/20，g4=外推
-	"roach_run":      {0.2451, 0.8002, 13.8887, 5.0012},       // 实测成员 4/10，g1=外推,g4=外推
-	"salmonid":       {1.2529, 2.9678, 6.25, 18.5486},         // 实测成员 23/54，g4=外推
-	"small_forage":   {3.4471, 11.2533, 29.988, 70.3327},      // 实测成员 3/13，g1=外推,g4=外推
-	"still_carp":     {1.0017, 3.2702, 6.7497, 20.4386},       // 实测成员 5/5，g1=外推,g4=外推
-	"sturgeon":       {1.625, 2.2475, 14.0466, 14.0466},       // 实测成员 5/12，g3=外推,g4=外推
-	"sunfish":        {0.5221, 1.7046, 10.6537, 10.6537},      // 实测成员 4/5，g1=外推,g3=外推,g4=外推
-	"weak_silver":    {179.9118, 7.8026, 4, 48.7663},          // 实测成员 8/9，g4=外推
+// fishXPGroupC 亲缘组基数：只存未达标档（g1）的 XP/克，四档由统一阶梯生成。
+// 取值=组内实测成员的 g1 中位；原 g2/g3 组中位留在 git 历史里，不再参与计算。
+var fishXPGroupC = map[string]float64{
+	"apex":           3.734,    // 实测成员 2/7
+	"carp_mid":       0.5335,   // 实测成员 12/12
+	"catfish":        0.3676,   // 实测成员 3/6
+	"flatfish":       0.5468,   // 实测成员 5/6
+	"herb_carp":      1.7609,   // 实测成员 6/8
+	"marine_gadid":   1.9909,   // 实测成员 5/6
+	"marine_pelagic": 41.3417,  // 实测成员 2/9
+	"marine_rock":    2.5,      // 实测成员 9/22
+	"predator":       0.8429,   // 实测成员 14/20
+	"roach_run":      0.2451,   // 实测成员 4/10
+	"salmonid":       1.2529,   // 实测成员 23/54
+	"small_forage":   3.4471,   // 实测成员 3/13
+	"still_carp":     1.0017,   // 实测成员 5/5
+	"sturgeon":       1.625,    // 实测成员 5/12
+	"sunfish":        0.5221,   // 实测成员 4/5
+	"weak_silver":    179.9118, // 实测成员 8/9；组内已无成员使用，g1 异常值待清
+}
+
+// fishXPInferred 无任何实测、也没有可落亲缘组的鱼种，按同属/近缘组推断的未达标基数。
+// 仅兜底这 4 种，不得当实测值引用；新鱼种缺数值时优先补实测，别往这里塞。
+//   - roach：与 c.roach（常见拟鲤）同属同体型段；
+//   - s_lamprey / trid_lamprey：与 c_lamprey 等七鳃鳗同科，沿用 marine_rock 组量级；
+//   - frog：原落 weak_silver 组（该组 g1 被牡蛎 179.9/g 拉高），改用 small_forage 组量级。
+var fishXPInferred = map[string]float64{
+	"roach":        0.1470,
+	"s_lamprey":    2.5,
+	"trid_lamprey": 2.5,
+	"frog":         3.4471,
 }
 
 // fishXPRateFor 返回 XP 速率 c（XP = trunc(c×W_g)）。
-// 优先级：本种实测精确命中 → 同种锚×档位乘子 → 皮肤别名→宿主整链 → 亲缘组 → 旧 valueRates → 缺省。
+// 优先级：本种实测精确命中 → g4 由上星推导 → 同种锚×档位乘子 → 皮肤别名→宿主整链 →
+// 无实测种推断表 → 亲缘组 → 旧 valueRates → 缺省。
 // 注意：皮肤变种（common_carp 等）官服有独立经济数值，实测/锚优先于宿主继承；
 // 别名仅兜零实测的皮肤种。
+// fishXPRateFor 返回 XP 速率 c（XP = trunc(c×W_g)）。
+// 2026-11-23 起全表统一阶梯：c = 本种未达标基数 × fishXPGradeFactor[档位]。
+// 官服实测只用来定「未达标基数」——取该种锚档实测值 ÷ 锚档乘子；
+// 同种其他档位的实测样本仍留在 fishXPRateC 里作证据，但不再逐档覆盖阶梯
+// （决策：四档形状统一优先于逐档贴合，被放弃的 26 条样本最大偏离 ±46%）。
 func fishXPRateFor(species string, grade int64) float64 {
 	if grade < 1 {
 		grade = 1
 	} else if grade > 4 {
 		grade = 4
 	}
-	if c, ok := fishXPRateC[vgKey{species: species, grade: grade}]; ok {
-		return c
+	// 锚档直接回实测值，避免 (c/f)×f 的浮点尾差把 trunc 结果挪一格。
+	if a, ok := fishXPAnchor[species]; ok && a.grade == grade {
+		return a.c
 	}
+	return fishXPBaseRate(species) * fishXPGradeFactor[grade-1]
+}
+
+// fishXPBaseRate 返回未达标档（g1）的 XP/克基数。
+// 优先级：本种锚档实测 → 皮肤别名→宿主 → 无实测种推断表 → 亲缘组 → 旧 valueRates → 缺省。
+func fishXPBaseRate(species string) float64 {
 	if a, ok := fishXPAnchor[species]; ok {
-		return a.c * fishXPGradeFactor[grade-1] / fishXPGradeFactor[a.grade-1]
+		return a.c / fishXPGradeFactor[a.grade-1]
 	}
 	if host, ok := fishPullAlias[species]; ok {
-		return fishXPRateFor(host, grade)
+		return fishXPBaseRate(host)
+	}
+	if v, ok := fishXPInferred[species]; ok {
+		return v
 	}
 	if grp, ok := fishPullSpeciesGroup[species]; ok {
-		if gv, ok2 := fishXPGroupC[grp]; ok2 {
-			return gv[grade-1]
+		if v, ok2 := fishXPGroupC[grp]; ok2 {
+			return v
 		}
 	}
-	if rate, ok := valueRates[vgKey{species: species, grade: grade}]; ok && rate[0] > 0 {
+	if rate, ok := valueRates[vgKey{species: species, grade: 1}]; ok && rate[0] > 0 {
 		return rate[0]
 	}
 	return fishXPRateFallback

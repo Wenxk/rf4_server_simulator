@@ -1189,24 +1189,6 @@ var speciesPushCalib = map[string]map[int64][2]float64{
 	"s.bream":   {2: {0, 0.3}},
 }
 
-func pushScoreRate(species string, grade int64) float64 {
-	if byGrade := speciesPushCalib[species]; byGrade != nil {
-		if v := byGrade[grade]; v[0] > 0 {
-			return v[0]
-		}
-	}
-	return scoreRate(grade)
-}
-
-func fishQuality(species string, grade int64) float64 {
-	if byGrade := speciesPushCalib[species]; byGrade != nil {
-		if v := byGrade[grade]; v[1] > 0 {
-			return v[1]
-		}
-	}
-	return 0.5
-}
-
 // rollFish 优先从静态鱼库判鱼，地点无数据时回退内置鱼池。
 // bait 是 14/2 记录的钩上饵 systemID，可影响鱼种权重。
 func (s *Server) rollFish(loc string, bait string) *RolledFish {
@@ -1895,11 +1877,6 @@ func weightedChoice(keys []string, wts []float64) string {
 		}
 	}
 	return keys[len(keys)-1]
-}
-
-// rollFishPools 在静态鱼库无数据时使用内置鱼池。
-func (s *Server) rollFishPools(loc string) *RolledFish {
-	return s.rollFishPoolsWithRules(loc, 0, fishingSkillBonus{BiteSpeed: 1})
 }
 
 func (s *Server) rollFishPoolsWithRules(loc string, gearCapKg float64, bonus fishingSkillBonus, contexts ...fishRollContext) *RolledFish {

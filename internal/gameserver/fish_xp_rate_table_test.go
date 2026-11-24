@@ -232,30 +232,44 @@ var officialXPAnchors = []struct {
 }
 
 func TestOfficialXPAnchors(t *testing.T) {
+	// 2026-11-23 起四档统一阶梯：只有「锚档」那一行仍按实测断言；
+	// 同种的第二/第三档样本（26 行）保留在 officialXPAnchors 里作证据，但不再约束阶梯。
+	checked, skipped := 0, 0
 	for _, a := range officialXPAnchors {
+		anchor := fishXPAnchor[a.species]
+		if a.grade != anchor.grade {
+			skipped++
+			continue
+		}
+		checked++
 		rate := fishXPRateFor(a.species, a.grade)
 		got := int64(math.Max(1, math.Trunc(rate*float64(a.weightG))))
 		if got != a.xp {
 			t.Errorf("%s g%d %dg: XP=%d, want %d (rate=%f)", a.species, a.grade, a.weightG, got, a.xp, rate)
 		}
 	}
+	if checked < 180 {
+		t.Fatalf("只校验了 %d 行锚档，期望 ≥180", checked)
+	}
+	_ = skipped
 }
 
 func TestXPSingleAnchorNotGroup(t *testing.T) {
-	// a.sleeper 仅实测 g2；缺档 g3 必须用本种锚×乘子，不得落亲缘组。
+	// a.sleeper 仅实测 g2；缺档 g3 必须用本种基数×阶梯，不得落亲缘组。
 	got := fishXPRateFor("a.sleeper", 3)
-	want := 1.125 * fishXPGradeFactor[2] / fishXPGradeFactor[1]
+	want := fishXPBaseRate("a.sleeper") * fishXPGradeFactor[2]
 	if math.Abs(got-want) > 1e-9 {
 		t.Fatalf("got %f, want %f", got, want)
 	}
-	if gv, ok := fishXPGroupC["predator"]; ok && math.Abs(got-gv[2]) < 1e-9 {
-		t.Fatalf("单点种落到了组值 %f", gv)
+	if gv, ok := fishXPGroupC["predator"]; ok && math.Abs(got-gv*fishXPGradeFactor[2]) < 1e-9 {
+		t.Fatalf("单点种落到了组值 %f", gv*fishXPGradeFactor[2])
 	}
 }
 
 func TestXPGroupFallback(t *testing.T) {
-	// macrourus_b 零实测 → 组 marine_gadid。
-	if got, want := fishXPRateFor("macrourus_b", 2), fishXPGroupC["marine_gadid"][1]; got != want {
+	// macrourus_b 零实测 → 组 marine_gadid 的未达标基数 × 阶梯。
+	want := fishXPGroupC["marine_gadid"] * fishXPGradeFactor[1]
+	if got := fishXPRateFor("macrourus_b", 2); got != want {
 		t.Fatalf("got %f, want %f", got, want)
 	}
 }
@@ -285,6 +299,9 @@ func TestXPCoverage(t *testing.T) {
 		check(sp, t)
 	}
 	for sp := range fishXPAnchor {
+		check(sp, t)
+	}
+	for sp := range fishXPInferred {
 		check(sp, t)
 	}
 }

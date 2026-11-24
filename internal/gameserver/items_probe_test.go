@@ -266,8 +266,10 @@ func TestSpawnLocatorBuild(t *testing.T) {
 		t.Fatalf("顶层 type_id 应 206，实得 %d", tid)
 	}
 	t.Logf("1/13 响应 %dB，顶层 206 ✓", len(body))
-	// 重锚校验：预报最小日号 == 昨天
-	day, _ := worldDayAndHour(time.Now().Unix())
+	// 重锚校验：预报最小日号 == 昨天。
+	// 预报的 f0 是**协议坐标**的日号（与 weatherAt 查表同轴、与客户端世界钟
+	// W 同轴），不是玩家可见的「开服第几天」。日号纪元重置后这两者相差 99180 天。
+	day := weatherPlanDay(time.Now().Unix())
 	maps, _ := loadMapDefs()
 	var dob irNode
 	_ = json.Unmarshal(maps[spawnLevelKey], &dob)

@@ -401,7 +401,10 @@ func TestTripSessionClockCalibration(t *testing.T) {
 	sess.startedAt = time.Now().Add(-10 * time.Minute)
 	// W = 世界纪元总分钟（2/2 FILETIME 校准坐标），与会话无关。
 	wNow := worldTotalGameMin(time.Now())
-	expectW := int64(float64(time.Now().Unix()-worldDayEpochUnix) * gameMinutesPerRealSecond)
+	// 协议坐标锚在 worldProtocolEpochUnix（2015 原游戏历元），**不是**日号纪元：
+	// 日号可以随开服重置成第 1 天，但 W 是客户端世界钟的基址，归零会让
+	// 篝火到期、船、退货窗口、钓鱼游锚点全部失效。
+	expectW := int64(float64(time.Now().Unix()-worldProtocolEpochUnix) * gameMinutesPerRealSecond)
 	if wNow != expectW {
 		t.Fatalf("世界时钟坐标错误: %d (期望 %d)", wNow, expectW)
 	}

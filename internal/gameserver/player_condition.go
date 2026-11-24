@@ -638,7 +638,7 @@ const operationResultFoodAidOnceADay = 16
 
 // gameDayNumberAt 世界钟游戏日号（24 倍速，1 游戏日 = 1 现实小时）。
 func gameDayNumberAt(now time.Time) int64 {
-	return int64(float64(now.Unix()-worldDayEpochUnix) * gameMinutesPerRealSecond / gameMinutesPerDay)
+	return int64(float64(now.Unix()-worldProtocolEpochUnix) * gameMinutesPerRealSecond / gameMinutesPerDay)
 }
 
 // hKitchenEat 处理 3/13 player/kitchen_eat：客户端在野外厨房/餐车物件上确认进食。

@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
+	"strings"
 	"time"
 
 	"rf4server/internal/store"
@@ -130,6 +132,56 @@ func (s *SQLiteStore) NextUserid(ctx context.Context) (int64, error) {
 		return 0, err
 	}
 	return next, nil
+}
+
+// loginUIDKey 是「登录名 → UID」的持久映射键。名字统一转小写，与同档案匹配用的
+// COLLATE NOCASE 保持同一套 ASCII 折叠（中文名不受影响）。
+func loginUIDKey(name string) string { return "login_uid:" + strings.ToLower(name) }
+
+// ResolveLoginUID 把客户端登录名解析成已建档玩家的 uid。
+//
+// 顺序：已登记的映射（校验档案还在）→ 同名档案（不区分 ASCII 大小写，取最小 uid）
+// 并把映射落库。两者都没有时返回 found=false，由调用方回落到来源 IP——这里**不新建
+// 档案**：新号必须先在后台「新建玩家」登记，避免客户端输错名字凭空多出一个空号。
+func (s *SQLiteStore) ResolveLoginUID(ctx context.Context, name string) (int64, bool, error) {
+	key := loginUIDKey(name)
+	// KVGet 未命中会带回 sql.ErrNoRows，那不是故障，只是还没登记过。
+	raw, ok, err := s.DB.KVGet(ctx, key)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return 0, false, err
+	}
+	if ok {
+		uid, perr := strconv.ParseInt(strings.TrimSpace(raw), 10, 64)
+		if perr == nil && uid > 0 {
+			var exists int
+			if err := s.DB.SQL.QueryRowContext(ctx,
+				`SELECT COUNT(*) FROM profile WHERE uid=?`, uid).Scan(&exists); err != nil {
+				return 0, false, err
+			}
+			if exists > 0 {
+				return uid, true, nil
+			}
+		}
+		// 映射指向的档案已不存在（或值损坏）：清掉旧键，继续按名字匹配。
+		_, _ = s.DB.SQL.ExecContext(ctx, `DELETE FROM kv WHERE k=?`, key)
+	}
+	var uid int64
+	err = s.DB.SQL.QueryRowContext(ctx,
+		`SELECT uid FROM profile WHERE name=? COLLATE NOCASE ORDER BY uid LIMIT 1`, name).Scan(&uid)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, err
+	}
+	if uid <= 0 {
+		return 0, false, nil
+	}
+	if err := s.DB.KVSet(ctx, key, strconv.FormatInt(uid, 10)); err != nil {
+		// 映射写失败不影响本次登录：下次按名字重新匹配即可。
+		s.log.Warn("登录名映射写入失败", "login", name, "uid", uid, "err", err)
+	}
+	return uid, true, nil
 }
 
 func fmtSscan(s string, out *int64) (int, error) {

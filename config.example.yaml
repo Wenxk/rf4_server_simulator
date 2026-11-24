@@ -35,13 +35,10 @@ gateway:
     addr: "127.0.0.1:9401"                          # gameserver 内部隧道地址。
     psk: "replace-with-shared-random-secret"        # 必须与 game.tunnel.psk 一致。
 
-  # 运行参数默认值，钓鱼限制可通过管理后台覆盖。
+  # 钓鱼手感参数（咬钩概率/延迟）不在这里配：它们存在数据库 tunables 表，
+  # 由管理后台「游戏参数」页读写（首次启动由 seed 写入默认值）。
   token_ttl_days: 365                 # 登录 token 有效期（天）。
   userid_start: 1000001               # 登录服务分配的第一个 user ID。
-  bite_probability: 1.0               # 每次抛竿出鱼的概率；1.0 表示每次都有鱼。
-  bite_delay_scale: 1.0               # 标准咬钩延迟分布的倍率。
-  bite_delay_fixed: 0                 # 固定咬钩延迟（秒）；大于 0 时不再使用分布。
-  keepalive_interval_sec: 5.0         # 世界时钟推送间隔（秒）；应小于 10 秒。
 
 game:
   tunnel:
@@ -64,5 +61,5 @@ admin:
 # RF4_GATEWAY_CERT、RF4_GATEWAY_KEY、RF4_TUNNEL_ADDR、RF4_TUNNEL_PSK、
 # RF4_GAME_TUNNEL_PSK、RF4_ADMIN_HTTP_ADDR、RF4_ADMIN_JWT_SECRET、RF4_ADMIN_PASSWORD、
 # RF4_GAME_CLIENT_PATH、RF4_GAME_CLIENT_REGION、
-# RF4_GATEWAY_KEEPALIVE_SEC、RF4_KEEPALIVE_INTERVAL_SEC、
-# RF4_BITE_PROBABILITY、RF4_GATEWAY_MAX_CONNS。
+# RF4_GATEWAY_KEEPALIVE_SEC、RF4_GATEWAY_MAX_CONNS。
+# 钓鱼手感参数（bite_probability / bite_delay_*）存 tunables 表，请用管理后台修改。

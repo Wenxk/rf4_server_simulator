@@ -128,3 +128,69 @@ func TestFishQueryReplyExpiredDeadline(t *testing.T) {
 		t.Fatalf("timeout reply=%q, want %q", got, want)
 	}
 }
+
+// 昼夜禁口导致的零方案要说明「等到几点」，而不是笼统说没有方案。
+func TestFishQueryReplyDielBlock(t *testing.T) {
+	result := &FishQueryResponse{Diel: &FishQueryDiel{
+		GameHour: 19, GameMinute: 12, Segment: "昏",
+		NextGameHour: 20, NextSegment: "夜", WaitSeconds: 1200,
+	}}
+	got := formatFishQueryReply("金鲫", result)
+	for _, want := range []string{"金鲫", "19:12", "「昏」", "不开口", "非活跃时段禁口", "20 分钟后", "20:00", "「夜」"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("diel reply missing %q: %s", want, got)
+		}
+	}
+	if strings.Contains(got, "没有可行方案") {
+		t.Fatalf("diel reply should not fall back to the generic message: %s", got)
+	}
+	// 不到一分钟也要给个下限，不出现「约 0 分钟」。
+	result.Diel.WaitSeconds = 20
+	if got := formatFishQueryReply("金鲫", result); !strings.Contains(got, "约 1 分钟后") {
+		t.Fatalf("short wait should round up to one minute: %s", got)
+	}
+}
+
+// 只有曲线低于活跃线才算昼夜禁口；白天或全天低活跃都不该套这段文案。
+func TestFishQueryDielBlockDetectsInactiveWindow(t *testing.T) {
+	s, db := newDetachTestServer(t)
+	ctx := t.Context()
+	if _, err := db.SQL.Exec(`INSERT INTO fish_ecology(fish_key,diel_curve,diel_mask,enabled) VALUES
+		('c.carp','[0.97,0.48,1.0,0.39]',5,1),
+		('always_low','[0.2,0.2,0.2,0.2]',0,1)`); err != nil {
+		t.Fatal(err)
+	}
+	c := fishRollContext{cache: newFishingRollCache()}
+	at := func(hour, offset int64) time.Time {
+		return time.Unix(worldDayEpochUnix+hour*realSecPerGameHour+offset, 0)
+	}
+	d := s.fishQueryDielBlock(ctx, "c.carp", at(19, 60), c)
+	if d == nil {
+		t.Fatal("19 点「昏」应判为禁口")
+	}
+	if d.GameHour != 19 || d.Segment != "昏" || d.NextGameHour != 20 || d.NextSegment != "夜" {
+		t.Fatalf("unexpected diel block: %+v", d)
+	}
+	if want := int64(90); d.WaitSeconds != want {
+		t.Fatalf("wait=%d, want %d（1 游戏小时 150 秒，已过 60 秒）", d.WaitSeconds, want)
+	}
+	if d.GameMinute != 24 {
+		t.Fatalf("minute=%d, want 24", d.GameMinute)
+	}
+	if d := s.fishQueryDielBlock(ctx, "c.carp", at(12, 0), c); d != nil {
+		t.Fatalf("12 点「昼」不该判禁口: %+v", d)
+	}
+	if d := s.fishQueryDielBlock(ctx, "always_low", at(19, 0), c); d != nil {
+		t.Fatalf("全天低活跃时等也没用，应保持普通空结果: %+v", d)
+	}
+	// 总开关关掉后不再解释，回到通用文案。
+	if err := db.TunableSet(ctx, tunableFishDielInactiveBlock, "0", "test"); err != nil {
+		t.Fatal(err)
+	}
+	s.tunMu.Lock()
+	s.tunAt = time.Time{}
+	s.tunMu.Unlock()
+	if d := s.fishQueryDielBlock(ctx, "c.carp", at(19, 0), c); d != nil {
+		t.Fatalf("禁口开关关闭后不该再提示: %+v", d)
+	}
+}

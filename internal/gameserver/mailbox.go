@@ -1036,6 +1036,7 @@ func (s *Server) execAdminCmd(cmd *AdminCommand) {
 		s.tunMu.Lock()
 		s.tunCache = nil // 强制下次读取刷新
 		s.tunMu.Unlock()
+		s.invalidateEconOverrides()
 		if err := s.reloadFishEcologyCache(s.dbCtx()); err != nil {
 			s.log.Warn("鱼种生态缓存刷新失败", "err", err)
 		}

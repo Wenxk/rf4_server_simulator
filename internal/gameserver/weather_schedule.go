@@ -139,6 +139,18 @@ func (p *mapWeatherProfile) hour(day, hour int64) irNode {
 	return n
 }
 
+// weatherPlanDay 返回天气计划用的游戏日号，自 worldProtocolEpochUnix 起算。
+//
+// 这是**查表坐标**，不是给玩家看的日号。fishingWeatherPlanFromIR 把每小时
+// 记成 day*24+hour，weatherAt 用 (now-协议锚点)/realSecPerGameHour 换算，
+// 两边必须同一个起算点，否则生成与查表会整体错开十万天、一小时也查不到。
+//
+// 不能用 worldDayAndHour（日号纪元）：那个会随开服重置，而天气是协议内容，
+// 客户端按 f0 的日号显示预报，锚点必须和客户端时间轴一致。
+func weatherPlanDay(nowUnix int64) int64 {
+	return (nowUnix - worldProtocolEpochUnix) / (realSecPerGameHour * 24)
+}
+
 // reanchorWeather 沿用地图协议容器，填入昨天至未来六天的统一天气计划。
 func reanchorWeather(root *irNode, nowUnix int64) {
 	if root == nil || len(root.Fields) == 0 {
@@ -152,7 +164,10 @@ func reanchorWeather(root *irNode, nowUnix int64) {
 	if p == nil {
 		return
 	}
-	day, _ := worldDayAndHour(nowUnix)
+	// 天气计划的 day 字段与 weatherAt 的查表坐标必须同一时间轴，否则
+	// 「生成时用日号纪元、查询时用协议锚点」会整体错开十万天，查不到任何一小时。
+	// 天气是协议内容（客户端按 f0 日号显示预报），所以两边都走协议锚点。
+	day := weatherPlanDay(nowUnix)
 	var forecasts []*irNode
 	var hours *irNode
 	irWalkObj(root, func(n *irNode) {

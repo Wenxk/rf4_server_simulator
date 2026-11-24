@@ -42,7 +42,7 @@ func TestFishDistributionRegionsAndTime(t *testing.T) {
 	}
 	// 分布层只做空间散布：乘子必须等于纯散布公式，不得再挂鱼种昼夜习性。
 	// 昼夜归 fishDielWeight（生态档案 diel_mask）一处管，见 fish_diel_mask_test.go。
-	period := (now.Unix() - worldDayEpochUnix) / (4 * realSecPerGameHour)
+	period := (now.Unix() - worldProtocolEpochUnix) / (4 * realSecPerGameHour)
 	v := fishVariation(fmt.Sprintf("%s/%s/%d", a, "perch", period))
 	want := 0.15 + 3.85*v*v
 	if v < 0.3 {

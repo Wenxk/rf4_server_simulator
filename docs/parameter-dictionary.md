@@ -19,7 +19,7 @@
 
 | 层 | 存在哪 | 谁写 | 生效方式 | 典型参数 |
 |---|---|---|---|---|
-| 部署配置 | `config.yaml` / 环境变量 | 运维 | 重启进程 | 端口、证书、数据库路径、`bite_probability` 初始值 |
+| 部署配置 | `config.yaml` / 环境变量 | 运维 | 重启进程 | 端口、证书、数据库路径、隧道密钥 |
 | 热更参数 | 玩家库 `tunables` 表 | 管理后台 | 30 秒缓存 | 绝大多数玩法手感 |
 | 配置表 | 玩家库各 `fish_*` / `hook_*` 表 | 管理后台 | 30 秒 / 立即 | 水域覆盖、鱼种权重、生态档案、区域名册 |
 | 编译期常量 | Go 源码 | 开发 | 重编译 | 延迟样本池、钩型自动因子、档位带边界 |
@@ -37,8 +37,9 @@
    延迟 = 样本池 × 天气因子 × 技能 × 保底6s × 上限 × 倍率 × 钩型自动因子
    参数：bite_delay_fixed（>0 直接短路整条链）/ bite_delay_scale / bite_delay_max /
          bite_delay_lure_max / fish_weather_enabled / fish_bite_setting（水域整组覆盖）
-   开 bite_pace_enabled 时，底层杆再乘饵效节奏因子（好/中/差 = ×1.0/1.6/3.0），
-   路亚不改窗口、只改单轮判定概率（0.30/0.10/0.02）
+   开 bite_pace_enabled 时，底层杆再乘饵效节奏因子（好/中/差 = ×1.0/1.6/3.0）；
+   路亚按「饵分 × 动作分」复合档位取等待窗：好 1.5~6s、中 10~60s、差 20~60s
+   （好档受 bite_delay_lure_max 封顶，中/差档不封顶），单轮开口率 1.0/0.5/0.12
    ↓
 ② 到点掷骰：这轮咬不咬
    p = bite_probability（水域可覆盖）→ 若开了饵料规则或天气鱼口则封顶 0.95
@@ -75,9 +76,9 @@
 | `bite_delay_max` | `20.0`（秒） | 普通竿延迟上限（先保底 6s 再截断） | 设 <6 会把落水保护一起缩到该值 |
 | `bite_delay_lure_max` | `6.0`（秒） | 路亚延迟上限（保底 0.8s） | 与普通竿分开算，改错只影响路亚 |
 | `bite_empty_retry_scale` | `1` | 空轮（无符合条件的鱼）后下一轮等待的倍率。0.25=空轮 5 秒重试 | 只改「空竿后重试」节奏，不改咬钩概率；调太小会刷屏式空竿 |
-| `fish_bite_setting`（表） | 无行 | 水域级**五项整组替换**：`bite_probability` + 四个延迟参数。有行即全换，不再逐项回落 | 该图从此与全局参数脱钩，后台「游戏参数」页对这张图全部失效且**界面无提示** |
+| `fish_bite_setting`（表） | 无行 | 水域级**五项逐列覆盖**：`bite_probability` + 四个延迟参数。非 NULL 的列才替换全局值，NULL 继续沿用 | 该图从此与全局参数脱钩，后台「游戏参数」页对这张图全部失效且**界面无提示** |
 
-**饵效控速（`bite_pace_enabled`，默认关，无后台入口）**——独立于判鱼候选的一层，
+**饵效控速（`bite_pace_enabled`，默认关，后台「游戏参数 → 咬钩节奏」有 15 项）**——独立于判鱼候选的一层，
 只改「多快来鱼」，不改鱼种权重、档位与候选集合：
 
 | 键 | 默认 | 作用 / 影响范围 |
@@ -260,8 +261,6 @@
 | `wear_leader_per_stress_sec` | `0.00005`（0~0.01） | 前导受力磨损率 | 同上 |
 | `reel_load_tick_seconds` | `1.9`（0.01~600） | 首条 14/8 负载上报没有前序时刻时按此秒数起算 | 太小会让单次上报折算极短，磨损几乎不涨 |
 | `reel_load_max_tick_seconds` | `5`（0.01~600） | 两条 14/8 之间最多折算的秒数 | 防止迟到上报一次烧完 |
-| `reel_wear_multiplier` | `1`（0~10） | 搏鱼磨损总倍率，乘在打滑基准率与全部受力磨损速率上 | 0=完全不磨损；与单条通道参数是**相乘**关系，不是覆盖 |
-| `cast_distance_multiplier` | `1`（0.5~3） | 抛竿距离总倍率，乘在物理满距之后、线长与卡线封顶之前 | 线杯不够长时仍由线长封顶，调再大也抛不出去 |
 | `line_break_loss_m` | `0`（>0 生效） | 断线固定扣线米数；≤0 走清杯/按上报口径 | 与断件上报口径冲突时以客户端 17/9 为准 |
 
 ### 3.8 玩家状态（精力 / 饱食 / 健康）
@@ -357,7 +356,7 @@
 | `fish_ecology` | `fish_key` | 全局习性基线 | `layer_min/pref/max`、`temp_min/pref/max`、`diel_mask`、`diel_curve`、`season_mask`、`diet_json`、`weather_json`、`action_json`、`aggression`、`enabled`、`rarity_tier`（由静态库同步，勿手改） |
 | `fish_ecology_loc` | `(stat_loc, fish_key)` | **部分覆盖**：空列继承全局 | 同上但仅习性字段；`enabled=0` = 该水域不出这种鱼 |
 | `fish_zone` / `fish_zone_fish` | `id` / `(zone_id, fish_key)` | 名册与分布乘法复合 | `kind`（grid_rect/sea_zone）、`mode`（exclusive/boost）、`boost` 默认 3.0、`keep_others` 默认 0.35。多区重叠：独占取交集、增益连乘 |
-| `fish_bait_override` | `fish_zh` | **整行替换**内置 252 条规则；只给确有增量的鱼写覆盖，其余继续跟随内置表 | `allow_json`（吃，命中给满分档）/ `deny_json` / `bottom_json`（底钓只吃）/ `condition`（前置条件，能填什么见 4.1）/ `groups_json`+`rotate_sec`+`rotate_mode`（`soft`=组内×3/组外×0.5、`strict`=组外不咬）/ `enabled`。**写覆盖必须把内置的 deny/bottom/condition 原样带过去**，否则禁饵、底钓只吃与海图/jig 限制整条失效；批量补齐用 `tools/merge_bait_allowlist.py` |
+| `fish_bait_override` | `fish_zh` | **整行替换**内置 252 条规则；只给确有增量的鱼写覆盖，其余继续跟随内置表 | `allow_json`（吃，命中给满分档）/ `deny_json` / `bottom_json`（底钓只吃）/ `condition`（前置条件，能填什么见 4.1）/ `enabled`。**写覆盖必须把内置的 deny/bottom/condition 原样带过去**，否则禁饵、底钓只吃与海图/jig 限制整条失效；批量补齐用 `tools/merge_bait_allowlist.py`。手工轮换三列（`groups_json`/`rotate_sec`/`rotate_mode`）已随迁移 00080 删除 |
 | `fish_bait_auto_rotation` | `fish_key` | 逐鱼自动轮换开关，**只存开启项**（关掉即删行）。与上面那张覆盖表完全解耦：给没有覆盖的鱼开开关不会复制内置规则 | 只有 `fish_key`+`enabled`+审计字段；周期/系数/抽签结果都不落库（`hash(fish_key,时间桶)` 实时算）。后台入口是鱼饵偏好表格的「自动抽取」列 |
 | `hook_bite_profile` | `item_id` | 四列调参，物理列只读 | `solid_scale_bp` / `hold_scale_bp`（基点，10000=1.0）/ `small_fish_floor_bp` / `over_capacity_hold_floor_bp` |
 | `fish_grade_lines` | `fish_key` | 档位线来源 | `qualified_g < trophy_g < blue_trophy_g`（CHECK 约束）；改它等于改「什么算星鱼/蓝冠」 |
@@ -402,13 +401,16 @@
 | `gateway.transport_keepalive_sec` | `5.0` | 空传输帧保活间隔 |
 | `gateway.token_ttl_days` | `365` | 登录 token 有效期 |
 | `gateway.userid_start` | `1000001` | 首个 user ID |
-| `gateway.bite_probability` / `bite_delay_scale` / `bite_delay_fixed` | `1.0` / `1.0` / `0` | **仅首次播种**，之后以 `tunables` 为准 |
-| `gateway.keepalive_interval_sec` | `5.0` | 世界时钟推送间隔，应 <10 秒 |
 | `tunnel.addr` / `tunnel.psk` | `127.0.0.1:9401` / 占位 | gateway 与 gameserver 内部隧道，两端必须一致 |
 | `sqlite.path` / `static_path` | `data/rf4server.db` / `server_data/static.sqlite3` | 主库 / 只读静态库（TEMP VIEW，不可写） |
 | `admin.http_addr` / `jwt_secret` / `username` / `password` | `:8080` / 占位 | 仅 `cmd/admin` 独立调试用；launcher 不监听此端口 |
 
 支持环境变量覆盖，完整清单见 `config.example.yaml` 注释。
+
+> 钓鱼手感参数（`bite_probability` 起竿必出鱼概率 / `bite_delay_scale` 延迟总倍率 /
+> `bite_delay_fixed` 固定延迟秒）**不在配置层**：`config.yaml` 里写这几项不会生效，
+> 它们只存在于 `tunables` 表，请用管理后台「游戏参数」修改。
+> 世界时钟推送间隔在配置层的键是 `game.keepalive_interval_sec`（`gateway` 段下没有这一项）。
 
 ---
 

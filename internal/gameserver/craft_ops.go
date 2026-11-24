@@ -504,19 +504,6 @@ func allDemandsExplicit(ms []craftDemand) bool {
 
 // ---- 鱼护渔获当制作材料 ----
 
-// slotsByDemand 把客户端材料槽按需求 id 归组。鱼类加工配方（蟹肉、鱼片、活饵、
-// 死鱼饵、熏鱼等）的槽位里拖的就是鱼护条目：f0 是需求 id，f1 是鱼护 echo guid。
-func slotsByDemand(slots []craftSlot) map[string][]craftSlot {
-	out := map[string][]craftSlot{}
-	for _, sl := range slots {
-		if sl.ItemID == "" {
-			continue
-		}
-		out[sl.ItemID] = append(out[sl.ItemID], sl)
-	}
-	return out
-}
-
 // keepnetAccepted 返回需求可接受的鱼种集合。鱼类配方的 alternatives 填的就是
 // 鱼种 id（如 craft_bait_from_crab → ["rk_crab","ed_crab"]），这些 id 在 item_def
 // 里没有定义，只能按 keepnet_items.species 匹配。
@@ -1286,126 +1273,6 @@ func (s *Server) hasMaterials(ctx context.Context, uid int64, ms []craftDemand) 
 	return true
 }
 
-// consumeMaterials 按需求扣除背包材料，支持 alternatives，并优先扣 item_id。
-// 可堆叠材料按份扣除；返回被修改的 GUID 列表。
-func (s *Server) consumeMaterials(ctx context.Context, uid int64, ms []craftDemand) []string {
-	rows, err := s.DB.ListItemsByContainers(ctx, uid, []string{"backpack", "rig"})
-	if err != nil {
-		return nil
-	}
-	touched := []string{}
-	for _, m := range ms {
-		need := m.need()
-		for _, accept := range demandAccepts(m) {
-			if need <= 0 {
-				break
-			}
-			for _, it := range rows {
-				if need <= 0 {
-					break
-				}
-				if it.ItemID != accept {
-					continue
-				}
-				take := need
-				if cnt := s.stackCountOf(ctx, it); cnt > 0 && cnt < take {
-					take = cnt // min(need, 该堆现有份数)
-				}
-				got := s.consumeItemQty(ctx, it, take)
-				need -= got
-				if got > 0 && !containsGUID(touched, it.GUID) {
-					touched = append(touched, it.GUID)
-				}
-			}
-		}
-	}
-	return touched
-}
-
-// consumeDeclared 按客户端提交的材料槽扣除。槽位 f0 是需求 id，f1 是实例 GUID。
-// 临时 GUID 无法在背包中定位时，再按需求 id 查找可用材料。
-func (s *Server) consumeDeclared(ctx *Ctx, cctx context.Context, uid int64, slots []craftSlot, demands []craftDemand) []string {
-	byDemand := map[string]craftDemand{}
-	for _, d := range demands {
-		if d.DemandID != "" {
-			byDemand[d.DemandID] = d
-		}
-	}
-	rows, _ := s.DB.ListItemsByContainers(cctx, uid, []string{"backpack", "rig"})
-	byGUID := map[string]*store.Item{}
-	for _, it := range rows {
-		byGUID[it.GUID] = it
-	}
-	touched := []string{}
-	var missing []string
-	for _, sl := range slots {
-		g := sl.GUID
-		if g == "" {
-			continue
-		}
-		if row, ok := byGUID[g]; ok {
-			if s.consumeItemQty(cctx, row, 1) > 0 && !containsGUID(touched, g) {
-				touched = append(touched, g)
-			}
-			continue
-		}
-		if demand, ok := byDemand[sl.ItemID]; ok {
-			if hit := s.consumeByDemand(cctx, uid, demand); hit != "" {
-				if !containsGUID(touched, hit) {
-					touched = append(touched, hit)
-				}
-				continue
-			}
-		}
-		missing = append(missing, fmt.Sprintf("%s/%s", sl.ItemID, shortGUID(g)))
-	}
-	if len(missing) > 0 {
-		ctx.Log.Warn("9/1 材料槽有物品既不在背包、也无法按需求类目定位（仍放行产出）",
-			"missing", missing)
-	}
-	return touched
-}
-
-// consumeByDemand 按一条需求的可接受类别/备选 item id 在背包里扣 1 份
-// （9_1._consume_by_demand）。返回被扣物品的 guid；没扣到返回 ""。
-func (s *Server) consumeByDemand(ctx context.Context, uid int64, d craftDemand) string {
-	alts := make([]string, 0, len(d.Alternatives))
-	for _, a := range d.Alternatives {
-		if a != "" {
-			alts = append(alts, a)
-		}
-	}
-	cats := map[int64]bool{}
-	for _, c := range d.Categories {
-		cats[c] = true
-	}
-	rows, _ := s.DB.ListItemsByContainers(ctx, uid, []string{"backpack", "rig"})
-	for _, it := range rows {
-		iid := it.ItemID
-		switch {
-		case len(alts) > 0:
-			if !containsStr(alts, iid) {
-				continue
-			}
-		case len(cats) > 0:
-			// effectiveCategory 与 class_for_item 同一口径（套盒解包到内含物）
-			realCat, ok := s.effectiveCategory(ctx, iid)
-			if !ok || !cats[realCat] {
-				continue
-			}
-		default:
-			// 只有标签组（gfhgeippgdj）：服务端无法从标签反查物品，交给下一条
-			return ""
-		}
-		if s.consumeItemQty(ctx, it, 1) > 0 {
-			ctxLog := s.log
-			ctxLog.Info("9/1 材料按需求类目扣除", "item", iid, "demand", d.DemandID)
-			return it.GUID
-		}
-	}
-	return ""
-}
-
 // consumeItemQty 从实例中按份扣除 n，返回实际扣除数量。
 //
 // 可堆叠物品的数量同时保存在 item.qty 和 ljnnpokapig 字段中，两处必须同步。
@@ -1664,19 +1531,6 @@ func (s *Server) digBaitWithShovel(ctx *Ctx, shovel *store.Item) ([]byte, bool) 
 		ctx.AfterResponse(func() { pushKeepalive(ctx.Sess) })
 	}
 	return s.replyCraftResultWithSkill(ctx, true, produced, produced, nil, progress, skillTree)
-}
-
-// removeItems 删除当前玩家的若干物品并清理关联记录，返回删除件数。
-func (s *Server) removeItems(ctx context.Context, uid int64, guids []string) int64 {
-	n := int64(0)
-	for _, g := range guids {
-		deleted, err := s.DB.DeleteItemOfUID(ctx, uid, g)
-		if err == nil && deleted {
-			n++
-		}
-		_ = s.DB.DeleteItemRefs(ctx, g)
-	}
-	return n
 }
 
 // mountedFish 标本挂鱼结果：嵌进板子树的鱼对象 + 被消耗的鱼护条目。

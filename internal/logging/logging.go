@@ -53,21 +53,6 @@ const (
 	ctxKeyCmd     ctxKey = "cmd"
 )
 
-// WithSession 给 ctx 挂会话标识（网关/主服通用，形如 "1.2.3.4:5555#42"）。
-func WithSession(ctx context.Context, session string) context.Context {
-	return context.WithValue(ctx, ctxKeySession, session)
-}
-
-// WithUserid 给 ctx 挂玩家 userid。
-func WithUserid(ctx context.Context, userid int64) context.Context {
-	return context.WithValue(ctx, ctxKeyUserid, userid)
-}
-
-// WithCmd 给 ctx 挂 (main,sub) 命令键，如 "14/2"。
-func WithCmd(ctx context.Context, main, sub int) context.Context {
-	return context.WithValue(ctx, ctxKeyCmd, cmdKey(main, sub))
-}
-
 func cmdKey(main, sub int) string {
 	return itoa(main) + "/" + itoa(sub)
 }

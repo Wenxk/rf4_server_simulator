@@ -125,7 +125,7 @@ func (sess *Session) weatherAt(loc string, now time.Time) fishingWeather {
 	if !ok {
 		return fishingWeather{kind: -1}
 	}
-	at := float64(now.Unix()-worldDayEpochUnix)/realSecPerGameHour + float64(now.Nanosecond())/float64(time.Second)/realSecPerGameHour
+	at := float64(now.Unix()-worldProtocolEpochUnix)/realSecPerGameHour + float64(now.Nanosecond())/float64(time.Second)/realSecPerGameHour
 	current, ok := plan.at(at)
 	if !ok {
 		return fishingWeather{kind: -1}

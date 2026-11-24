@@ -136,7 +136,7 @@ func (s *Server) settleCatchOnceWithQualification(ctx context.Context, uid int64
 	if _, err := s.DB.EnsureProfile(ctx, uid); err != nil {
 		return nil, err
 	}
-	xp, silver := catchValue(f.Species, f.Grade, f.WeightG)
+	xp, silver := s.catchValue(f.Species, f.Grade, f.WeightG)
 	xp = int64(math.Round(float64(xp) * s.tunableF("xp_gain", 1)))
 	if xp < 1 {
 		xp = 1

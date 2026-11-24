@@ -210,50 +210,6 @@ func (s *Server) markPlayerBoarded(ctx *Ctx, tree *proto.Value) {
 	}
 }
 
-// pickStationTicket 按站点在背包里挑一张未租用的船票（不写租用状态）。
-func (s *Server) pickStationTicket(ctx *Ctx, station uint64) *proto.Value {
-	cctx := ctx.Sess.pushCtx()
-	guids, err := s.DB.ItemGUIDsByContainers(cctx, ctx.Sess.Userid, []string{"backpack"})
-	if err != nil {
-		ctx.Log.Warn("3/7 按站点选票：读背包失败", "err", err)
-		return nil
-	}
-	for _, g := range guids {
-		row, rerr := s.DB.GetItemByGUID(cctx, g)
-		if rerr != nil || row == nil || row.UID != ctx.Sess.Userid || row.TypeID != boatTicketTypeID {
-			continue
-		}
-		def, derr := s.DB.GetItemDef(cctx, row.NumericID)
-		if derr != nil {
-			def = nil
-		}
-		if station > 0 && def != nil {
-			if st, ok := defAttrU64(def, boatTicketStationAttr); ok && st != station {
-				continue
-			}
-		}
-		// 票只能在其购买地图使用，跨地图时视为没有可用票。
-		if !s.ticketLevelOK(ctx, def) {
-			continue
-		}
-		// 必须在这里就写入租用状态：客户端构造租用记录时读的是票对象里的
-		// knpoijanngk，等它选完再写已经来不及（那时记录已失败）。
-		rented := s.startTicketRent(ctx, row, def)
-		tree, terr := s.ItemToTree(cctx, row)
-		if terr != nil {
-			continue
-		}
-		if rented {
-			ctx.Log.Info("3/7 按站点选票：已开始租用", "guid", guidShort(g), "item", row.ItemID)
-		}
-		ctx.Sess.Push(4, 21, proto.Args524(proto.GuidArr([]string{row.GUID})))
-		ctx.Sess.Push(4, 22, proto.Args(proto.S("61"), tree))
-		s.markPlayerBoarded(ctx, tree)
-		return tree
-	}
-	return nil
-}
-
 // startTicketRent 写入"已租用"状态并落库；返回是否发生改动。
 //
 // 租期只取票定义里的 gloegohmand（分钟）。客户端会拿时效对象的 f3 与物品定义
@@ -454,64 +410,6 @@ func (s *Server) repairActiveTicketAnchor(ctx *Ctx, row *store.Item, fields []pr
 	ctx.Log.Info("3/7 修复船票世界时钟锚点",
 		"guid", guidShort(row.GUID), "anchor", want, "old_anchor", oldAnchor)
 	return fields
-}
-
-// pushTicketRemaining 刷新已租用船票并记录当前剩余。
-//
-// oieepfcgjgn 必须保持为租用起始的世界总游戏分钟；客户端用
-// pioghgjeelp 根据 W 自行计算剩余，不能把剩余值写回锚点。
-func (s *Session) pushTicketRemaining() {
-	if s.Srv == nil || s.Srv.DB == nil {
-		return
-	}
-	cctx := s.pushCtx()
-	guids, err := s.Srv.DB.ItemGUIDsByContainers(cctx, s.Userid, []string{"backpack"})
-	if err != nil {
-		return
-	}
-	nowMin := uint64(time.Now().Unix() / 60)
-	for _, g := range guids {
-		row, rerr := s.Srv.DB.GetItemByGUID(cctx, g)
-		if rerr != nil || row == nil || row.TypeID != boatTicketTypeID {
-			continue
-		}
-		fields, ferr := FieldsFromJSON(row.FieldsJSON)
-		if ferr != nil {
-			continue
-		}
-		ki := fieldIdxByCS(row.WireClass, "knpoijanngk")
-		if ki < 0 || ki >= len(fields) || u64Of(fields[ki].Num) != 1 {
-			continue
-		}
-		ri := fieldIdxByCS(row.WireClass, "bkmnbppciao")
-		if ri < 0 || ri >= len(fields) || fields[ri].Val == nil || fields[ri].Val.Kind != proto.KindObj {
-			continue
-		}
-		rent := fields[ri].Val
-		if len(rent.Fields) < 4 {
-			continue
-		}
-		start := u64Of(rent.Fields[2].Num)
-		dur := u64Of(rent.Fields[3].Num)
-		// 票时长是"游戏分钟"（24 倍速），换算成现实分钟判断是否到期。
-		// 游戏时间 24 倍速：现实分钟 = ceil(游戏分钟 / 24)
-		realDur := (dur + 23) / 24
-		if realDur < 1 {
-			realDur = 1
-		}
-		var remain uint64
-		if start+realDur > nowMin {
-			remain = start + realDur - nowMin
-		}
-		tree, terr := s.Srv.ItemToTree(cctx, row)
-		if terr != nil {
-			continue
-		}
-		// 先"移除"再"添加"，强制客户端替换物品对象并重建提示。
-		s.Push(4, 21, proto.Args524(proto.GuidArr([]string{g})))
-		s.Push(4, 22, proto.Args(proto.S("61"), tree))
-		s.log.Info("船票剩余分钟推送", "guid", guidShort(g), "remain", remain, "dur", dur)
-	}
 }
 
 // expireRentalTickets 清理已过期的租用票：直接从背包移除并推送 4/21。

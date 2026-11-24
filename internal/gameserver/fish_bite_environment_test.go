@@ -85,8 +85,8 @@ func TestEveryLureMotionBitHasDistinctAction(t *testing.T) {
 
 func TestWaterTemperatureUsesSeasonDepthAndLag(t *testing.T) {
 	profile := defaultFishEcology("carp")
-	summer := time.Unix(worldDayEpochUnix+120*24*realSecPerGameHour+12*realSecPerGameHour, 0)
-	winter := time.Unix(worldDayEpochUnix+300*24*realSecPerGameHour+12*realSecPerGameHour, 0)
+	summer := time.Unix(worldSeasonEpochUnix+120*24*realSecPerGameHour+12*realSecPerGameHour, 0)
+	winter := time.Unix(worldSeasonEpochUnix+300*24*realSecPerGameHour+12*realSecPerGameHour, 0)
 	weather := fishingWeather{known: true, airTemp: 18, previousAirTemp: 18, kind: fishingWeatherCloudy, wind: 3}
 	shallow := fishRollContext{rigType: 1, depthCM: 50, now: summer, weather: weather}
 	deep := shallow

@@ -26,16 +26,25 @@ var mapDefsJSON []byte
 
 // 游戏时间换算常量。时钟本体在 internal/worldclock（后台也要按同一套算术判断昼夜），
 // 这里保留同名别名，既有调用点不必改。
+//
+// **三个纪元要分清**（2026-11-24 定论）：
+//   - worldDayEpochUnix 已退役：只是「整游戏日边界上的一个已知时刻」，测试当锚点用。
+//     DayAndHour 不再从它起算——日号已回归世界时钟轴，否则与客户端对不上。
+//   - worldSeasonEpochUnix 季节锚点，鱼的适温窗口按它标定。
+//   - worldProtocolEpochUnix 协议坐标：307 档案 f13、篝火、船、退货窗口用的
+//     「世界总游戏分钟」必须继续锚在 2015，不能归零；展示日号现在也读它（只读共享）。
 const (
-	worldDayEpochUnix   = worldclock.EpochUnix          // 2015-08-01 00:00:00 UTC（游戏历元）
-	gameHoursPerRealHr  = 24                            // 1 真实小时 = 24 游戏小时
-	realSecPerGameHour  = worldclock.RealSecPerGameHour // 150 真实秒 = 1 游戏小时
-	spawnLevelKey       = "level_001_lake"
-	spawnScene          = "loc1_01"
-	dobClassID          = 205
-	spawnLocatorClassID = 206
-	forecastClass       = "bleinjfhebp" // 逐日预报，f0=日号
-	hourPlanClass       = "odnlikfnhnl" // 逐小时计划，f0=日号 f1=小时
+	worldDayEpochUnix      = worldclock.DayEpochUnix       // 已退役，仅测试锚点
+	worldSeasonEpochUnix   = worldclock.SeasonEpochUnix    // 季节锚点，鱼的适温窗口按它标定
+	worldProtocolEpochUnix = worldclock.ProtocolEpochUnix  // 协议时间轴锚点，**不可随开服重置**
+	gameHoursPerRealHr     = 24                            // 1 真实小时 = 24 游戏小时
+	realSecPerGameHour     = worldclock.RealSecPerGameHour // 150 真实秒 = 1 游戏小时
+	spawnLevelKey          = "level_001_lake"
+	spawnScene             = "loc1_01"
+	dobClassID             = 205
+	spawnLocatorClassID    = 206
+	forecastClass          = "bleinjfhebp" // 逐日预报，f0=日号
+	hourPlanClass          = "odnlikfnhnl" // 逐小时计划，f0=日号 f1=小时
 )
 
 var (
@@ -58,7 +67,12 @@ func loadMapDefs() (map[string]json.RawMessage, error) {
 	return mapDefs, mapErr
 }
 
-// worldDayAndHour 当前游戏日号（自 2015-08-01 起的真实小时数）与游戏小时。
+// worldDayAndHour 当前游戏日号与游戏小时。
+//
+// 日号与客户端屏幕上的「游戏中 N 天」、天气模板查表坐标三者同源，
+// 全部锚在 2015-08-01 且不 +1（见 worldclock.DayAndHour 的说明）。
+// 调用点普遍只取 hour 丢弃 day，但 day 本身也要保持正确——
+// 后台面板会直接展示它。
 func worldDayAndHour(nowUnix int64) (day, hour int64) {
 	return worldclock.DayAndHour(nowUnix)
 }

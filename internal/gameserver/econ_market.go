@@ -183,10 +183,18 @@ func marketSilverPerKgOverlay(mapKey, fishKey string, grade int64) float64 {
 
 type marketOverlayMap map[string]map[string]map[string]float64
 
+// speciesPriceGradeFactor 鱼价四档阶梯（相对未达标"1"）= 1 : 1.5 : 3 : 6。
+// 这是**定稿基准**（2026-11-23 用户确认）：游戏内所有卖鱼结算都以本表为准。
+// 价表只提供未达标基准价，其余三档在加载时按这条阶梯生成；原先
+// g2=g1（251/251）、g3/g1 中位 3.0、g4/g1 中位 6.0 的逐种噪声不再保留。
+// 改动本表等于改游戏经济数值，必须先过 `specs/changes/unified-grade-ladder` 与一致性测试。
+var speciesPriceGradeFactor = [4]float64{1, 1.5, 3, 6}
+
 var (
 	overlayOnce      sync.Once
 	marketPriceTable marketOverlayMap   // by_map[map][fish][gradeStr] = 银/kg
 	marketPctTable   map[string]float64 // by_map_key[map] = 倍率
+	marketNameTable  map[string]string  // by_map_key[map] = 中文水域名（后台试算用）
 )
 
 func loadMarketOverlay() {
@@ -195,16 +203,36 @@ func loadMarketOverlay() {
 	}
 	if err := json.Unmarshal(fishMarketPricesJSON, &prices); err == nil {
 		marketPriceTable = prices.ByMap
+		applyPriceGradeLadder(marketPriceTable)
 	}
 	var mults struct {
 		ByMapKey map[string]struct {
+			Map       string  `json:"map"`
 			MarketPct float64 `json:"market_pct"`
 		} `json:"by_map_key"`
 	}
 	if err := json.Unmarshal(mapMarketMultipliersJSON, &mults); err == nil {
 		marketPctTable = map[string]float64{}
+		marketNameTable = map[string]string{}
 		for k, rec := range mults.ByMapKey {
 			marketPctTable[k] = rec.MarketPct
+			marketNameTable[k] = rec.Map
+		}
+	}
+}
+
+// applyPriceGradeLadder 用未达标基准价（"1"）重算四档价，忽略表里可能残留的 2/3/4 列。
+// 价表已只存 "1"，这里是唯一的档位推导点：改动只会影响基准价本身。
+func applyPriceGradeLadder(table marketOverlayMap) {
+	for _, fishes := range table {
+		for _, rec := range fishes {
+			base, ok := rec["1"]
+			if !ok || base <= 0 {
+				continue
+			}
+			for i, f := range speciesPriceGradeFactor {
+				rec[strconv.Itoa(i+1)] = base * f
+			}
 		}
 	}
 }
@@ -343,7 +371,7 @@ func hMarketRate(ctx *Ctx) ([]byte, bool) {
 			rotten++
 		}
 		// 鱼市按卖鱼时所在水域计价：同一批鱼在不同地图卖出，价格随该图倍率变化。
-		price := marketPriceCentsForMap(e, now, sellMapKey)
+		price := srv.marketPriceCentsForMap(e, now, sellMapKey)
 		out.Items = append(out.Items, wiregen.MustMakeObj("jpmlmnfkbfn", map[int]*proto.Value{
 			0: proto.Guid(g),
 			1: proto.U64(uint64(price)),
@@ -420,7 +448,7 @@ func hMarketSell(ctx *Ctx) ([]byte, bool) {
 			return []byte{0x0F}, true
 		}
 		mapKey := sellMapKey
-		price := marketPriceCentsForMap(e, now, mapKey)
+		price := srv.marketPriceCentsForMap(e, now, mapKey)
 		sold = append(sold, soldPair{guid: g, price: price})
 		total += price
 		removed = append(removed, g)
@@ -1226,24 +1254,6 @@ func (s *Server) buildPartInstance(ctx context.Context, host *store.Item, sysID,
 		obj.Fields[idx].Hex = host.GUID
 	}
 	return obj, nil
-}
-
-// workshopSlots 返回物品可修零件的品类列表。
-//
-// 响应字段 f3 在客户端是 oinpmjophkh[]（普通 u32 数组，marker 0x05）；
-// 若改成 typed_u32arr（0x07 带类型名）会解码成 kkeibjcmjnl，
-// 客户端强转 oinpmjophkh[] 时抛 InvalidCastException，整行作废。
-func workshopSlots(ctx context.Context, srv *Server, guid string) []uint32 {
-	row, err := srv.DB.GetItemByGUID(ctx, guid)
-	if err != nil || row == nil {
-		return nil
-	}
-	parts := srv.repairPartsOf(ctx, row)
-	out := make([]uint32, 0, len(parts))
-	for _, p := range parts {
-		out = append(out, p.Cat)
-	}
-	return out
 }
 
 // workshopPartRepairPrice 以分计费。客户端对有磨损部件的确认报价最低

@@ -76,17 +76,6 @@ func build315() *proto.Value {
 	})
 }
 
-// BuildStats322 构造档案内的状态块。
-// f0 不是最大渔获重量，而是客户端世界时钟的游戏日内分钟；客户端在
-// 接收 307 后以它校准 24 倍速时钟。把鱼重写进这里会导致篝火等所有
-// 依赖世界时钟的功能把鱼重误当成时间。
-func BuildStats322(_ context.Context, _ *store.DB, _ int64) *proto.Value {
-	return wiregen.MustMakeObj("kkmhfbeldpg", map[int]*proto.Value{
-		0: proto.U32(gameMinuteOfDayAt(time.Now())),
-		4: build315(),
-	})
-}
-
 // buildStats322W 同上，但 f0 下发连续游戏分钟（不 mod 1440）：客户端世界
 // 时钟基址 = f13.f0，之后 ×24 流逝。钓鱼游锚点（f23.oieepfcgjgn）用同一
 // 连续坐标（见 f23 注释），基址回绕会让跨午夜的锚点与 W 错位 1440 分钟。

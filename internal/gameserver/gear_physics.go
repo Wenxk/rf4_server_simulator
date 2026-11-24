@@ -200,7 +200,6 @@ func rodPowerKg(def *store.ItemDef) float64     { return itemDefF32(def, gearAtt
 func rodLengthM(def *store.ItemDef) float64     { return itemDefF32(def, gearAttrLength) }
 func rodAction(def *store.ItemDef) int64        { return itemDefInt(def, gearAttrRodAction) }
 func rodStiffness(def *store.ItemDef) int64     { return itemDefInt(def, gearAttrRodStiffness) }
-func rodRigidity(def *store.ItemDef) float64    { return itemDefF32(def, gearAttrRodRigidity) }
 func rodSensitivity(def *store.ItemDef) float64 { return itemDefF32(def, gearAttrSensitivity) }
 
 // missingRodDataLogged 记录已经告警过"缺物理字段"的竿 itemID，每个竿只告警一次，
@@ -353,13 +352,6 @@ func reelDragMaxKg(def *store.ItemDef) float64 {
 		return 0
 	}
 	return nestedF32(itemDefNested(def, gearAttrDrag), gearAttrDragMax)
-}
-
-func reelGearRatio(def *store.ItemDef) float64 {
-	if def == nil {
-		return 0
-	}
-	return nestedF32(itemDefNested(def, gearAttrGear), gearAttrRatio)
 }
 
 // 渔轮摩擦档位：17/14 线上值从 0 开始，客户端 UI 显示值 = 线上值 + 1。
@@ -545,17 +537,6 @@ func gearWeakestPart(spec gearPhysicsSpec) string {
 		name, limit = p.name, p.kg
 	}
 	return name
-}
-
-// effectiveLineBuffer 是线材吸收冲击后的拉力系数（1=刚性，越大越能缓冲）。
-func effectiveLineBuffer(stretch float64) float64 {
-	if stretch < 0 {
-		stretch = 0
-	}
-	if stretch > 1 {
-		stretch = 1
-	}
-	return 1.0 - 0.5*stretch
 }
 
 // hookWeightCapG 以钩体长度估算鱼入口的重量上限。缺少长度时用钩号

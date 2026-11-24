@@ -61,12 +61,8 @@ type Gateway struct {
 
 	ObsAddr string `yaml:"obs_addr"` // 观测端口 /healthz /readyz /metrics /debug/pprof
 
-	TokenTTL          int     `yaml:"token_ttl_days"`         // 登录 token 有效期（天）
-	UseridStart       int64   `yaml:"userid_start"`           // 自增 userid 起点
-	BiteProbability   float64 `yaml:"bite_probability"`       // 起竿判出鱼概率（1.0=每杆必出）
-	BiteDelayScale    float64 `yaml:"bite_delay_scale"`       // 咬钩延迟倍率
-	BiteDelayFixed    float64 `yaml:"bite_delay_fixed"`       // 固定咬钩延迟秒（>0 时忽略分布）
-	KeepaliveInterval float64 `yaml:"keepalive_interval_sec"` // 2/2 世界时钟推送间隔（秒）
+	TokenTTL    int   `yaml:"token_ttl_days"` // 登录 token 有效期（天）
+	UseridStart int64 `yaml:"userid_start"`   // 自增 userid 起点
 }
 
 type Game struct {
@@ -145,10 +141,6 @@ func defaults() *Config {
 			ObsAddr:               ":9501",
 			TokenTTL:              365,
 			UseridStart:           1000001,
-			BiteProbability:       1.0,
-			BiteDelayScale:        1.0,
-			BiteDelayFixed:        0,
-			KeepaliveInterval:     5.0,
 		},
 		Game: Game{
 			Tunnel:               Tunnel{Addr: "127.0.0.1:9401", PSK: "change-me"},
@@ -207,8 +199,6 @@ func (c *Config) applyEnvOverrides() {
 	envStr("RF4_GAME_CLIENT_PATH", &c.Launcher.GamePath)
 	envStr("RF4_GAME_CLIENT_REGION", &c.Launcher.GameRegion)
 	envFloat("RF4_GATEWAY_KEEPALIVE_SEC", &c.Gateway.TransportKeepaliveSec)
-	envFloat("RF4_KEEPALIVE_INTERVAL_SEC", &c.Gateway.KeepaliveInterval)
-	envFloat("RF4_BITE_PROBABILITY", &c.Gateway.BiteProbability)
 	envInt("RF4_GATEWAY_MAX_CONNS", &c.Gateway.MaxConns)
 }
 

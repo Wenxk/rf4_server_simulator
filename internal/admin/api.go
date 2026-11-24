@@ -19,6 +19,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+	"unicode/utf8"
 
 	"github.com/golang-jwt/jwt/v5"
 
@@ -80,6 +81,7 @@ func NewServer(cfg config.Admin, db *store.DB, log logger, webFS fs.FS) *Server 
 	mux.HandleFunc("POST /api/skill_gain_mode", auth(s.handleSkillGainModeSet))
 	mux.HandleFunc("POST /api/fish_tv_test", auth(s.handleFishTVTest))
 	mux.HandleFunc("GET /api/players", auth(s.handlePlayers))
+	mux.HandleFunc("POST /api/players/create", auth(s.handlePlayerCreate))
 	mux.HandleFunc("GET /api/players/detail", auth(s.handlePlayerDetail))
 	mux.HandleFunc("POST /api/players/update", auth(s.handlePlayerUpdate))
 	mux.HandleFunc("GET /api/players/records", auth(s.handlePlayerRecords))
@@ -134,6 +136,19 @@ func NewServer(cfg config.Admin, db *store.DB, log logger, webFS fs.FS) *Server 
 	mux.HandleFunc("GET /api/fish/ecology-loc", auth(s.handleFishEcologyLoc))
 	mux.HandleFunc("POST /api/fish/ecology-loc", auth(s.handleFishEcologyLocSave))
 	mux.HandleFunc("POST /api/fish/ecology-loc/delete", auth(s.handleFishEcologyLocDelete))
+	// 鱼种档案：按鱼种维护全套生态基线（资产基线之上、水域覆盖之下的一层）。
+	mux.HandleFunc("GET /api/fish/ecology-species", auth(s.handleFishEcologySpecies))
+	mux.HandleFunc("POST /api/fish/ecology-species", auth(s.handleFishEcologySpeciesSave))
+	mux.HandleFunc("POST /api/fish/ecology-species/reset", auth(s.handleFishEcologySpeciesReset))
+
+	// 鱼种经济：按鱼种覆盖经验与基准鱼价（后台「鱼种经济」页）。
+	mux.HandleFunc("GET /api/econ/species", auth(s.handleEconSpecies))
+	mux.HandleFunc("POST /api/econ/species/save", auth(s.handleEconSpeciesSave))
+	mux.HandleFunc("POST /api/econ/species/reset", auth(s.handleEconSpeciesReset))
+	mux.HandleFunc("GET /api/econ/preview", auth(s.handleEconPreview))
+	// 天气预览：每张图的温度区间与逐小时天气（与客户端预报同源）。
+	mux.HandleFunc("GET /api/weather/maps", auth(s.handleWeatherMaps))
+	mux.HandleFunc("GET /api/weather/preview", auth(s.handleWeatherPreview))
 	mux.HandleFunc("POST /api/mail/send", auth(s.handleMailSend))
 	mux.HandleFunc("GET /api/audit", auth(s.handleAudit))
 	mux.HandleFunc("GET /api/about", auth(s.handleAbout))
@@ -450,6 +465,38 @@ var reelWearTunableRanges = map[string]tunableRange{
 	"reel_load_max_tick_seconds": {min: 0.01, max: 600},
 }
 
+// tunableSwitchKeys 是取值只能是 0/1 的开关类运行参数。
+//
+// 为什么必须逐项登记：判鱼侧各开关的判定式并不统一（有 `> 0`、`== 1`、`!= 1` 三种），
+// 写入 "2" 时 `> 0` 算开、`== 1` 算关；写入 "true" 时 jsonFloat 解析失败，该键根本不进
+// tunCache，tunableF 静默回退默认值——开关"设了等于没设"。统一在入口挡成 0/1，
+// 下游三种写法才等价。新增开关请同时登记到这里。
+var tunableSwitchKeys = map[string]struct{}{
+	"fish_ecology_enabled":            {},
+	"fish_bait_rules_enabled":         {},
+	"fish_distribution_enabled":       {},
+	"fish_weather_enabled":            {},
+	"happy_hour_enabled":              {},
+	"grade_ratio_enabled":             {},
+	"fish_hunt_enabled":               {},
+	"two_stage_hunt_enabled":          {},
+	"hook_nibble_enabled":             {},
+	"event_anniversary_enabled":       {},
+	"event_newyear_enabled":           {},
+	"condition_health_enabled":        {},
+	"condition_fishing_pause_enabled": {},
+	"fish_roll_trace_enabled":         {},
+	"fish_diel_weight_enabled":        {},
+	// 以下 7 个此前漏在校验之外（2026-11-24 代码审查补入）。
+	"bait_rotation_auto_enabled": {},
+	"bite_gate_enabled":          {},
+	"bite_pace_enabled":          {},
+	"groundbait_enabled":         {},
+	"level_gifts_enabled":        {},
+	"loot_box_enabled":           {},
+	"player_condition_enabled":   {},
+}
+
 func (s *Server) handleTunableSet(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Key   string `json:"key"`
@@ -459,7 +506,7 @@ func (s *Server) handleTunableSet(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 400, "参数错误")
 		return
 	}
-	if (req.Key == "fish_ecology_enabled" || req.Key == "fish_bait_rules_enabled" || req.Key == "fish_distribution_enabled" || req.Key == "fish_weather_enabled" || req.Key == "happy_hour_enabled" || req.Key == "grade_ratio_enabled" || req.Key == "fish_hunt_enabled" || req.Key == "two_stage_hunt_enabled" || req.Key == "hook_nibble_enabled" || req.Key == "event_anniversary_enabled" || req.Key == "event_newyear_enabled" || req.Key == "condition_health_enabled" || req.Key == "condition_fishing_pause_enabled" || req.Key == "fish_roll_trace_enabled" || req.Key == "fish_diel_weight_enabled") && req.Value != "0" && req.Value != "1" {
+	if _, isSwitch := tunableSwitchKeys[req.Key]; isSwitch && req.Value != "0" && req.Value != "1" {
 		httpError(w, 400, "开关只能为 0 或 1")
 		return
 	}
@@ -730,6 +777,87 @@ func queryPlayers(ctx context.Context, db *store.DB, out *[]playerRow, q string,
 		*out = append(*out, p)
 	}
 	return rows.Err()
+}
+
+// defaultPlayerUIDBase 与 config.gateway.userid_start 的默认值一致：
+// 空库时把第一个手工新建的玩家放在网关分配的第一个号上。
+const defaultPlayerUIDBase int64 = 1000001
+
+// handlePlayerCreate 手工预建玩家档案（UID + 昵称 + 可选初始等级与货币）。
+//
+// 本服没有密码：客户端的登录名就是账号，网关按 login= 找同名档案并长期绑定
+// （见 gateway.SQLiteStore.ResolveLoginUID）。所以这条入口等价于「登记账号」：
+// 名字必须先在后台建好，客户端才能登进来；没建过的名字仍回落到来源 IP 账号。
+// 这里只写一行 profile，不碰网关的 IP→UID 映射；starter 物品也不在这里播种——
+// 游戏服 EnsurePlayer 按「背包为空」判断，预建档案不会被跳过。
+func (s *Server) handlePlayerCreate(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		UID    int64  `json:"uid"`
+		Name   string `json:"name"`
+		Level  *int64 `json:"level"`
+		Silver *int64 `json:"silver"`
+		Gold   *int64 `json:"gold"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		httpError(w, 400, "参数错误")
+		return
+	}
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		name = "player" // 与 store.EnsureProfile 的默认昵称一致
+	}
+	if utf8.RuneCountInString(name) > 32 {
+		httpError(w, 400, "昵称最多 32 个字符")
+		return
+	}
+	if req.UID < 0 {
+		httpError(w, 400, "UID 必须是正整数")
+		return
+	}
+	if (req.Silver != nil && *req.Silver < 0) || (req.Gold != nil && *req.Gold < 0) {
+		httpError(w, 400, "初始银币/金币不能为负数")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	uid := req.UID
+	if uid == 0 {
+		var next int64
+		if err := s.db.SQL.QueryRowContext(ctx, `SELECT COALESCE(MAX(uid),0) FROM profile`).Scan(&next); err != nil {
+			httpError(w, 500, err.Error())
+			return
+		}
+		uid = next + 1
+		if uid < defaultPlayerUIDBase {
+			uid = defaultPlayerUIDBase
+		}
+	}
+	// 等级与经验保持与「改玩家资产」同一套换算，避免下一次经验结算把等级改回去。
+	level, xp := gameserver.AdminResolveLevelXP(req.Level, nil, 1, 0)
+	silver, gold := int64(5000), int64(0)
+	if req.Silver != nil {
+		silver = *req.Silver
+	}
+	if req.Gold != nil {
+		gold = *req.Gold
+	}
+	now := float64(time.Now().Unix())
+	res, err := s.db.SQL.ExecContext(ctx, `
+		INSERT INTO profile(uid, name, level, xp, silver, gold, created_ts, updated_ts)
+		VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(uid) DO NOTHING`,
+		uid, name, level, xp, silver, gold, now, now)
+	if err != nil {
+		httpError(w, 500, err.Error())
+		return
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		httpError(w, 409, fmt.Sprintf("UID %d 已有档案，请直接管理该玩家", uid))
+		return
+	}
+	_ = s.db.AuditLogWrite(ctx, adminOf(r), "player_create", strconv.FormatInt(uid, 10), mustJSON(map[string]any{
+		"name": name, "level": level, "xp": xp, "silver": silver, "gold": gold,
+	}))
+	writeJSON(w, map[string]any{"ok": true, "uid": uid, "name": name, "level": level, "xp": xp, "silver": silver, "gold": gold})
 }
 
 func (s *Server) handlePlayerDetail(w http.ResponseWriter, r *http.Request) {

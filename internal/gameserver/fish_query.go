@@ -6,6 +6,8 @@ import (
 	"math"
 	"sort"
 	"time"
+
+	"rf4server/internal/worldclock"
 )
 
 type FishQueryRequest struct {
@@ -63,12 +65,24 @@ type FishQueryPlan struct {
 	Weather              map[string]any       `json:"weather"`
 }
 
+// FishQueryDiel 解释「零方案」是否由昼夜禁口造成：给出当前时段与下次开口时刻。
+// 只供回复文案使用，不参与判鱼；其他原因导致的零方案保持原提示。
+type FishQueryDiel struct {
+	GameHour     int64  `json:"game_hour"`
+	GameMinute   int64  `json:"game_minute"`
+	Segment      string `json:"segment"`
+	NextGameHour int64  `json:"next_game_hour"`
+	NextSegment  string `json:"next_segment"`
+	WaitSeconds  int64  `json:"wait_seconds"`
+}
+
 type FishQueryResponse struct {
 	Fish             string             `json:"fish"`
 	Grade            int64              `json:"grade"`
 	AsOf             string             `json:"as_of"`
 	Flags            map[string]float64 `json:"flags"`
 	Plans            []FishQueryPlan    `json:"plans"`
+	Diel             *FishQueryDiel     `json:"diel,omitempty"`
 	Evaluated        int                `json:"evaluated"`
 	Regions          int                `json:"regions"`
 	CandidateRegions int                `json:"candidate_regions"`
@@ -223,7 +237,7 @@ func (s *Server) QueryFish(ctx context.Context, req FishQueryRequest) (*FishQuer
 			response.Evaluated += max(0, len(loc.regions.areas)-1)
 		}
 		_, hour := worldDayAndHour(at.Unix())
-		minute := ((at.Unix() - worldDayEpochUnix) % realSecPerGameHour) * 60 / realSecPerGameHour
+		minute := ((at.Unix() - worldProtocolEpochUnix) % realSecPerGameHour) * 60 / realSecPerGameHour
 		plan := FishQueryPlan{Map: loc.id, MapName: loc.name, Scene: loc.scene, Bait: bait.id, BaitName: bait.name, EquivalentBaits: bait.equivalents, RigType: rig, RigName: rigNameForType(rig), DepthCM: depth, LureLayer: layer, Action: action, OnBoat: c.onBoat, At: at.UTC().Format(time.RFC3339), GameHour: hour, GameMinute: minute, WaitSeconds: int64(at.Sub(started).Seconds()), X: point.x, Z: point.z, Zone: point.zone, CoordinateKind: point.kind, Region: region, References: loc.references, Chance: c.query.chance, FishShare: c.query.fishShare, Selection: c.query.selection, Acceptance: c.query.acceptance, GradeShare: c.query.gradeShare, BaitTier: s.cachedBaitTiers(ctx, base, bait.id)[req.Fish], WeightMode: s.baitWeightModeForRoll(req.Fish, []string{bait.id}, base), CapKg: capKg, Weather: map[string]any{"known": w.known, "kind": w.kind, "air_temp": roundTo(w.airTemp, 1), "wind": roundTo(w.wind, 2)}}
 		// Candidate bait, not the selected rod's currently equipped bait.
 		state := &FishState{Loc: loc.scene, Bait: bait.id, RigType: rig, DepthCM: depth, LureLayer: layer, LureAction: action, Bonus: bonus}
@@ -310,6 +324,13 @@ func (s *Server) QueryFish(ctx context.Context, req FishQueryRequest) (*FishQuer
 		}
 	}
 	response.Elapsed = time.Since(started).Seconds()
+	// 零方案时判断是不是「这条鱼这个时辰本来就不开口」：昼夜禁口会让所有
+	// 候选饵权重归零，回复里必须说清等到几点，而不是笼统说没有方案。
+	if len(response.Plans) == 0 && len(maps) > 0 {
+		diag := base
+		diag.loc = maps[0].id
+		response.Diel = s.fishQueryDielBlock(ctx, req.Fish, started, diag)
+	}
 	response.Notes = []string{"理论条/小时 = 3600 × 单次目标鱼概率 ÷ 平均判鱼间隔；单竿、单饵无窝料，按当前条件折算，不是官服概率或未来一小时预测。不含客户端等待、占竿、搏鱼、收鱼、重抛及落水就位保护，非实际鱼获。", "只查指定地图、当前时段，比较天然饵及拟饵各最多24组与代表钓法；不是全饵、全天候最优解。", "海图比较最多6个有依据的落点，假设已上船；内陆默认岸钓。"}
 	if maps[0].regions != nil {
 		response.Notes = append(response.Notes, "区域范围采用游戏显示坐标，左闭右开；代表鱼饵落入的区域，不是角色站位或指定落点。忽略局部水深、底质、水流和结构，实际落点概率会有差异。")
@@ -345,4 +366,49 @@ func fishQueryMotion(rig int64, rule fishBaitRule) (float64, string, uint32) {
 		return .5, "drift", lureMotionDriftBit
 	}
 	return .5, "jig", lureMotionJigBit
+}
+
+// fishQueryDielBlock 判断目标鱼此刻是否被「非活跃时段禁口」拦住。
+//
+// 判鱼里曲线低于活跃线的时段会直接返回 0（fish_diel_inactive_block），这一杆
+// 无论挂什么饵都不可能有鱼；查鱼助手此时只回「没有可行方案」会让人以为是饵或
+// 规则配错了。这里把当前段和下次开口时刻算出来，交给回复文案解释。
+// 返回 nil 表示不是昼夜原因（或全天都不活跃，等一会儿也没用），保持原提示。
+func (s *Server) fishQueryDielBlock(ctx context.Context, fish string, now time.Time, c fishRollContext) *FishQueryDiel {
+	if s.tunableF("fish_diel_weight_enabled", 1) != 1 ||
+		s.tunableF(tunableFishDielInactiveBlock, 1) < dielActiveThreshold {
+		return nil
+	}
+	p := s.cachedFishEcology(ctx, c, fish)
+	if !p.Enabled {
+		return nil
+	}
+	_, hour := worldDayAndHour(now.Unix())
+	if fishDielWeight(p, hour) >= dielActiveThreshold {
+		return nil
+	}
+	next := int64(-1)
+	for i := int64(1); i <= 24; i++ {
+		h := (hour + i) % 24
+		if fishDielWeight(p, h) >= dielActiveThreshold {
+			next = h
+			break
+		}
+	}
+	if next < 0 {
+		return nil
+	}
+	elapsed := (now.Unix() - worldProtocolEpochUnix) % realSecPerGameHour
+	wait := ((next-hour+24)%24)*realSecPerGameHour - elapsed
+	if wait < 1 {
+		wait = 1
+	}
+	return &FishQueryDiel{
+		GameHour:     hour,
+		GameMinute:   elapsed * 60 / realSecPerGameHour,
+		Segment:      worldclock.SegmentName(worldclock.SegmentOf(hour)),
+		NextGameHour: next,
+		NextSegment:  worldclock.SegmentName(worldclock.SegmentOf(next)),
+		WaitSeconds:  wait,
+	}
 }

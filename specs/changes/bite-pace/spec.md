@@ -87,8 +87,9 @@ Status: done
   （仅打窝压缩时生效，无窝不动）。
 - 恢复：`PaceKnown=false`（重启/重连）时在 timer 触发前惰性重算一次，
   防止重启后差饵鱼变快。
-- 参数面：全部走 tunables（POST /api/tunables + reload_tunables 秒级生效），
-  不做管理页 UI。
+- 参数面：全部走 tunables（POST /api/tunables + reload_tunables 秒级生效）。
+  2026-11-24 已补后台入口：管理页「游戏参数 → 咬钩节奏」登记 15 项（开关 + 阈值/概率/三档窗口），
+  其余 `pace_factor_*`、`pace_bottom_max`、`pace_marine_*`、`pace_groundbait_*` 仍只能走 API。
 
 ## Testing Decisions
 

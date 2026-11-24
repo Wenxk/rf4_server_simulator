@@ -496,6 +496,20 @@ func TestSpawnModeEndpoint(t *testing.T) {
 	if code, _ := call("POST", "/api/tunables", token, `{"key":"two_stage_hunt_enabled","value":"x"}`); code != 400 {
 		t.Fatalf("two_stage_hunt_enabled 非法值应 400，实得 %d", code)
 	}
+	// 开关白名单是声明式表，新增开关必须一起登记：这里逐键验证非 0/1 被拒。
+	// 漏登记时判鱼侧会按 `>0` / `==1` / `!=1` 三种写法给出不一致的结果。
+	for _, k := range []string{
+		"bait_rotation_auto_enabled", "bite_gate_enabled", "bite_pace_enabled",
+		"groundbait_enabled", "level_gifts_enabled", "loot_box_enabled",
+		"player_condition_enabled",
+	} {
+		if code, out := call("POST", "/api/tunables", token, `{"key":"`+k+`","value":"true"}`); code != 400 {
+			t.Fatalf("%s 非 0/1 应 400，实得 %d %v", k, code, out)
+		}
+		if code, out := call("POST", "/api/tunables", token, `{"key":"`+k+`","value":"1"}`); code != 200 {
+			t.Fatalf("%s 写 1 应 200，实得 %d %v", k, code, out)
+		}
+	}
 	if code, _ := call("POST", "/api/tunables", token, `{"key":"two_stage_daily_below","value":"-1"}`); code != 400 {
 		t.Fatalf("两档制负权重应 400，实得 %d", code)
 	}

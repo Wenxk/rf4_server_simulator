@@ -367,49 +367,6 @@ func hRigSyncRig(ctx *Ctx) ([]byte, bool) {
 	return body, true
 }
 
-// ---- 3/37 金币买断地图 ----
-
-// hPlaceBuyout 处理 3/37 地图买断。
-// 请求参数为 [place, packetId, price]，响应为 307 玩家档案。
-//
-// 价格必须等于静态买断价才扣金币，防止客户端改价。成功后写入 place_access
-// 和交易流水；档案 307 的字段 22 用于向客户端表示已买断。
-func hPlaceBuyout(ctx *Ctx) ([]byte, bool) {
-	srv := ctx.Sess.Srv
-	if !srv.requireDB(ctx) {
-		return nil, false
-	}
-	place, packet, price := parsePlaceBuyoutArgs(ctx.Tree)
-	cctx := ctx.Sess.pushCtx()
-	uid := ctx.Sess.Userid
-	if tier := placeBuyoutPrice(place, packet); tier > 0 && price == tier {
-		// 金币买断（百分位）：扣款 → 授予 → 流水
-		if p, err := srv.DB.EnsureProfile(cctx, uid); err == nil && p != nil {
-			_ = srv.DB.UpdateBalance(cctx, uid, p.Silver, p.Gold-tier, p.Bank)
-		}
-		if err := srv.DB.PlaceAccessInsert(cctx, uid, place, "buyout"); err != nil {
-			ctx.Log.Warn("3/37 授予地点失败", "place", place, "err", err)
-		}
-		_ = srv.DB.AddTxn(cctx, uid, "buy", place, "", 0, -tier, "place_buyout")
-		ctx.Log.Info("3/37 金币买断地图", "place", place, "tier", packet,
-			"gold", -tier, "gold_yuan", float64(tier)/100.0)
-	} else {
-		tiers, _ := placeBuyoutTiers[place]
-		ctx.Log.Info("3/37 价格与静态表不符，不扣款", "place", place,
-			"packet", packet, "price", price, "tiers", tiers)
-	}
-	p, err := srv.BuildProfile307W(cctx, uid, worldTotalGameMin(time.Now()))
-	if err != nil {
-		ctx.Log.Warn("3/37 档案构造失败", "err", err)
-		return nil, false
-	}
-	body, err := proto.EncodeValue(p, ctx.Sess.Table())
-	if err != nil {
-		return nil, false
-	}
-	return body, true
-}
-
 // parsePlaceBuyoutArgs 顶层 args 位置取参：[0]=place 字符串、[1]=packetId、
 // [2]=price（long）。缺参按零值处理（调用方走"价格不符"分支）。
 func parsePlaceBuyoutArgs(tree *proto.Value) (place string, packet, price int64) {
@@ -1826,7 +1783,6 @@ func registerSessionHandlers(d *Dispatch) {
 	d.Register(3, 13, hKitchenEat)    // 3/13 player/kitchen_eat：野外厨房进食，恢复饱食度
 	d.Register(3, 30, hRigSyncBackpack)
 	d.Register(3, 31, hRigSyncRig)
-	d.Register(3, 37, hPlaceBuyout)
 	d.Register(1, 12, hPlace)
 	d.Register(1, 13, hEnterMap)
 	d.Register(1, 14, hTravel)

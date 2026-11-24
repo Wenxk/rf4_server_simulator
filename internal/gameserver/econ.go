@@ -35,6 +35,12 @@ var valueRates = map[vgKey][2]float64{
 // 经验走官服实测表 fishXPRateFor（XP = trunc(c×W)，2026-11 抓包标定，覆盖全部鱼种档位）；
 // 银价仍走 valueRates/缺省 0.1，只用于结算界面和 catch_log，不直接增加余额；银币在鱼市 20/2 卖鱼时入账。
 func catchValue(species string, grade, weightG int64) (xp, silver int64) {
+	return catchValueAtRate(species, grade, weightG, fishXPRateFor(species, grade))
+}
+
+// catchValueAtRate 用给定 XP 速率（XP/克）计算经验；后台按鱼种覆盖时替换速率，
+// 银价与覆盖无关（它只进 catch_log，不作为入账依据）。
+func catchValueAtRate(species string, grade, weightG int64, xpRate float64) (xp, silver int64) {
 	rate, ok := valueRates[vgKey{species, grade}]
 	silverRate := 0.0
 	if ok {
@@ -42,7 +48,6 @@ func catchValue(species string, grade, weightG int64) (xp, silver int64) {
 	} else if grade >= 2 {
 		silverRate = 0.1
 	}
-	xpRate := fishXPRateFor(species, grade)
 	w := weightG
 	if w < 1 {
 		w = 1
@@ -50,119 +55,6 @@ func catchValue(species string, grade, weightG int64) (xp, silver int64) {
 	xp = int64(math.Max(1, math.Trunc(xpRate*float64(w))))
 	silver = int64(math.Max(0, math.Round(silverRate*float64(w)/silverRateSeedDivisor)))
 	return
-}
-
-// grantXp 增加经验并重算等级，返回新等级、累计经验和提升级数。
-func (s *Server) grantXp(ctx context.Context, uid, xp int64) (int64, int64, int64) {
-	p, err := s.DB.EnsureProfile(ctx, uid)
-	if err != nil {
-		return 1, 0, 0
-	}
-	oldLevel := p.Level
-	newXp := p.XP + xp
-	newLevel := levelForXp(newXp)
-	_, _ = s.DB.SQL.ExecContext(ctx, `UPDATE profile SET xp=?, level=?, updated_ts=? WHERE uid=?`,
-		newXp, newLevel, float64(time.Now().Unix()), uid)
-	_ = s.DB.AddTxn(ctx, uid, "xp", "", "", 0, 0, "fishing")
-	return newLevel, newXp, newLevel - oldLevel
-}
-
-// fishingEnd 14/4 收竿结算。
-func (s *Server) fishingEnd(ctx *Ctx) ([]byte, bool) {
-	if !s.requireDB(ctx) {
-		return nil, false
-	}
-	uid := ctx.Sess.Userid
-	st := s.stateFor(uid)
-	st.mu.Lock()
-	if st.biteTimer != nil {
-		st.biteTimer.Stop()
-	}
-	st.CastActive = false
-	pending := st.Pending
-	hooked := st.Hooked
-	rigType := st.RigType
-	gearGUID := st.GearGuid
-	loc, spot := st.Loc, st.Spot
-	st.mu.Unlock()
-
-	cctx := ctx.Sess.pushCtx()
-	var stats813 *proto.Value
-	var profileTree *proto.Value
-	var skill312 *proto.Value
-	hasFish := pending != nil && hooked
-
-	levelsGained := int64(0)
-	prevLevel := int64(1)
-	if hasFish {
-		s.recordHuntCatch(cctx, uid, loc, spot, pending)
-		// 14/4 只结算经验；银币由鱼市 20/2 卖鱼入账。
-		xp, silver := catchValue(pending.Species, pending.Grade, pending.WeightG)
-		bonusXp := s.tunableF("xp_gain", 1.0)
-		xp = int64(math.Round(float64(xp) * bonusXp))
-		prevBest, _ := s.DB.CatchLogMaxWeight(cctx, uid, pending.Species)
-		newLevel, _, gained := s.grantXp(cctx, uid, xp)
-		levelsGained = gained
-		prevLevel = max64(1, newLevel-1)
-		// 按实际钓组大类增长；概率随当前熟练度反比下降，满熟练度不再增加。
-		skillID, skillGain := s.awardFishingProficiency(cctx, uid, rigType)
-		// catch_log 已在 settleCatchOnce 的 14/4 事务里写下这一尾（source='catch'），
-		// 入护只把同一行抬成 'keep'，放生保持 'catch'——图鉴与统计都认「钓到过」。
-		pending.XP = xp
-		pending.Silver = silver
-		// 对本次钓组组件施加钓获磨损。
-		s.wearRigForCatch(cctx, st.GearGuid)
-		st.mu.Lock()
-		st.LastSkill = skillID
-		st.mu.Unlock()
-
-		stats813 = s.build813(cctx, uid, pending, prevBest, skillGain, levelsGained)
-		profileTree, _ = s.BuildProfile307W(cctx, uid, worldTotalGameMin(time.Now()))
-		skill312 = s.buildSingleSkill312(cctx, uid, skillID)
-	}
-
-	// 801（空竿也回完整 801，f0/f6/f7 = null）
-	f0 := proto.Null()
-	if hasFish {
-		f0 = proto.Args(proto.S("174"), stats813)
-	}
-	f6 := proto.Null()
-	if hasFish && skill312 != nil {
-		f6 = proto.Args(proto.S("121"), skill312)
-	}
-	f7 := proto.Null()
-	if hasFish && profileTree != nil {
-		f7 = profileTree
-	}
-	obj801, err := wiregen.MakeObj("caagocpofin", map[int]*proto.Value{
-		0:  f0,
-		1:  proto.U32(s.castDistanceBitsForRig(cctx, uid, gearGUID, rigType)),
-		2:  proto.U32(f32Const801F2),
-		3:  s.build5003(cctx, uid),
-		4:  proto.Null(),
-		5:  proto.Null(),
-		6:  f6,
-		7:  f7,
-		8:  proto.Null(),
-		9:  proto.Args(proto.S("61")),
-		10: proto.Null(),
-	})
-	if err != nil {
-		return nil, false
-	}
-	body, err := proto.EncodeValue(obj801, ctx.Sess.Table())
-	if err != nil {
-		return nil, false
-	}
-
-	// 结算后主动推送：升级 → 2/6；然后 2/1
-	if hasFish && levelsGained > 0 {
-		ctx.Sess.Push2_6(prevLevel)
-	}
-	if hasFish {
-		ctx.Sess.Push2_1()
-	}
-	return body, true
 }
 
 // build813 搏鱼统计块（813 内嵌 310 + 25）。
@@ -530,7 +422,7 @@ func (s *Server) fishingRelease(ctx *Ctx) ([]byte, bool) {
 		// 放生奖励：base × release_xp_ratio（默认 0.5）
 		base := pending.XP
 		if base == 0 {
-			b, _ := catchValue(pending.Species, pending.Grade, pending.WeightG)
+			b, _ := s.catchValue(pending.Species, pending.Grade, pending.WeightG)
 			base = b
 		}
 		ratio := s.tunableF("release_xp_ratio", 0.5)
@@ -562,7 +454,7 @@ func (s *Server) fishingRelease(ctx *Ctx) ([]byte, bool) {
 			}
 			base := f.XP
 			if base == 0 {
-				b, _ := catchValue(f.Species, f.Grade, f.WeightG)
+				b, _ := s.catchValue(f.Species, f.Grade, f.WeightG)
 				base = b
 			}
 			extraReleaseBonus := int64(math.Round(float64(base) * ratio))

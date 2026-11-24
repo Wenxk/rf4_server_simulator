@@ -168,6 +168,18 @@ go build -trimpath -ldflags "-s -w -X 'rf4server/internal/buildinfo.Version=<语
 
 `gateway.advertise_host` 和 `gateway.advertise_port` 会包含在登录响应中。客户端使用这两个值建立实时连接。
 
+### 账号与登录名
+
+客户端登录框里的名字就是账号，没有密码。网关按 `login=` 参数在 `profile` 里找同名档案
+（ASCII 大小写不敏感，同名多份取最小 UID），首次命中后把「登录名 → UID」写入 `kv`
+（`login_uid:<小写名>`）长期绑定，之后在后台改昵称不影响该名字登录。
+
+- 想加人：先在管理后台「玩家管理 → 新建玩家」建档，再让对方用同名登录
+- 没建过的名字**不会**自动建档，会回落到来源 IP 的账号（本机固定 `gateway.userid_start`，
+  局域网按来源 IP 递增，映射存在网关工作目录的 `gateway_ip_uids.json`）
+- 同一台机器输入不同名字即可切换账号；只带 `token=` 的二次登录按 token 内的 UID 走
+- 能访问网关的机器都能用任意已登记的名字登录，仅适合本机或可信局域网
+
 ## 数据
 
 主数据库是一个 SQLite 文件，通常为 `data/rf4server.db`，由 gameserver、gateway 和内嵌管理后台共享使用，并启用 WAL 模式。
@@ -180,7 +192,7 @@ go build -trimpath -ldflags "-s -w -X 'rf4server/internal/buildinfo.Version=<语
 
 ## 安全与协议约束
 
-- 网关登录流程不会认证游戏账户。它会为配置的用户 ID 签发 token，而实时连接会接受结构有效、但未在当前 token 存储中注册的 token。请将网络访问边界视为信任边界，不要将服务暴露到公网。
+- 网关登录流程不校验密码。带 `login=` 时按后台已登记的同名档案签发 token，未登记的名字回落到来源 IP 账号；实时连接还会接受结构有效、但未在当前 token 存储中注册的 token。请将网络访问边界视为信任边界，不要将服务暴露到公网。
 - 完整的登录 token 就是 RC4 密钥。输入和输出 RC4 流会跨帧连续。帧分配、加密和套接字写入必须通过会话写入器保持有序。
 - 在处理客户端帧之前先发送 ACK。改变这一顺序会破坏客户端协议。
 - 服务器到客户端的推送必须使用预期的顶层 value 结构，并通过响应契约检查。无效推送会被拒绝，而不会发送。

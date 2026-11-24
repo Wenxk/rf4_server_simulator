@@ -98,6 +98,11 @@ func (s *Server) fishQueryReply(ctx context.Context, sess *Session, text string)
 func formatFishQueryReply(fishName string, result *FishQueryResponse) string {
 	fishName = fishQueryName(fishName)
 	if len(result.Plans) == 0 {
+		if d := result.Diel; d != nil {
+			minutes := (d.WaitSeconds + 59) / 60
+			return fmt.Sprintf("%s\n游戏时间 %02d:%02d，现在是「%s」，这条鱼在这个时段不开口（非活跃时段禁口）。\n约 %d 分钟后（游戏 %02d:00 进入「%s」）再查。",
+				fishName, d.GameHour, d.GameMinute, d.Segment, minutes, d.NextGameHour, d.NextSegment)
+		}
 		return fishName + "\n当前地图、当前条件没有可行方案，可指定其他地图。"
 	}
 	lines := []string{result.Plans[0].MapName + " · " + fishName}

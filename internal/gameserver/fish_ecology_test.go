@@ -82,8 +82,8 @@ func TestFishEcologySeedsSpeciesAndMatchesWaterLayers(t *testing.T) {
 
 	// 合成鱼口权重：暖季底层偏向鲶鱼，冬季鲶鱼被季节权重压低（season_mask 不含冬）。
 	// 游戏历 24 倍速，这里固定游戏时刻，避免真实日期漂移。
-	summer := time.Unix(worldDayEpochUnix+180*24*realSecPerGameHour+12*realSecPerGameHour, 0)
-	winter := time.Unix(worldDayEpochUnix+350*24*realSecPerGameHour+12*realSecPerGameHour, 0)
+	summer := time.Unix(worldSeasonEpochUnix+180*24*realSecPerGameHour+12*realSecPerGameHour, 0)
+	winter := time.Unix(worldSeasonEpochUnix+350*24*realSecPerGameHour+12*realSecPerGameHour, 0)
 	catSummer := srv.fishBiteEnvironmentWeight(ctx, "w_catfish", fishRollContext{rigType: 12, depthCM: 500, now: summer})
 	catWinter := srv.fishBiteEnvironmentWeight(ctx, "w_catfish", fishRollContext{rigType: 12, depthCM: 500, now: winter})
 	pikeSummer := srv.fishBiteEnvironmentWeight(ctx, "n.pike", fishRollContext{rigType: 12, depthCM: 500, now: summer})
@@ -484,7 +484,7 @@ func TestCastPrepareClearsStaleLureStateOnNonLureRod(t *testing.T) {
 // spotEnv 实际水深归一——区域批量捕获没有点位 spotEnv，实际水深归一会让
 // 批量与逐点生产权重对不上（TestFishQueryRegionCaptureMatchesPointCalculation）。
 func TestFloatWaterLayerStaysFiveMeterScale(t *testing.T) {
-	at := time.Unix(worldDayEpochUnix+180*24*realSecPerGameHour+12*realSecPerGameHour, 0)
+	at := time.Unix(worldSeasonEpochUnix+180*24*realSecPerGameHour+12*realSecPerGameHour, 0)
 	shallow := fishRollContext{rigType: 1, depthCM: 300,
 		spotEnv: fishSpotEnvironment{Known: true, DepthM: 10}, now: at}
 	legacy := shallow

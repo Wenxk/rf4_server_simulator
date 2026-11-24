@@ -25,7 +25,7 @@ func fishArea(loc string, c fishRollContext) string {
 // 昼夜只由 fishDielWeight（生态档案 diel_mask × 活跃加成）一处决定。
 func distributionMultiplier(area, species string, now time.Time) float64 {
 	// 每四个游戏小时重新分布；同区域同鱼种共享结果，不因玩家或换饵重抽。
-	period := (now.Unix() - worldDayEpochUnix) / (4 * realSecPerGameHour)
+	period := (now.Unix() - worldProtocolEpochUnix) / (4 * realSecPerGameHour)
 	v := fishVariation(fmt.Sprintf("%s/%s/%d", area, species, period))
 	if v < 0.3 {
 		return 0

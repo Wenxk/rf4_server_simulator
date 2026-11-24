@@ -340,16 +340,6 @@ func (d *DB) CatchLogMaxWeight(ctx context.Context, uid int64, fishKey string) (
 	return mw, err
 }
 
-// CatchLogTotals 统计（3/2 用）：总钓获/奖杯/超稀有。
-func (d *DB) CatchLogTotals(ctx context.Context, uid int64) (total, trophy, superN int64, err error) {
-	err = d.SQL.QueryRowContext(ctx, `
-		SELECT COUNT(*),
-		       SUM(CASE WHEN grade>=3 THEN 1 ELSE 0 END),
-		       SUM(CASE WHEN grade>=4 THEN 1 ELSE 0 END)
-		FROM catch_log WHERE uid=? AND source='catch'`, uid).Scan(&total, &trophy, &superN)
-	return
-}
-
 // ---- 地点买断 ----
 
 // PlaceAccessList 玩家已买断地点（档案 307 f22 与 placeOwned 买断判断同源）。
@@ -1059,11 +1049,6 @@ func (d *DB) QueuePop(ctx context.Context) (string, bool, error) {
 }
 
 var _ = fmt.Sprintf
-
-// RemoveRigComponent 移除钓组某槽位组件行。
-func (d *DB) RemoveRigComponent(ctx context.Context, rigGUID string, slot int64) error {
-	return d.DeleteRigComponentsBySlot(ctx, rigGUID, slot)
-}
 
 // UpdateItemContainer 改物品容器归属（backpack/rig/keepnet）。
 func (d *DB) UpdateItemContainer(ctx context.Context, guid, container string) error {

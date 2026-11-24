@@ -170,6 +170,9 @@ func (s *Server) reloadFishEcologyCache(ctx context.Context) error {
 	s.fishEcologyCacheLoaded = true
 	s.fishEcologyMu.Unlock()
 	// 水域覆盖与全局档案同一次刷新：只刷新一半会出现「习性旧、覆盖新」的错配。
+	if err := s.reloadFishEcologySpeciesCache(ctx); err != nil {
+		return err
+	}
 	return s.reloadFishEcologyLocCache(ctx)
 }
 
@@ -185,6 +188,57 @@ type fishEcologyLocOverride struct {
 	dietJSON, weatherJSON *string
 	activity              *float64
 	enabled               *bool
+}
+
+// fishEcologySpeciesOverride 是鱼种级覆盖的内存形态：nil 字段继承资产基线。
+// 字段比水域覆盖宽——鱼种档案维护的是「这个物种本身的习性」，
+// 所以底质/水色/水流/光照/攻击性/拟饵动作这些不随水域变的部分都放在这一层。
+type fishEcologySpeciesOverride struct {
+	layerMin, layerPref, layerMax *float64
+	tempMinC, tempPrefC, tempMaxC *float64
+	dielMask, seasonMask          *int64
+	dielCurve                     *string
+	dietJSON, weatherJSON         *string
+	actionJSON                    *string
+	substrateJSON, colorJSON      *string
+	currentPref, activity         *float64
+	lightPref, clarityPref        *float64
+	aggression                    *float64
+	enabled                       *bool
+}
+
+// reloadFishEcologySpeciesCache 全量载入鱼种级覆盖。
+// 与水域覆盖一并刷新，避免层级之间出现半新半旧。
+func (s *Server) reloadFishEcologySpeciesCache(ctx context.Context) error {
+	if s == nil || s.DB == nil {
+		return nil
+	}
+	rows, err := s.DB.AllFishEcologySpecies(ctx)
+	if err != nil {
+		return err
+	}
+	cache := make(map[string]fishEcologySpeciesOverride, len(rows))
+	for _, o := range rows {
+		ov := fishEcologySpeciesOverride{
+			layerMin: o.LayerMin, layerPref: o.LayerPref, layerMax: o.LayerMax,
+			tempMinC: o.TempMinC, tempPrefC: o.TempPrefC, tempMaxC: o.TempMaxC,
+			dielMask: o.DielMask, dielCurve: o.DielCurve, seasonMask: o.SeasonMask,
+			dietJSON: o.DietJSON, weatherJSON: o.WeatherJSON, actionJSON: o.ActionJSON,
+			substrateJSON: o.SubstrateJSON, colorJSON: o.ColorJSON,
+			currentPref: o.CurrentPref, activity: o.Activity,
+			lightPref: o.LightPref, clarityPref: o.ClarityPref,
+			aggression: o.Aggression,
+		}
+		if o.Enabled != nil {
+			enabled := *o.Enabled != 0
+			ov.enabled = &enabled
+		}
+		cache[o.FishKey] = ov
+	}
+	s.fishEcologyMu.Lock()
+	s.fishEcologySpeciesCache = cache
+	s.fishEcologyMu.Unlock()
+	return nil
 }
 
 // reloadFishEcologyLocCache 全量载入水域覆盖。与全局档案同一次刷新，
@@ -275,21 +329,99 @@ func mergeFishEcology(p fishEcologyProfile, ov *fishEcologyLocOverride) fishEcol
 	return p
 }
 
-// fishEcologyFor 是判鱼侧唯一入口：全局档案 + 该水域覆盖。
-// statLoc 为空（位置未知/静态库不可用）时保持全局，不因缺定位改手感。
+// mergeFishEcologySpecies 把鱼种级覆盖叠到资产基线上：只改有值的字段。
+// 字段比水域覆盖宽（多了底质/水色/动作/水流/光照/清澈度/攻击性）。
+func mergeFishEcologySpecies(p fishEcologyProfile, ov *fishEcologySpeciesOverride) fishEcologyProfile {
+	if ov == nil {
+		return p
+	}
+	if ov.layerMin != nil {
+		p.LayerMin = *ov.layerMin
+	}
+	if ov.layerPref != nil {
+		p.LayerPref = *ov.layerPref
+	}
+	if ov.layerMax != nil {
+		p.LayerMax = *ov.layerMax
+	}
+	if ov.tempMinC != nil {
+		p.TempMinC = *ov.tempMinC
+	}
+	if ov.tempPrefC != nil {
+		p.TempPrefC = *ov.tempPrefC
+	}
+	if ov.tempMaxC != nil {
+		p.TempMaxC = *ov.tempMaxC
+	}
+	if ov.dielMask != nil {
+		p.DielMask = *ov.dielMask
+	}
+	if ov.dielCurve != nil {
+		p.DielCurve = *ov.dielCurve
+	}
+	if ov.seasonMask != nil {
+		p.SeasonMask = *ov.seasonMask
+	}
+	if ov.dietJSON != nil {
+		p.DietJSON = *ov.dietJSON
+	}
+	if ov.weatherJSON != nil {
+		p.WeatherJSON = *ov.weatherJSON
+	}
+	if ov.actionJSON != nil {
+		p.ActionJSON = *ov.actionJSON
+	}
+	if ov.substrateJSON != nil {
+		p.SubstrateJSON = *ov.substrateJSON
+	}
+	if ov.colorJSON != nil {
+		p.ColorJSON = *ov.colorJSON
+	}
+	if ov.currentPref != nil {
+		p.CurrentPref = *ov.currentPref
+	}
+	if ov.activity != nil {
+		p.Activity = *ov.activity
+	}
+	if ov.lightPref != nil {
+		p.LightPref = *ov.lightPref
+	}
+	if ov.clarityPref != nil {
+		p.ClarityPref = *ov.clarityPref
+	}
+	if ov.aggression != nil {
+		p.Aggression = *ov.aggression
+	}
+	if ov.enabled != nil {
+		p.Enabled = *ov.enabled
+	}
+	return p
+}
+
+// fishEcologyFor 是判鱼侧唯一入口：资产基线 → 鱼种覆盖 → 该水域覆盖。
+//
+// statLoc 为空（位置未知/静态库不可用）时只跳过水域层，鱼种层照常合并——
+// 水温窗口这类「属于物种本身」的参数不该因为定位缺失而退回合成基线。
 func (s *Server) fishEcologyFor(ctx context.Context, statLoc, key string) fishEcologyProfile {
 	p := s.fishEcology(ctx, key)
-	if s == nil || statLoc == "" {
+	if s == nil {
 		return p
 	}
 	s.fishEcologyMu.RLock()
+	var sp *fishEcologySpeciesOverride
+	if v, ok := s.fishEcologySpeciesCache[key]; ok {
+		sp = &v
+	}
 	var ov *fishEcologyLocOverride
-	if byKey := s.fishEcologyLocCache[statLoc]; byKey != nil {
-		if v, ok := byKey[key]; ok {
-			ov = &v
+	if statLoc != "" {
+		if byKey := s.fishEcologyLocCache[statLoc]; byKey != nil {
+			if v, ok := byKey[key]; ok {
+				ov = &v
+			}
 		}
 	}
 	s.fishEcologyMu.RUnlock()
+	p = mergeFishEcologySpecies(p, sp)
 	return mergeFishEcology(p, ov)
 }
 
@@ -301,6 +433,7 @@ func (s *Server) invalidateFishEcologyCache() {
 	s.fishEcologyCache = nil
 	s.fishEcologyCacheLoaded = false
 	s.fishEcologyLocCache = nil
+	s.fishEcologySpeciesCache = nil
 	s.fishEcologyMu.Unlock()
 	s.invalidatePaceDietCache()
 }
@@ -419,16 +552,6 @@ func (s *Server) rigWaterLayer(c fishRollContext) float64 {
 		return normalizeWaterLayer(float64(c.depthCM) / 500)
 	}
 	return .45
-}
-
-// fishLayerWeight 按当前钓法水层与鱼种范围计算软匹配权重。
-// 底层杆对明显不属于底层水层的鱼保留极小杂口，而不是绝对删除。
-func (s *Server) fishLayerWeight(ctx context.Context, key string, c fishRollContext) float64 {
-	p := s.cachedFishEcology(ctx, c, key)
-	if !p.Enabled {
-		return 0
-	}
-	return s.fishLayerWeightProfile(p, c)
 }
 
 // fishLayerWeightProfile 按当前钓法水层与鱼种区间计算软匹配权重：

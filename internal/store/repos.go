@@ -67,14 +67,6 @@ func (d *DB) UpdateBalance(ctx context.Context, uid, silver, gold, bank int64) e
 	return err
 }
 
-// AddXP 增加经验（可能升级的处理在业务层）。
-func (d *DB) AddXP(ctx context.Context, uid, delta int64) error {
-	_, err := d.SQL.ExecContext(ctx, `
-		UPDATE profile SET xp = xp + ?, updated_ts=? WHERE uid=?`,
-		delta, float64(time.Now().Unix()), uid)
-	return err
-}
-
 // AddTxn 记一条货币流水。
 func (d *DB) AddTxn(ctx context.Context, uid int64, kind, itemID, guid string, silverDelta, goldDelta int64, note string) error {
 	_, err := d.SQL.ExecContext(ctx, `

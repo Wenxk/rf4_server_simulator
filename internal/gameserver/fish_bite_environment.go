@@ -7,6 +7,8 @@ import (
 	"math"
 	"strconv"
 	"strings"
+
+	"rf4server/internal/worldclock"
 )
 
 type fishSpotEnvironment struct {
@@ -515,8 +517,9 @@ func lureColorFamily(s string) (string, bool) {
 }
 
 func fishSeasonAt(nowUnix int64) int {
-	day, _ := worldDayAndHour(nowUnix)
-	day %= 365
+	// 季节天数走 SeasonDay，不走 DayAndHour：日号可以随开服重置，
+	// 但 253 种鱼的适温窗口是按这套季节标定的，动它会全体错位。
+	day := worldclock.SeasonDay(nowUnix)
 	monthLengths := [...]int{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
 	month := 0
 	for month < len(monthLengths) && day >= int64(monthLengths[month]) {

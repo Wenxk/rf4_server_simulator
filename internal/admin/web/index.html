@@ -232,6 +232,63 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
 .br-term-grid .btn{font-size:12px;padding:4px 9px}
 .br-term-grid .btn.on{background:#43356b;color:#d9c8ff;border-color:#6a55a3;opacity:.8}
 .br-term-chip{background:#43356b !important;color:#d9c8ff}
+/* 天气预览：照着游戏内天气预报的手感做——7 天卡片 + 24 小时温曲线 + 温度区间统计。
+   天空色只作氛围底色（低透明度），信息一律靠前景色，保证任何色弱都能读。 */
+.wx-sum{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0 14px}
+.wx-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:11px;border:1px solid var(--line);background:#0e1b29;font-size:12.5px}
+.wx-chip b{font-family:Consolas,monospace;font-size:14px}
+.wx-chip .k{color:var(--muted);font-size:11px}
+.wx-clock{margin-left:auto;display:inline-flex;align-items:baseline;gap:8px;padding:7px 14px;border-radius:11px;border:1px solid #2a526c;background:linear-gradient(135deg,#123c50,#0e2437)}
+.wx-clock b{font-family:Consolas,monospace;font-size:20px;letter-spacing:.06em;color:#8fe6ff}
+.wx-day-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.wx-day{position:relative;border:1px solid var(--line);border-radius:14px;padding:11px 9px 10px;background:#0c1826;cursor:pointer;transition:.16s;overflow:hidden;text-align:center;min-width:0}
+.wx-day:hover{border-color:#2f5d80;transform:translateY(-2px)}
+.wx-day.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 12px 28px #42b8ff24}
+.wx-day .dl{font-size:11px;color:var(--muted);letter-spacing:.04em}
+.wx-day .dl b{color:var(--text);font-size:12px;letter-spacing:0}
+.wx-day .ic{height:44px;display:grid;place-items:center;margin:4px 0 2px}
+.wx-day .ic svg{width:40px;height:40px}
+.wx-day .kn{font-size:12.5px;font-weight:650}
+.wx-day .tt{font-family:Consolas,monospace;font-size:13px;margin-top:3px}
+.wx-day .tt .hi{color:#ffb27a}.wx-day .tt .lo{color:#8fc6ff}
+.wx-day .wt{font-family:Consolas,monospace;font-size:11px;color:var(--accent2);margin-top:2px}
+.wx-day .rn{font-size:10.5px;color:#7fa8cc;margin-top:2px;min-height:14px}
+.wx-day.now:after{content:"现在";position:absolute;right:7px;top:7px;font-size:9.5px;padding:1px 5px;border-radius:5px;background:#1b4f74;color:#bfe8ff}
+.wx-chart{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#08131f;padding:6px}
+.wx-chart svg{display:block;width:100%;min-width:760px;height:auto}
+.wx-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin:8px 0 0}
+.wx-legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:3px;margin-right:5px}
+.wx-legend .sw{width:10px;height:10px;border-radius:2px;vertical-align:-1px}
+.wx-band{display:flex;height:26px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#08131f}
+.wx-band i{position:relative;transition:.16s}
+.wx-band i:hover{filter:brightness(1.35)}
+.wx-band-row{display:flex;justify-content:space-between;gap:8px;font:11px/1.5 Consolas,monospace;color:var(--muted);margin-top:5px}
+/* 分档明细：两列网格，13 档也只占 7 行，比竖排一长串好扫读 */
+.wx-band-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 16px;margin-top:10px;max-height:230px;overflow:auto}
+.wx-band-list .wx-band-row{margin-top:0;padding:3px 0;border-bottom:1px solid #16273a}
+.wx-band-list .wx-band-row span:first-child{color:#bcd1e4}
+@media(max-width:720px){.wx-band-list{grid-template-columns:1fr}}
+.wx-season{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.wx-season .sr{display:grid;grid-template-columns:52px minmax(0,1fr) 100px;gap:9px;align-items:center;font-size:12px}
+.wx-season .sn{color:var(--muted);white-space:nowrap}
+.wx-season .sb{position:relative;height:18px;border-radius:5px;background:#0a1725;border:1px solid #1b2e42;overflow:hidden}
+.wx-season .sb i{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,#2b7fd4,#37e2b0);border-radius:4px;opacity:.6}
+.wx-season .sr.now .sn{color:#8fe6ff;font-weight:700}
+.wx-season .sr.now .sb{border-color:#2f6b90}
+.wx-season .sr.now .sb i{opacity:1;background:linear-gradient(90deg,#42b8ff,#37e2b0);box-shadow:0 0 10px #42b8ff55}
+.wx-season .sv{font-family:Consolas,monospace;text-align:right;color:#cfe3f5;white-space:nowrap}
+/* 季节性跨度条上叠一条「当前季」参考竖线，四季相对位置一眼可比 */
+.wx-season .sb:after{content:"";position:absolute;top:-3px;bottom:-3px;width:0;border-left:1px dashed #3d6b8c;left:50%;opacity:0}
+.wx-season .sb.marked:after{opacity:1}
+.wx-axis{display:grid;grid-template-columns:52px minmax(0,1fr) 100px;gap:9px;font:10.5px/1.4 Consolas,monospace;color:#5b7690;margin-top:2px}
+.wx-axis span:nth-child(2){display:flex;justify-content:space-between}
+.wx-cmp td{padding:7px 10px}
+.wx-cmp .rng{position:relative;height:8px;border-radius:4px;background:#0a1725;border:1px solid #1b2e42;min-width:150px}
+.wx-cmp .rng i{position:absolute;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#2b7fd4,#37e2b0);opacity:.85}
+.wx-cmp tr.on{background:#15263a}
+.wx-cmp tr{cursor:pointer}
+@media(max-width:1100px){.wx-day-row{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:720px){.wx-day-row{grid-template-columns:repeat(2,minmax(0,1fr))}.wx-clock{margin-left:0;width:100%;justify-content:center}}
 </style>
 </head>
 <body>
@@ -256,6 +313,9 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
       <button data-view="players" onclick="go('players')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3 3.4-4.5 6.5-4.5s5.7 1.5 6.5 4.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17.5 15.6c2 .4 3.5 1.6 4 3.9"/></svg></span><span class="txt"><b>玩家管理</b><small>档案 · 资产 · 护鱼网 · 技能</small></span></button>
       <button data-view="stores" onclick="go('stores')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M21 8v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8"/><path d="M2 4h20v4H2z"/><path d="M10 12h4"/></svg></span><span class="txt"><b>商店与库存</b><small>改货架价格和库存</small></span></button>
       <button data-view="fish" onclick="go('fish')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M6.5 12c1.2-3.3 4.3-5.5 7.5-5.5 3.5 0 6 2.5 7 5.5-1 3-3.5 5.5-7 5.5-3.2 0-6.3-2.2-7.5-5.5Z"/><path d="M17.5 11v.01"/><path d="M6.5 12 3 9v6l3.5-3Z"/></svg></span><span class="txt"><b>钓场与鱼口</b><small>玩法开关 · 出什么鱼 · 咬钩快慢</small></span></button>
+      <button data-view="econ" onclick="go('econ')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M6 20v-7M11 20V6M16 20v-9M21 20V9"/></svg></span><span class="txt"><b>鱼种经济</b><small>按鱼种改经验与鱼价</small></span></button>
+      <button data-view="ecology" onclick="go('ecology')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v3"/><path d="M12 18v3"/><circle cx="12" cy="12" r="5"/><path d="M4.2 7.5 6.8 9M17.2 15 19.8 16.5M4.2 16.5 6.8 15M17.2 9 19.8 7.5"/></svg></span><span class="txt"><b>鱼种档案</b><small>水温 · 季节 · 水层 · 活跃度</small></span></button>
+      <button data-view="weather" onclick="go('weather')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/><path d="M9.5 19.5a3.5 3.5 0 0 1 .6-6.95 4.5 4.5 0 0 1 8.6 1.2 3 3 0 0 1-.7 5.75z"/></svg></span><span class="txt"><b>天气预览</b><small>每图温度区间 · 逐时天气</small></span></button>
       <button data-view="hooks" onclick="go('hooks')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M15 3v10a6 6 0 1 1-12 0V9"/><path d="M15 3l3 3-3 3"/></svg></span><span class="txt"><b>钩子手感</b><small>真实型号 · 入口容量 · 咬口概率</small></span></button>
       <button data-view="bait" onclick="go('bait')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3c3 4 5.5 7.4 5.5 10a5.5 5.5 0 0 1-11 0C6.5 10.4 9 7 12 3Z"/><path d="M9.8 13.5a2.2 2.2 0 0 0 2.2 2.2"/></svg></span><span class="txt"><b>鱼饵偏好</b><small>规则 + 饵效实证；官服占比仅参考</small></span></button>
       <button data-view="mail" onclick="go('mail')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><span class="txt"><b>邮件</b><small>发消息和物品附件</small></span></button>
@@ -277,9 +337,48 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
         <div class="card"><div class="section-head"><h2>玩法开关</h2><button class="btn alt sm" onclick="go('fish')">去调整</button></div><div id="ruleOverview"><div class="empty">读取中…</div></div></div>
       </div>
     </section>
-    <section class="view" id="view-players"><div class="split"><div class="card player-list"><div class="toolbar"><input class="grow" id="playerSearch" placeholder="搜索 UID / 昵称" onkeydown="if(event.key==='Enter')loadPlayers()"><button class="btn sm" onclick="loadPlayers()">搜索</button><span class="legend"><span class="online-dot on"></span>在线<span class="online-dot off"></span>不在线</span></div><div id="playerList" style="margin-top:12px"></div></div><div class="card" id="playerDetail"><div class="empty">选择左侧玩家开始管理</div></div></div></section>
+    <section class="view" id="view-players"><div class="split"><div class="card player-list"><div class="toolbar"><input class="grow" id="playerSearch" placeholder="搜索 UID / 昵称" onkeydown="if(event.key==='Enter')loadPlayers()"><button class="btn sm" onclick="loadPlayers()">搜索</button><button class="btn good sm" onclick="showCreatePlayer()">+ 新建玩家</button><span class="legend"><span class="online-dot on"></span>在线<span class="online-dot off"></span>不在线</span></div><div id="playerList" style="margin-top:12px"></div></div><div class="card" id="playerDetail"><div class="empty">选择左侧玩家开始管理</div></div></div></section>
     <section class="view" id="view-stores"><div class="card"><div class="toolbar"><select id="storeSelect" class="grow" onchange="loadStoreItems()"></select><input id="storeSearch" placeholder="搜索商品 / 名称" onkeydown="if(event.key==='Enter')loadStoreItems()"><button class="btn" onclick="loadStoreItems()">查询</button></div><div id="storeSummary" class="muted" style="margin:12px 0"></div><div class="table-wrap" id="storeTable"></div></div></section>
     <section class="view" id="view-fish"><div class="card" id="fishRulesCard" style="margin-bottom:12px"><div class="rules-strip"><h2>鱼口模式</h2><span id="biteModeInline" style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap"><span id="biteModeBody">读取中…</span></span><small class="muted" id="biteModeStatus"></small></div><div class="rules-strip" style="margin-top:8px"><label class="rule-item"><span>硬性鱼口约束</span><input type="checkbox" class="switch" id="biteGateSwitch" disabled onchange="toggleFishRules('gate',this)"></label><label class="rule-item"><span>逐鱼种生态</span><input type="checkbox" class="switch" id="fishEcologySwitch" disabled onchange="toggleFishRules('ecology',this)"></label><label class="rule-item"><span>鱼群随机分布</span><input type="checkbox" class="switch" id="fishDistributionSwitch" disabled onchange="toggleFishRules('distribution',this)"></label><label class="rule-item"><span>鱼类吃饵偏好</span><input type="checkbox" class="switch" id="fishRulesSwitch" disabled onchange="toggleFishRules('bait',this)"></label><label class="rule-item"><span>天气与温度鱼口</span><input type="checkbox" class="switch" id="fishWeatherSwitch" disabled onchange="toggleFishRules('weather',this)"></label><label class="rule-item"><span>欢乐时光</span><input type="checkbox" class="switch" id="happyHourSwitch" disabled onchange="toggleFishRules('happy',this)"></label><small class="muted" id="rulesStatus"></small><button class="btn alt sm" id="rulesHelpBtn" aria-expanded="false" onclick="toggleRulesHelp()">说明 ⌄</button></div><div id="rulesHelp" hidden><p class="muted" style="margin:0 0 8px">各项独立保存；硬性约束、生态、天气、饵料和分布规则默认关闭，欢乐时光默认开启。上方「鱼口模式」一键切换五项组合。</p><div class="rule-help"><b>硬性鱼口约束</b><span id="biteGateMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>逐鱼种生态</b><span id="fishEcologyMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>鱼群随机分布</b><span id="fishDistributionMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>鱼类吃饵偏好</b><span id="fishRulesMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>天气与温度鱼口</b><span id="fishWeatherMessage" role="status">正在读取开关。</span></div><div class="rule-help"><b>欢乐时光</b><span id="happyHourMessage" role="status">正在读取开关。</span></div></div></div><div class="grid fish-layout" style="grid-template-columns:270px minmax(0,1fr)"><div class="card"><div class="section-head"><h2>水域</h2></div><input id="fishSearch" placeholder="筛选水域" oninput="renderFishAreas()"><div id="fishAreas"></div></div><div class="card" id="fishEditor"><div class="empty">选择水域配置鱼口</div></div></div><div class="card" id="rollTraceCard" style="margin-top:12px"><div class="section-head"><div><h2>判鱼追踪</h2><small>最近的真实咬钩判定：候选鱼种在各层乘完后的权重 · 空轮的空因 · 只读诊断，不影响玩法</small></div><span class="muted" id="rollTraceStatus"></span><button class="btn alt sm" id="rollTraceScope" onclick="loadRollTrace(true,!ROLL_TRACE_ALL)">看全部水域</button><button class="btn alt sm" onclick="loadRollTrace(true)">刷新</button></div><div id="rollTraceBody"><div class="empty">加载中…</div></div></div></section>
+    <section class="view" id="view-econ"><div class="card"><div class="section-head"><div><h2>鱼种经验与鱼价</h2><small>按鱼种逐档覆盖：经验单位 XP/克，鱼价单位 银/公斤（基准水域，其他水域按倍率折算）</small></div><span class="muted" id="econStatus"></span></div><div class="toolbar"><input class="grow" id="econSearch" placeholder="搜索鱼种 key / 中文名，如 bream、欧鳊" onkeydown="if(event.key==='Enter')loadEcon()"><select id="econFilter" style="max-width:160px" onchange="renderEconRows()"><option value="">全部鱼种</option><option value="overridden">只看已覆盖</option></select><button class="btn" onclick="loadEcon()">查询</button><button class="btn alt" onclick="loadEcon()">刷新</button></div><p class="muted" style="margin:10px 0"><b style="color:#ffd479">金色</b>＝已覆盖，灰色＝内置默认。留空＝跟随内置表。经验按 <b>trunc(速率 × 克重)</b> 结算；鱼价在基准价之上再叠当日系数（±5%）与新鲜度（24h 内全额）。<b>四档统一阶梯</b>：经验 1 : 3.27 : 20.4 : 40.8、鱼价 1 : 1.5 : 3 : 6（都相对未达标），每种鱼只有未达标基数是独立数据。这两条阶梯是<b>游戏内结算基准</b>（2026-11-23 定稿），改档位溢价须走提案并同步测试，不要用逐鱼种覆盖绕过。保存后投递刷新指令，正常情况下立即生效，最迟 30 秒。</p><div class="table-wrap" id="econTable"><div class="empty">读取中…</div></div></div></section>
+    <section class="view" id="view-ecology"><div class="card"><div class="section-head"><div><h2>鱼种档案</h2><small>按物种维护全套生态基线；留空＝跟随资产基线，只影响这个物种本身，对所有水域生效</small></div><span class="muted" id="ecoStatus"></span></div><div class="toolbar"><input class="grow" id="ecoSearch" placeholder="搜索鱼种 key / 中文名，如 burbot、江鳕" onkeydown="if(event.key==='Enter')loadEcology()"><select id="ecoFilter" style="max-width:170px" onchange="renderEcologyRows()"><option value="">全部鱼种</option><option value="overlaid">只看已覆盖</option><option value="cold">只看到冷水鱼</option><option value="warm">只看到暖水鱼</option></select><button class="btn" onclick="loadEcology()">查询</button><button class="btn alt" onclick="loadEcology()">刷新</button></div><p class="muted" style="margin:10px 0"><b style="color:#ffd479">金色</b>＝已覆盖，灰色＝资产基线。温度单位 ℃，窗口越窄温度对判鱼的影响越大；<b>窗口宽度直接决定「热响应」这根曲线的陡缓</b>——现在 253 种的中位宽度是 20.2℃，等于温度几乎不筛鱼。季节/昼夜掩码为位掩码（季节 1春2夏4秋8冬，昼夜 1夜2晨4昼8昏）。保存后投递刷新指令，最迟 30 秒生效。</p><div class="table-wrap" id="ecoTable"><div class="empty">读取中…</div></div></div></section>
+    <section class="view" id="view-weather">
+      <div class="card" style="margin-bottom:14px">
+        <div class="section-head"><div><h2>天气预览</h2><small>与客户端天气预报、判鱼天气<b>同一套</b>数据；游戏时钟 1 小时 = 现实 150 秒</small></div><span class="muted" id="wxStatus"></span></div>
+        <div class="toolbar">
+          <select id="wxMap" class="grow" style="max-width:280px" onchange="loadWeather()"></select>
+          <select id="wxDays" style="max-width:130px" onchange="loadWeather()"><option value="3">看 3 天</option><option value="7" selected>看 7 天</option><option value="14">看 14 天</option></select>
+          <button class="btn alt" onclick="loadWeather()">刷新</button>
+          <button class="btn alt" onclick="loadWeatherOverview()">全部水域对比</button>
+        </div>
+        <div class="wx-sum" id="wxSum"></div>
+        <div class="wx-day-row" id="wxDayCards"></div>
+        <div class="section-head"><div><h2 style="font-size:14px">温度曲线（选中日）</h2><small>气温 / 表层 / 中层 / 底层四条线；竖线为当前时刻</small></div><span class="muted" id="wxDayLabel"></span></div>
+        <div class="wx-chart" id="wxChart"><div class="empty">读取中…</div></div>
+        <div class="wx-legend">
+          <span><i style="background:#ffb27a"></i>气温</span>
+          <span><i style="background:#8fe6ff"></i>表层水温</span>
+          <span><i style="background:#37e2b0"></i>中层水温（默认钓组）</span>
+          <span><i style="background:#9d8bff"></i>底层水温（底钓）</span>
+          <span><i style="background:#ffd479"></i>降水（柱）</span>
+          <span><i style="background:#ff8fa3"></i>雷暴（柱）</span>
+        </div>
+      </div>
+      <div class="grid duo">
+        <div class="card">
+          <div class="section-head"><div><h2>温度区间</h2><small>全水层覆盖（表层 0 → 底钓 0.93），这是「这图能出什么温度」</small></div></div>
+          <div id="wxBandBox"><div class="empty">读取中…</div></div>
+        </div>
+        <div class="card">
+          <div class="section-head"><div><h2>四季对比</h2><small>同一张图在四季的水温跨度，共用一根轴；发光的高亮条＝当前季</small></div></div>
+          <div id="wxSeasonBox"><div class="empty">读取中…</div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px" id="wxCmpCard">
+        <div class="section-head"><div><h2>全部水域温度区间对比</h2><small>点一行切换上方明细</small></div></div>
+        <div class="table-wrap" id="wxCmpBox"><div class="empty">点「全部水域对比」加载</div></div>
+      </div>
+    </section>
     <section class="view" id="view-hooks"><div class="card"><div class="section-head"><div><h2>真实钩子型号档案</h2><small>物理数据来自 item_def；倍率和兜底值只影响咬口，不改钩子拉力</small></div></div><div class="toolbar"><input class="grow" id="hookSearch" placeholder="搜索 item_id / 厂牌，如 triple_20686、simmons" onkeydown="if(event.key==='Enter')loadHookProfiles()"><select id="hookSize"><option value="">全部尺寸</option></select><select id="hookFamily"><option value="">全部钩型族</option><option value="classic">Classic</option><option value="carp">Carp</option><option value="treble">Treble</option><option value="jighead">Jighead</option><option value="offset">Offset</option><option value="marine">Marine</option><option value="other">Other</option></select><button class="btn" onclick="loadHookProfiles()">查询</button></div><p class="muted" style="margin:10px 0">默认倍率 1.0、兜底值 0；修改后写入审计，最多 30 秒由主服热加载。入口容量按真实钩体长度计算。</p><div class="table-wrap" id="hookProfilesTable"><div class="empty">读取中…</div></div></div></section>
     <section class="view" id="view-bait"><div class="card"><div class="section-head"><div><h2>鱼饵偏好</h2><small id="baitSummary" class="muted">正在读取…</small></div></div><div class="toolbar"><input class="grow" id="baitSearch" placeholder="搜索鱼种 key / 中文名，如 pike、狗鱼" onkeydown="if(event.key==='Enter')loadBaitPrefs()"><input id="baitLoc" placeholder="水域（可选）" onkeydown="if(event.key==='Enter')loadBaitPrefs()"><select id="baitFilter" onchange="loadBaitPrefs()"><option value="">全部鱼种</option><option value="tier3">有 tier3 饵</option><option value="norule">规则表无条目</option><option value="rule">规则表有条目</option></select><button class="btn" onclick="loadBaitPrefs()">查询</button><button class="btn alt" onclick="rerollBaitAuto()" title="给所有开了「自动抽取」的鱼立刻换一批本期开口饵；周期与下次切换时刻不变">↻ 立即重抽本期</button></div><p class="muted" style="margin:10px 0">判定只用两套证据：<b>规则</b>来自编译进服务端的 fishing_bait_rules.txt（严格模式生效）；<b>tier</b> 来自 companion_bait_fish 饵效实证（tier3 满档 / tier1~2 低权重）。<b>官服占比</b>取自 rf4records.com 渔获纪录，只作参考展示，<b>不参与判鱼</b>。最右「吃不吃」按同一套逻辑给出人话结论。「自动抽取」按<b>型号</b>抽签：抽中「红蚯蚓（10/14/18）· Pop-up」表示这三个尺寸都开口，同型号不同规格在判鱼上等价；<b>名单里只写了一个尺寸也整组开</b>。折叠名一律带形态后缀（煮饵/Pop-up/颗粒/玉米/活饵…），因为「玉米」光看名字分不出是颗粒还是玉米粒。点击行展开全部饵；点右侧「编辑」可改吃/不吃/底钓只吃。本期开口饵由「自动抽取」列控制。</p><div class="table-wrap" id="baitTable"></div></div></section>
     <section class="view" id="view-mail"><div class="mail-box"><div class="card"><div class="section-head"><h2>撰写邮件</h2><small>队列约 2 秒内由主服投递</small></div><div class="form-grid" style="grid-template-columns:1fr 1fr"><div class="field"><label>收件人 UID</label><input id="mailUid" type="number"></div><div class="field"><label>快捷载入玩家</label><input id="mailPlayerSearch" placeholder="搜索并回车" onkeydown="if(event.key==='Enter')findMailPlayer()"></div></div><div class="field" style="margin-top:12px"><label>邮件正文</label><textarea id="mailText" placeholder="写给玩家的消息…"></textarea></div><div class="section-head" style="margin-top:14px"><h2>附件</h2><button class="btn alt sm" onclick="addAttachment()">+ 添加附件</button></div><div id="attachments"></div><div class="actions"><button class="btn good" onclick="sendMail()">发送邮件</button><button class="btn alt" onclick="previewMail()">预览</button></div></div><div class="card"><div class="section-head"><h2>发送预览</h2></div><div id="mailPreview" class="empty">填写邮件后点击预览</div><div class="section-head" style="margin-top:20px"><h2>常用模板</h2></div><div class="actions"><button class="btn alt sm" onclick="mailTemplate('补偿')">补偿邮件</button><button class="btn alt sm" onclick="mailTemplate('活动奖励')">活动奖励</button><button class="btn alt sm" onclick="mailTemplate('测试')">测试邮件</button></div></div></div></section>
@@ -371,7 +470,7 @@ async function boot(){
     const initial=location.hash.slice(1);go(titles[initial]?initial:'dashboard',true);if(!REFRESH_TIMER)REFRESH_TIMER=setInterval(()=>{if(!TOKEN)return;if(VIEW==='dashboard')loadDashboard(false).catch(()=>{});else if(VIEW==='players')loadPlayers(true).catch(()=>{})},8000);
   }catch(e){logout()}
 }
-const titles={dashboard:['总览','服务器正常吗 · 谁在玩 · 最近改了什么'],players:['玩家管理','档案 · 资产 · 背包 · 护鱼网 · 技能'],stores:['商店与库存','覆盖货架价格与库存，即时生效'],fish:['钓场与鱼口','玩法开关 · 各水域出什么鱼 · 咬钩快慢'],hooks:['钩子手感','真实型号 · 入口容量 · 咬口概率'],bait:['鱼饵偏好','每种鱼爱吃的饵料：规则表 + 饵效实证（官服占比仅参考）'],mail:['邮件','给玩家发消息和物品附件'],params:['游戏参数','玩法手感与经验结算倍率，随时可调回默认'],audit:['审计日志','后台每次操作的留痕'],release:['发布说明','发布包内的版本更新 · 修复内容'],about:['关于','项目说明 · README.md']};
+const titles={dashboard:['总览','服务器正常吗 · 谁在玩 · 最近改了什么'],players:['玩家管理','档案 · 资产 · 背包 · 护鱼网 · 技能'],stores:['商店与库存','覆盖货架价格与库存，即时生效'],fish:['钓场与鱼口','玩法开关 · 各水域出什么鱼 · 咬钩快慢'],econ:['鱼种经济','按鱼种调经验与鱼价，即时生效'],ecology:['鱼种档案','按物种维护水温 · 季节 · 水层 · 活跃度等生态基线'],weather:['天气预览','每张图的温度区间与逐时天气，效果贴近游戏内天气预报'],hooks:['钩子手感','真实型号 · 入口容量 · 咬口概率'],bait:['鱼饵偏好','每种鱼爱吃的饵料：规则表 + 饵效实证（官服占比仅参考）'],mail:['邮件','给玩家发消息和物品附件'],params:['游戏参数','玩法手感与经验结算倍率，随时可调回默认'],audit:['审计日志','后台每次操作的留痕'],release:['发布说明','发布包内的版本更新 · 修复内容'],about:['关于','项目说明 · README.md']};
 function go(name,fromHash=false){
   if(!titles[name])name='dashboard';
   VIEW=name;document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===name));
@@ -382,8 +481,379 @@ function go(name,fromHash=false){
 }
 window.addEventListener('hashchange',()=>go(location.hash.slice(1),true));
 function refreshCurrent(){
-  const jobs={dashboard:loadDashboard,players:()=>loadPlayers(false),stores:loadStores,fish:loadFishAreas,hooks:loadHookProfiles,bait:loadBaitPrefs,mail:()=>{},params:loadTunables,audit:loadAudit,release:loadReleaseNotes,about:loadAbout};
+  const jobs={dashboard:loadDashboard,players:()=>loadPlayers(false),stores:loadStores,fish:loadFishAreas,econ:loadEcon,ecology:loadEcology,weather:loadWeather,hooks:loadHookProfiles,bait:loadBaitPrefs,mail:()=>{},params:loadTunables,audit:loadAudit,release:loadReleaseNotes,about:loadAbout};
   (jobs[VIEW]||(()=>{}))().catch(e=>toast(e.message,'bad'));
+}
+// ---- 鱼种经济：按鱼种覆盖 XP/克 与基准水域银/公斤 ----
+let ECON_ROWS=[],ECON_MAPS=[],ECON_EDIT=null,ECON_PREVIEW_TIMER=null;
+const ECON_GRADES=['未达标','达标','上星','蓝冠'];
+const econNum=v=>{if(v==null||v==='')return '—';const n=Number(v);if(!isFinite(n))return '—';return String(Math.round(n*10000)/10000)};
+const econCell=(ov,base)=>ov!=null?`<b style="color:#ffd479">${econNum(ov)}</b>`:(base>0?`<span class="muted">${econNum(base)}</span>`:'<span class="muted">—</span>');
+async function loadEcon(){
+  const q=($('#econSearch').value||'').trim();
+  $('#econTable').innerHTML='<div class="empty">读取中…</div>';
+  try{
+    const d=await api('/api/econ/species'+(q?'?q='+encodeURIComponent(q):''));
+    ECON_ROWS=d.items||[];ECON_MAPS=d.maps||[];
+    const ovr=ECON_ROWS.filter(r=>r.overridden).length;
+    $('#econStatus').textContent=`${ECON_ROWS.length} 个鱼种 · ${ovr} 个已覆盖`;
+    renderEconRows();
+  }catch(e){$('#econTable').innerHTML='<div class="empty">读取失败：'+esc(e.message)+'</div>'}
+}
+function renderEconRows(){
+  const only=$('#econFilter').value==='overridden';
+  const rows=ECON_ROWS.filter(r=>!only||r.overridden);
+  if(!rows.length){$('#econTable').innerHTML='<div class="empty">没有符合条件的鱼种</div>';return}
+  $('#econTable').innerHTML=`<table><thead><tr><th>鱼种</th><th>达标 / 上星 / 蓝冠 (g)</th><th>XP/g g1</th><th>XP/g g2</th><th>XP/g g3</th><th>XP/g g4</th><th>银/kg g1</th><th>银/kg g2</th><th>银/kg g3</th><th>银/kg g4</th><th>状态</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.name_zh)}</b><div class="muted mono">${esc(r.fish_key)}</div></td><td class="muted mono">${r.trophy_g||'—'} / ${r.trophy_line_g||'—'} / ${r.super_trophy_line_g||'—'}</td>${r.grades.map(g=>`<td>${econCell(g.xp_c,g.base_xp)}</td>`).join('')}${r.grades.map(g=>`<td>${econCell(g.price_per_kg,g.base_price)}</td>`).join('')}<td><span class="pill ${r.overridden?'ok':''}">${r.overridden?'已覆盖':'默认'}</span>${r.price_missing?' <span class="tag gold">价表缺失</span>':''}</td><td class="right"><button class="btn sm" onclick="openEconEditor('${esc(r.fish_key)}')">编辑</button></td></tr>`).join('')}</tbody></table>`;
+}
+function openEconEditor(key){
+  const r=ECON_ROWS.find(x=>x.fish_key===key);if(!r)return;
+  ECON_EDIT=r;
+  const gradeRows=r.grades.map(g=>`<tr><td><b>${g.grade}</b> ${ECON_GRADES[g.grade-1]}</td><td class="muted mono">${econNum(g.base_xp)}</td><td><input class="mini-input" id="eco_xp_${g.grade}" type="number" min="0" step="0.0001" placeholder="默认" value="${g.xp_c??''}" oninput="scheduleEconPreview()"></td><td class="muted mono">${econNum(g.base_price)}</td><td><input class="mini-input" id="eco_pr_${g.grade}" type="number" min="0" step="0.01" placeholder="默认" value="${g.price_per_kg??''}" oninput="scheduleEconPreview()"></td></tr>`).join('');
+  const body=`<p class="muted" style="margin:0 0 10px;white-space:normal">阈值：达标 ${r.trophy_g||'—'}g · 上星 ${r.trophy_line_g||'—'}g · 蓝冠 ${r.super_trophy_line_g||'—'}g。<b>留空＝跟随内置表</b>；只填一列也可以，另一列继续用默认。</p>
+  <div class="table-wrap"><table><thead><tr><th>档位</th><th>默认 XP/克</th><th>覆盖 XP/克</th><th>默认 银/公斤</th><th>覆盖 银/公斤</th></tr></thead><tbody>${gradeRows}</tbody></table></div>
+  <div class="toolbar" style="margin-top:12px">
+    <label class="muted">试算档位 <select id="ecoGrade" onchange="scheduleEconPreview()">${ECON_GRADES.map((n,i)=>`<option value="${i+1}" ${i===2?'selected':''}>${i+1} ${n}</option>`).join('')}</select></label>
+    <label class="muted">重量(g) <input id="ecoW" class="mini-input" type="number" min="1" value="1000" oninput="scheduleEconPreview()"></label>
+    <label class="muted">水域 <select id="ecoMap" onchange="scheduleEconPreview()">${ECON_MAPS.map(m=>`<option value="${esc(m.key)}">${esc(m.name)}（×${m.pct}）</option>`).join('')}</select></label>
+    <span id="ecoPreview" class="muted">试算中…</span>
+  </div>
+  <div class="actions"><button class="btn good" onclick="saveEcon()">保存</button><button class="btn alt" onclick="resetEcon()">全部恢复默认</button></div>`;
+  showModal(r.name_zh+' · '+r.fish_key,'按鱼种覆盖经验与鱼价（未填的档位继续用内置值）',body,'econ');
+  const savedGrade=r.grades.find(g=>g.xp_c!=null||g.price_per_kg!=null);
+  if(savedGrade){$('#ecoGrade').value=String(savedGrade.grade)}
+  runEconPreview();
+}
+function scheduleEconPreview(){clearTimeout(ECON_PREVIEW_TIMER);ECON_PREVIEW_TIMER=setTimeout(runEconPreview,220)}
+async function runEconPreview(){
+  const r=ECON_EDIT;if(!r||!$('#ecoPreview'))return;
+  const grade=$('#ecoGrade').value||'3';
+  const weight=$('#ecoW').value||'1000';
+  const xpEl=$('#eco_xp_'+grade),prEl=$('#eco_pr_'+grade);
+  const qs=new URLSearchParams({species:r.fish_key,grade,weight_g:weight,map:$('#ecoMap').value});
+  if(xpEl&&xpEl.value.trim()!=='')qs.set('xp_c',xpEl.value.trim());
+  if(prEl&&prEl.value.trim()!=='')qs.set('price_per_kg',prEl.value.trim());
+  try{
+    const d=await api('/api/econ/preview?'+qs.toString());
+    // 卖价 = 每公斤价 × 当日行情系数 × (克重/1000) × 水域倍率 × 新鲜度。
+    // 必须把行情系数与算式摊出来，否则「1kg 却不是每公斤价」在任何一天都会被当成 bug。
+    const mf=Number(d.market_factor)||1;
+    const basePerKg=Number(d.price_per_kg)>0?Number(d.price_per_kg):Number(d.base_price);
+    const kg=Number(d.weight_g)/1000;
+    const mp=ECON_MAPS.find(m=>m.key===d.map);
+    const mapName=mp?mp.name:d.map;
+    // 接口返回的 price_per_kg / base_price 是基准水域价，需再乘水域倍率才是本图每公斤价。
+    const pct=Number(d.map_pct)||1;
+    const mapPerKg=basePerKg*pct;
+    $('#ecoPreview').innerHTML=`经验 <b>${fmt(d.xp)}</b> · 卖价 <b>${Number(d.price_silver).toFixed(2)}</b> 银`
+      +`<div class="muted" style="margin-top:4px">${d.weight_g}g · ${d.grade} 档 · ${esc(mapName)} ×${d.map_pct} · 刚钓获（新鲜度 1.0）</div>`
+      +`<div class="muted">算式：基准价 ${basePerKg.toFixed(2)} × 水域倍率 ${pct} = 本图 ${mapPerKg.toFixed(2)} 银/kg，再 × 当日行情 <b>${mf.toFixed(4)}</b> × ${kg}kg → ${Number(d.price_silver).toFixed(2)} 银</div>`
+      +`<div class="muted">当日行情取 0.95–1.05，按「UTC 日期 + 鱼种」哈希，同一鱼种当天固定、跨天会变；因此 1kg 通常不正好等于每公斤基准价。</div>`;
+  }catch(e){$('#ecoPreview').textContent='试算失败：'+e.message}
+}
+async function saveEcon(){
+  const r=ECON_EDIT;if(!r)return;
+  const grades=r.grades.map(g=>{
+    const xp=$('#eco_xp_'+g.grade).value.trim(),pr=$('#eco_pr_'+g.grade).value.trim();
+    return {grade:g.grade,xp_c:xp===''?null:+xp,price_per_kg:pr===''?null:+pr};
+  });
+  const bad=grades.find(g=>(g.xp_c!=null&&!(g.xp_c>0))||(g.price_per_kg!=null&&!(g.price_per_kg>0)));
+  if(bad){toast(`${bad.grade} 档的覆盖值必须大于 0，或留空表示默认`,'bad');return}
+  try{
+    await api('/api/econ/species/save',{method:'POST',body:JSON.stringify({fish_key:r.fish_key,grades})});
+    toast('已保存：'+r.fish_key+'，主服刷新后生效');
+    closeModal(true);await loadEcon();
+  }catch(e){toast('保存失败：'+e.message,'bad')}
+}
+async function resetEcon(){
+  const r=ECON_EDIT;if(!r)return;
+  askConfirm('恢复默认',`「${r.name_zh}」四档的经验与鱼价覆盖将全部删除，回到内置表。`,async()=>{
+    await api('/api/econ/species/reset',{method:'POST',body:JSON.stringify({fish_key:r.fish_key})});
+    toast('已恢复默认：'+r.fish_key);closeModal(true);await loadEcon();
+  });
+}
+// ---- 鱼种档案（fish_ecology_species）：按物种维护全套生态基线 ----
+// 层级：资产基线 fish_ecology → 本页覆盖 → 水域覆盖（钓场页弹窗）。
+// 本页改的是「这个物种的习性」，对所有水域生效；钓场页改的是「这张图上的这种鱼」。
+let ECO_ROWS=[],ECO_EDIT=null;
+const ECO_SEASON_NAMES=['春','夏','秋','冬'];
+const ECO_DIEL_NAMES=['夜','晨','昼','昏'];
+const ECO_RARITY=['普通','稀有','超稀有'];
+// 位掩码 → 文字。m 为空返回空串（= 该字段未覆盖）。
+function ecoMaskText(m,names){
+  if(m===null||m===undefined)return'';
+  const on=names.filter((_,i)=>m&(1<<i));
+  return on.length?on.join('/'):'无';
+}
+// 掩码单元格：被覆盖标金色，否则灰。
+function ecoMaskCell(ov,base,names){
+  const v=ov!=null?ov:base;
+  const txt=ecoMaskText(v,names)||'—';
+  return ov!=null?`<b style="color:#ffd479">${esc(txt)}</b>`:`<span class="muted">${esc(txt)}</span>`;
+}
+const ecoF=(v,d=1)=>(v==null||v===''||!isFinite(Number(v)))?'—':Number(v).toFixed(d);
+// 数值单元格：override 里显式给了值就标金色，否则灰显基线值。
+function ecoCellOf(r,field,digits){
+  const ov=r.override?r.override[field]:null;
+  const base=r.base?r.base[field]:null;
+  const v=ov!=null?ov:base;
+  return ov!=null?`<b style="color:#ffd479">${ecoF(v,digits)}</b>`:`<span class="muted">${ecoF(v,digits)}</span>`;
+}
+// 生效值：基线叠覆盖（只取非 null 字段）。与 gameserver.fishEcologyFor 同口径，
+// 只是不含水域层——本页展示的就是「物种本身」这一层。
+function ecoEffective(r){
+  const out={...(r.base||{})};
+  const ov=r.override||{};
+  for(const k of Object.keys(ov)){
+    if(k==='fish_key'||k==='origin'||k==='updated_by'||k==='updated_ts')continue;
+    if(ov[k]!==null&&ov[k]!==undefined)out[k]=ov[k];
+  }
+  return out;
+}
+async function loadEcology(){
+  const q=($('#ecoSearch').value||'').trim();
+  $('#ecoTable').innerHTML='<div class="empty">读取中…</div>';
+  try{
+    const d=await api('/api/fish/ecology-species'+(q?'?q='+encodeURIComponent(q):''));
+    ECO_ROWS=d.items||[];
+    const ovr=ECO_ROWS.filter(r=>r.overlaid).length;
+    $('#ecoStatus').textContent=`${ECO_ROWS.length} / ${d.total||ECO_ROWS.length} 个鱼种 · ${ovr} 个已覆盖`;
+    renderEcologyRows();
+  }catch(e){$('#ecoTable').innerHTML='<div class="empty">读取失败：'+esc(e.message)+'</div>'}
+}
+// 偏好温度的分位数（0~1）。用于「只看到冷水鱼 / 暖水鱼」两档筛选：
+// 阈值必须跟着现有数据走，否则数据整体偏冷或偏暖时筛出 0 行或全量。
+function ecoTempQuartile(q){
+  const vals=ECO_ROWS.map(r=>ecoEffective(r).temp_pref_c).filter(v=>v!=null&&isFinite(Number(v))).map(Number).sort((a,b)=>a-b);
+  if(!vals.length)return q<0.5?0:Infinity;
+  const i=Math.min(vals.length-1,Math.max(0,Math.floor(vals.length*q)));
+  return vals[i];
+}
+function renderEcologyRows(){
+  const f=$('#ecoFilter').value;
+  let rows=ECO_ROWS;
+  if(f==='overlaid')rows=rows.filter(r=>r.overlaid);
+  // 冷暖分期用全量数据的四分位当阈值，不用硬编码温度：
+  // 当前 253 种偏好温度实际只落在 9.9~21.2℃，写死 22 会永远筛出 0 行。
+  else if(f==='cold'){const cut=ecoTempQuartile(0.25);rows=rows.filter(r=>{const e=ecoEffective(r);return e.temp_pref_c!=null&&Number(e.temp_pref_c)<=cut})}
+  else if(f==='warm'){const cut=ecoTempQuartile(0.75);rows=rows.filter(r=>{const e=ecoEffective(r);return e.temp_pref_c!=null&&Number(e.temp_pref_c)>=cut})}
+  if(!rows.length){$('#ecoTable').innerHTML='<div class="empty">没有符合条件的鱼种</div>';return}
+  $('#ecoTable').innerHTML=`<table><thead><tr><th>鱼种</th><th>稀有度</th><th>水温窗口 ℃</th><th>窗宽 ℃</th><th>季节</th><th>昼夜</th><th>水层偏好</th><th>活跃度</th><th>状态</th><th></th></tr></thead><tbody>${rows.map(r=>{
+    const e=ecoEffective(r);
+    const w=(e.temp_max_c!=null&&e.temp_min_c!=null)?(Number(e.temp_max_c)-Number(e.temp_min_c)):null;
+    // 窗宽是「温度能不能筛鱼」的关键：热响应容差 = max(2.2, 窗宽/2)，窗宽 20℃ 时曲线极平。
+    const wCell=w==null?'—':(w<=8?`<b style="color:#6ff0b7">${ecoF(w,1)}</b>`:w<=14?`<span style="color:#ffd479">${ecoF(w,1)}</span>`:`<span class="danger-text">${ecoF(w,1)}</span>`);
+    return `<tr><td><b>${esc(r.name_zh)}</b><div class="muted mono">${esc(r.fish_key)}</div></td>
+      <td><span class="tag ${r.rarity_tier>=2?'gold':(r.rarity_tier>=1?'blue':'')}">${ECO_RARITY[r.rarity_tier]||r.rarity_tier}</span></td>
+      <td class="mono">${ecoCellOf(r,'temp_min_c',1)} ~ ${ecoCellOf(r,'temp_max_c',1)}<span class="muted">（偏好 ${ecoCellOf(r,'temp_pref_c',1)}）</span></td>
+      <td class="mono">${wCell}</td>
+      <td>${ecoMaskCell(r.override?.season_mask,r.base?.season_mask,ECO_SEASON_NAMES)}</td>
+      <td>${ecoMaskCell(r.override?.diel_mask,r.base?.diel_mask,ECO_DIEL_NAMES)}</td>
+      <td class="mono">${ecoCellOf(r,'layer_pref',2)}</td>
+      <td class="mono">${ecoCellOf(r,'activity',2)}</td>
+      <td><span class="pill ${r.overlaid?'ok':''}">${r.overlaid?(r.origin==='curated'?'文献值':'已覆盖'):'基线'}</span></td>
+      <td class="right"><button class="btn sm" onclick="openEcologyEditor('${esc(r.fish_key)}')">编辑</button></td></tr>`;
+  }).join('')}</tbody></table>`;
+}
+// 掩码勾选组：4 个 checkbox，返回 {mode, mask}。继承时 mode=''，mask=null。
+// 注意别复用 .rules-strip —— 它只在 #fishRulesCard 里被定义成 flex，
+// 拿过来用会退化成块级，四个勾选框会各自占一行铺到底。
+function ecoMaskWidget(id,label,names,cur,base){
+  const curTxt=ecoMaskText(base,names)||'—';
+  const boxes=names.map((n,i)=>`<label style="display:inline-flex;align-items:center;gap:4px;margin-right:14px;white-space:nowrap;font-size:12px"><input type="checkbox" id="${id}_b${i}" ${cur!=null&&(cur&(1<<i))?'checked':''} onchange="ecoMaskSync('${id}')"><span>${n}</span></label>`).join('');
+  return `<div class="field"><label>${label}</label>
+    <select id="${id}_mode" onchange="ecoMaskMode('${id}')">
+      <option value="" ${cur==null?'selected':''}>继承基线（当前 ${esc(curTxt)}）</option>
+      <option value="1" ${cur!=null?'selected':''}>自定义</option>
+    </select>
+    <div id="${id}_box" style="margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#0b1a28" ${cur==null?'hidden':''}>${boxes}<span class="muted" id="${id}_txt" style="font-size:12px"></span></div>
+    <div class="tunable-hint">位掩码：${names.map((n,i)=>`${1<<i} ${n}`).join(' · ')}；全不勾＝0＝任何时段都不活跃</div></div>`;
+}
+function ecoMaskMode(id){
+  const mode=$('#'+id+'_mode').value;
+  $('#'+id+'_box').hidden=(mode==='');
+  ecoMaskSync(id);
+}
+// 实时显示「= 9（春/冬）」，只给数字管理员还得自己换算成哪些时段。
+const ECO_MASK_NAMES={eco_s_season:ECO_SEASON_NAMES,eco_s_diel:ECO_DIEL_NAMES};
+function ecoMaskSync(id){
+  const mode=$('#'+id+'_mode').value;
+  if(mode===''){$('#'+id+'_txt').textContent='';return}
+  let m=0;for(let i=0;i<4;i++)if($('#'+id+'_b'+i).checked)m|=(1<<i);
+  const names=ECO_MASK_NAMES[id]||ECO_SEASON_NAMES;
+  const on=names.filter((_,i)=>m&(1<<i));
+  $('#'+id+'_txt').textContent='= '+m+(on.length?'（'+on.join('/')+'）':'（全关）');
+}
+// 掩码读值：mode 为空返回 null（继承）。
+function ecoMaskRead(id){
+  if($('#'+id+'_mode').value==='')return null;
+  let m=0;for(let i=0;i<4;i++)if($('#'+id+'_b'+i).checked)m|=(1<<i);
+  return m;
+}
+function ecoText(id){
+  const el=$('#'+id);if(!el)return null;
+  const raw=el.value.trim();
+  return raw===''?null:raw;
+}
+function openEcologyEditor(key){
+  const r=ECO_ROWS.find(x=>x.fish_key===key);if(!r)return;
+  ECO_EDIT=r;
+  const ov=r.override||{},base=r.base||{};
+  const v=k=>(ov[k]===null||ov[k]===undefined)?'':ov[k];
+  // 继承提示：写清「继承 12.0」，否则只写「继承」看不出当前到底用多少。
+  // 继承提示：写清「继承 18.9」而不是「继承」，否则看不出当前到底用多少。
+  // 精度跟着字段走，不能直接 String(b) —— 基线值是合成小数（如 18.9184），原样显示太吵。
+  const inhDecimals={temp_min_c:1,temp_pref_c:1,temp_max_c:1,layer_min:2,layer_pref:2,layer_max:2,
+    activity:2,aggression:2,current_pref:2,light_pref:2,clarity_pref:2};
+  const inh=k=>{
+    const b=base[k];
+    if(b===null||b===undefined)return '继承';
+    const d=inhDecimals[k];
+    return '继承 '+(d===undefined?b:Number(b).toFixed(d));
+  };
+  const f=(id,label,val,step,hint,baseKey)=>`<div class="field"><label for="${id}">${label}</label>
+    <input id="${id}" type="number" step="${step}" value="${v(baseKey)}" placeholder="${esc(inh(baseKey))}">
+    <div class="tunable-hint">${hint}</div></div>`;
+  const ta=(id,label,baseKey,hint)=>{
+    const raw=ov[baseKey]??'';
+    let pretty=raw;
+    try{pretty=raw?JSON.stringify(JSON.parse(raw)):''}catch(e){pretty=raw}
+    return `<div class="field span2"><label for="${id}">${label}</label>
+      <textarea id="${id}" rows="2" placeholder="${esc('继承 '+JSON.stringify(base[baseKey]??{}))}">${esc(pretty)}</textarea>
+      <div class="tunable-hint">${hint}；留空＝继承基线</div></div>`;
+  };
+  const curveRaw=ov.diel_curve??'';
+  const curveVal=curveRaw?String(curveRaw).replace(/[[\]"\s]/g,'').split(',').map(s=>s.replace(/[^0-9.]/g,'')).join(','):'';
+  const body=`
+  <div class="eco-glob">基线档案：水温 <b>${ecoF(base.temp_min_c,1)}~${ecoF(base.temp_max_c,1)}℃</b>（偏好 ${ecoF(base.temp_pref_c,1)}）· 水层 ${ecoF(base.layer_min,2)}~${ecoF(base.layer_max,2)}（偏好 ${ecoF(base.layer_pref,2)}）· 活跃 ${ecoF(base.activity,2)} · 昼夜 ${esc(ecoMaskText(base.diel_mask,ECO_DIEL_NAMES)||'—')} · 季节 ${esc(ecoMaskText(base.season_mask,ECO_SEASON_NAMES)||'—')} · 攻击性 ${ecoF(base.aggression,2)}<br><span class="muted">留空的字段＝继承这份基线；覆盖只作用于本物种，对全部水域生效。</span></div>
+
+  <h3 style="font-size:13px;margin:14px 0 8px">水温（判鱼热响应的自变量）</h3>
+  <div class="form-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    ${f('eco_s_tmin','水温下限 ℃',ov.temp_min_c,'0.5','低于此温度几乎不开口','temp_min_c')}
+    ${f('eco_s_tpref','水温偏好 ℃',ov.temp_pref_c,'0.5','最活跃的温度（热响应峰值）','temp_pref_c')}
+    ${f('eco_s_tmax','水温上限 ℃',ov.temp_max_c,'0.5','高于此温度几乎不开口','temp_max_c')}
+  </div>
+  <div class="tunable-hint" id="ecoTempHint" style="margin-top:2px">—</div>
+
+  <h3 style="font-size:13px;margin:16px 0 8px">栖息水层（0=水面 1=水底）</h3>
+  <div class="form-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    ${f('eco_s_lmin','水层下限',ov.layer_min,'0.01','','layer_min')}
+    ${f('eco_s_lpref','水层偏好',ov.layer_pref,'0.01','权重峰值所在深度','layer_pref')}
+    ${f('eco_s_lmax','水层上限',ov.layer_max,'0.01','','layer_max')}
+  </div>
+
+  <h3 style="font-size:13px;margin:16px 0 8px">活跃时段</h3>
+  <div class="form-grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    ${ecoMaskWidget('eco_s_season','季节掩码',ECO_SEASON_NAMES,ov.season_mask,base.season_mask)}
+    ${ecoMaskWidget('eco_s_diel','昼夜掩码',ECO_DIEL_NAMES,ov.diel_mask,base.diel_mask)}
+  </div>
+  <div class="field" style="margin-top:10px"><label for="eco_s_curve">昼夜曲线 夜/晨/昼/昏</label>
+    <input id="eco_s_curve" type="text" value="${esc(curveVal)}" placeholder="${esc('继承 '+(base.diel_curve||'—'))}">
+    <div class="tunable-hint">四个 0~1 的数，如 <b>1,0.3,0.2,0.5</b>；峰值固定 1、最低 0.08，只压不抬。填了曲线就以曲线为准，掩码只在没有曲线时生效。</div>
+  </div>
+
+  <h3 style="font-size:13px;margin:16px 0 8px">行为系数</h3>
+  <div class="form-grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+    ${f('eco_s_activity','活跃度',ov.activity,'0.05','1=常规，>1 更活跃','activity')}
+    ${f('eco_s_aggr','攻击性',ov.aggression,'0.05','1=常规，影响咬口积极性','aggression')}
+    ${f('eco_s_current','水流偏好',ov.current_pref,'0.01','0~1，越大越爱流水','current_pref')}
+    ${f('eco_s_light','光照偏好',ov.light_pref,'0.01','0~1，越大越爱强光','light_pref')}
+    ${f('eco_s_clarity','清澈度偏好',ov.clarity_pref,'0.01','0~1，越大越爱清水','clarity_pref')}
+  </div>
+
+  <h3 style="font-size:13px;margin:16px 0 8px">矩阵（JSON 对象，一般不用手改）</h3>
+  <div class="form-grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    ${ta('eco_s_diet','食性矩阵','diet_json','键为饵料类目，值为偏好权重')}
+    ${ta('eco_s_weather','天气矩阵','weather_json','键为天气类型，值为偏好权重')}
+    ${ta('eco_s_action','拟饵动作矩阵','action_json','键为拟饵动作，值为偏好权重')}
+    ${ta('eco_s_substrate','底质矩阵','substrate_json','键为底质类型，值为偏好权重')}
+    ${ta('eco_s_color','水色矩阵','color_json','键为水色，值为偏好权重')}
+  </div>
+
+  <div class="field" style="margin-top:10px"><label for="eco_s_enabled">本物种是否参与判鱼</label>
+    <select id="eco_s_enabled">
+      <option value="" ${ov.enabled==null?'selected':''}>继承基线（${base.enabled===0?'不出鱼':'出鱼'}）</option>
+      <option value="1" ${ov.enabled===1?'selected':''}>出鱼</option>
+      <option value="0" ${ov.enabled===0?'selected':''}>不出鱼</option>
+    </select>
+    <div class="tunable-hint">选「不出鱼」= 全服所有水域都不再判到这种鱼</div>
+  </div>
+  <div class="actions">
+    <button class="btn good" onclick="saveEcologySpecies()">保存</button>
+    ${r.overlaid?'<button class="btn bad" onclick="resetEcologySpecies()">恢复基线</button>':''}
+    <button class="btn alt" onclick="closeModal()">取消</button>
+  </div>`;
+  showModal(r.name_zh+' · '+r.fish_key,'留空＝继承基线；这里改的是物种本身，对全服所有水域生效',body,'ecology');
+  ['eco_s_tmin','eco_s_tpref','eco_s_tmax'].forEach(id=>$('#'+id).addEventListener('input',updateEcoTempHint));
+  updateEcoTempHint();
+  // 已覆盖过的掩码要立刻显示出「= 9（春/冬）」，不能等用户再点一下勾选框。
+  ecoMaskSync('eco_s_season');
+  ecoMaskSync('eco_s_diel');
+}
+// 实时算窗宽与热响应容差，直接对应判鱼侧
+// tolerance := max(2.2, (temp_max - temp_min) / 2)。
+function updateEcoTempHint(){
+  const el=$('#ecoTempHint');if(!el)return;
+  const g=id=>{const raw=($('#'+id)?.value||'').trim();return raw===''?null:Number(raw)};
+  const base=ECO_EDIT?.base||{};
+  const pick=(cur,k)=>cur==null?(base[k]==null?null:Number(base[k])):cur;
+  const tmin=pick(g('eco_s_tmin'),'temp_min_c');
+  const tmax=pick(g('eco_s_tmax'),'temp_max_c');
+  const tpref=pick(g('eco_s_tpref'),'temp_pref_c');
+  if(tmin==null||tmax==null||tpref==null||!(tmax>tmin)){el.textContent='—';return}
+  const width=tmax-tmin;
+  const tol=Math.max(2.2,width/2);
+  const verdict=width<=8?'窄窗口：温度能有效筛鱼':width<=14?'中等：温度有一定区分力':'宽窗口：温度几乎不参与筛选（热响应曲线极平）';
+  el.innerHTML=`窗口宽 <b>${width.toFixed(1)}℃</b> · 热响应容差 <b>${tol.toFixed(1)}℃</b> · 偏好距两端 ${(tpref-tmin).toFixed(1)} / ${(tmax-tpref).toFixed(1)}℃ → <span class="${width<=14?'':'danger-text'}">${verdict}</span>`;
+}
+async function saveEcologySpecies(){
+  const r=ECO_EDIT;if(!r)return;
+  const curveRaw=($('#eco_s_curve')?.value||'').trim();
+  let diel_curve=null;
+  if(curveRaw!==''){
+    const parts=curveRaw.replace(/[[\]]/g,'').split(/[,\s]+/).filter(Boolean).map(Number);
+    if(parts.length!==4||parts.some(v=>!Number.isFinite(v)||v<0||v>1)){
+      return toast('昼夜曲线要四个 0~1 的数，顺序 夜,晨,昼,昏','bad');
+    }
+    diel_curve=JSON.stringify(parts);
+  }
+  const body={fish_key:r.fish_key,
+    layer_min:ecoNum('eco_s_lmin'),layer_pref:ecoNum('eco_s_lpref'),layer_max:ecoNum('eco_s_lmax'),
+    temp_min_c:ecoNum('eco_s_tmin'),temp_pref_c:ecoNum('eco_s_tpref'),temp_max_c:ecoNum('eco_s_tmax'),
+    diel_mask:ecoMaskRead('eco_s_diel'),
+    diel_curve,season_mask:ecoMaskRead('eco_s_season'),
+    diet_json:ecoText('eco_s_diet'),weather_json:ecoText('eco_s_weather'),action_json:ecoText('eco_s_action'),
+    substrate_json:ecoText('eco_s_substrate'),color_json:ecoText('eco_s_color'),
+    current_pref:ecoNum('eco_s_current'),activity:ecoNum('eco_s_activity'),
+    light_pref:ecoNum('eco_s_light'),clarity_pref:ecoNum('eco_s_clarity'),aggression:ecoNum('eco_s_aggr')};
+  const en=($('#eco_s_enabled')?.value||'').trim();
+  body.enabled=en===''?null:Number(en);
+  const labels={layer_min:'水层下限',layer_pref:'水层偏好',layer_max:'水层上限',
+    temp_min_c:'水温下限',temp_pref_c:'水温偏好',temp_max_c:'水温上限',
+    current_pref:'水流偏好',activity:'活跃度',light_pref:'光照偏好',
+    clarity_pref:'清澈度偏好',aggression:'攻击性'};
+  for(const [k,val] of Object.entries(body)){
+    if(typeof val==='number'&&Number.isNaN(val))return toast((labels[k]||k)+' 不是有效数字','bad');
+  }
+  for(const [k,val] of Object.entries({diet_json:'食性',weather_json:'天气',action_json:'拟饵动作',substrate_json:'底质',color_json:'水色'})){
+    const raw=body[k];if(raw==null)continue;
+    try{const p=JSON.parse(raw);if(!p||typeof p!=='object'||Array.isArray(p))throw 0}
+    catch(e){return toast(val+' 必须是 JSON 对象，如 {"worm":1.2}','bad')}
+  }
+  try{
+    await api('/api/fish/ecology-species',{method:'POST',body:JSON.stringify(body)});
+    toast('已保存：'+r.fish_key+'，最迟 30 秒生效');
+    closeModal(true);await loadEcology();
+  }catch(e){toast('保存失败：'+e.message,'bad')}
+}
+async function resetEcologySpecies(){
+  const r=ECO_EDIT;if(!r)return;
+  askConfirm('恢复基线',`「${r.name_zh}」的鱼种档案覆盖将全部删除，回到资产基线（其他水域不受影响）。`,async()=>{
+    try{
+      await api('/api/fish/ecology-species/reset',{method:'POST',body:JSON.stringify({fish_key:r.fish_key})});
+      toast('已恢复基线：'+r.fish_key);closeModal(true);await loadEcology();
+    }catch(e){toast(e.message,'bad')}
+  });
 }
 // 发放物品会偶发造成玩家坏档，暂时关闭前端入口；后端接口保留。
 // 修复坏档问题后把此开关改回 true 即可恢复。
@@ -1265,6 +1735,305 @@ async function resetGradeRatio(){
  gradeRatioPreview();
  await saveGradeRatio();
 }
+// ---- 天气预览：每张图的温度区间与逐时天气 ----
+// 数据来源单一：全部走 /api/weather/preview，后端直接调 gameserver 的天气排程，
+// 与客户端下发的预报、判鱼用的天气是同一份，不存在「后台看到的和游戏里不一样」。
+let WX_MAPS=[],WX_CUR=null,WX_PICK_DAY=null,WX_CMP=null;
+const WX_KIND_COLOR={'晴':'#ffd479','少云':'#ffd479','多云':'#9fb4c8','小雨':'#8fc6ff','大雨':'#6aa9ff','雷雨':'#b48bff'};
+const WX_KIND_EMOJI={'晴':'☀','少云':'🌤','多云':'☁','小雨':'🌦','大雨':'🌧','雷雨':'⛈'};
+const wxF=(v,d=1)=>(v==null||!isFinite(Number(v)))?'—':Number(v).toFixed(d);
+
+// 天气图标：手写 SVG，不引外部字体/图片，跟着前景色走。
+function wxIcon(kind,size=40){
+  const c=WX_KIND_COLOR[kind]||'#9fb4c8';
+  const sun=`<circle cx="16" cy="15" r="6.5" fill="${c}"/>`;
+  const rays=`<g stroke="${c}" stroke-width="1.8" stroke-linecap="round"><path d="M16 3.5v3M16 23.5v3M4.5 15h3M24.5 15h3M8 7l2.1 2.1M21.9 20.9 24 23M8 23l2.1-2.1M21.9 9.1 24 7"/></g>`;
+  const cloud=`<path d="M11 27.5a5.2 5.2 0 0 1 .9-10.3 6.6 6.6 0 0 1 12.5 1.7A4.4 4.4 0 0 1 23.5 27.5z" fill="${c}"/>`;
+  const drop=`<g stroke="#6aa9ff" stroke-width="2" stroke-linecap="round"><path d="M14 30v3M20 30v3M17 33v3"/></g>`;
+  const heavy=`<g stroke="#6aa9ff" stroke-width="2.4" stroke-linecap="round"><path d="M12 29v5M18 29v5M24 29v5"/></g>`;
+  const bolt=`<path d="M17 26l-4.5 6.5h3L14 39l7-8.5h-3.2L19 26z" fill="#ffe066"/>`;
+  let body='';
+  if(kind==='晴')body=sun+rays;
+  else if(kind==='少云')body=`<g transform="translate(-2,-2) scale(.75)">${sun}${rays}</g>`+`<path d="M13 28a4.6 4.6 0 0 1 .8-9.1 5.9 5.9 0 0 1 11.1 1.5A3.9 3.9 0 0 1 24 28z" fill="${c}"/>`;
+  else if(kind==='多云')body=cloud;
+  else if(kind==='小雨')body=cloud.replace(/27.5/g,'25')+drop;
+  else if(kind==='大雨')body=cloud.replace(/27.5/g,'24')+heavy;
+  else if(kind==='雷雨')body=cloud.replace(/27.5/g,'23')+bolt;
+  else body=cloud;
+  return `<svg viewBox="0 0 32 40" width="${size}" height="${size}" aria-hidden="true">${body}</svg>`;
+}
+
+// 城市级「日号 → 日期感」：游戏日号没有公历意义，但换算成「第 N 天」+ 距今天数更好读。
+//
+// day 现在是世界时钟日号（= 自 2015-08-01 起的游戏小时数，与客户端「游戏中 N 天」
+// 同一个数），所以 day%365 与后端 worldclock.SeasonDay 完全等价 —— 这里算出的
+// 「M月D日」与页面上的季节标签是同一套历法，不会出现「1月5日 · 秋」这种矛盾。
+// 2026-11-23 日号曾被重置成「开服第 4 天」，那时 day%365=4 → 显示 1 月 5 日（冬），
+// 而季节标签是秋，两者打架；回退到世界时钟轴后这个偏差自动消失了。
+function wxDayLabel(day,nowDay){
+  const diff=day-nowDay;
+  if(diff===0)return['今天',''];
+  if(diff===1)return['明天',''];
+  if(diff===-1)return['昨天',''];
+  const idx=((day%365)+365)%365;
+  const months=[31,28,31,30,31,30,31,31,30,31,30,31];
+  let m=0,d=idx;
+  while(m<months.length&&d>=months[m]){d-=months[m];m++}
+  return[(m+1)+'月'+(d+1)+'日','第'+day+'天'];
+}
+
+async function loadWeather(){
+  $('#wxStatus').textContent='读取中…';
+  try{
+    if(!WX_MAPS.length){
+      const d=await api('/api/weather/maps');
+      WX_MAPS=d.maps||[];
+      const sel=$('#wxMap');
+      // 后端字段是 map_name（见 admin/weather_preview.go 的 weatherPreviewMap）。
+      // 读 m.name 会得到 undefined，option 文本全空 → 下拉看着像「没有选项」。
+      sel.innerHTML=WX_MAPS.map(m=>`<option value="${esc(m.key)}">${esc(m.map_name||m.key)}</option>`).join('');
+      // 默认选阿赫图巴河（温差最大、最能看效果），没有就第一张。
+      const ahtuba=WX_MAPS.find(m=>m.key==='level_009_ahtuba');
+      if(ahtuba)sel.value=ahtuba.key;
+    }
+    const mapKey=$('#wxMap').value||(WX_MAPS[0]&&WX_MAPS[0].key);
+    if(!mapKey){$('#wxStatus').textContent='没有可用的水域';return}
+    const days=$('#wxDays').value||'7';
+    const d=await api('/api/weather/preview?map='+encodeURIComponent(mapKey)+'&days='+days);
+    WX_CUR=d.preview;
+    // 默认看「今天」；若今天不在窗口内（用户指定了 from）就取窗口首日。
+    const hasNow=WX_CUR.days.some(x=>x.day===d.now_day);
+    WX_PICK_DAY=hasNow?d.now_day:WX_CUR.days[0].day;
+    $('#wxStatus').textContent=`${WX_CUR.map_name} · ${WX_CUR.days.length} 天 · ${WX_CUR.season_name}季`;
+    renderWeatherSummary();
+    renderWeatherDays();
+    renderWeatherChart();
+    renderWeatherBands();
+    renderWeatherSeasons();
+    // 对比表首次进页就拉一次，省得非要先点按钮；之后切图只重画高亮行，不重发请求。
+    if(!WX_CMP)loadWeatherOverview().catch(()=>{});
+    else markWeatherCompare();
+  }catch(e){
+    $('#wxStatus').textContent='读取失败：'+e.message;
+    $('#wxDayCards').innerHTML='';
+    $('#wxChart').innerHTML='<div class="empty">读取失败：'+esc(e.message)+'</div>';
+  }
+}
+
+function renderWeatherSummary(){
+  const p=WX_CUR;if(!p)return;
+  const nowH=p.hours.find(h=>h.is_now);
+  // 时钟只在最右侧出现一次：「游戏时钟」chip 与右侧大时钟重复，去掉左边那个。
+  const chips=[
+    ['当前天气',`<b>${esc(nowH?nowH.kind_name:'—')}</b>`,`${esc(nowH?nowH.segment_name:'')} · 气温 ${wxF(nowH?nowH.air_temp_c:null)}℃ · 水温 ${wxF(nowH?nowH.water_c:null)}℃`],
+    ['气温区间',`<b>${wxF(p.air_min_c)} ~ ${wxF(p.air_max_c)}℃</b>`,`近 ${p.days.length} 天`],
+    ['水温区间',`<b>${wxF(p.water_min_c)} ~ ${wxF(p.water_max_c)}℃</b>`,'全水层覆盖'],
+    ['季节',`<b>${esc(p.season_name)}</b>`,`风 ${wxF(nowH?nowH.wind_kmh:null)} km/h · 雾 ${wxF(nowH?nowH.fog:null,2)}`],
+  ];
+  $('#wxSum').innerHTML=chips.map(([k,v,s])=>`<span class="wx-chip"><span class="k">${esc(k)}</span>${v}<span class="k">${esc(s)}</span></span>`).join('')
+    // 这里的日号已与客户端「游戏中 N 天」完全同源（世界时钟轴），玩家报天数时可以
+    // 直接对数；2026-11-23 曾显示「第 4 天」而客户端是 99184，那次回退了。
+    +`<span class="wx-clock"><span class="k" style="color:#7fb9d4">游戏内第 ${p.now_day} 天</span><b>${esc(p.game_clock||'--:--')}</b></span>`;
+}
+
+function renderWeatherDays(){
+  const p=WX_CUR;if(!p)return;
+  $('#wxDayCards').innerHTML=p.days.map(d=>{
+    const [lab,sub]=wxDayLabel(d.day,p.now_day);
+    const isNow=d.day===p.now_day,on=d.day===WX_PICK_DAY;
+    return `<div class="wx-day${on?' on':''}${isNow?' now':''}" onclick="wxPickDay(${d.day})" title="${esc(sub||lab)}">
+      <div class="dl"><b>${esc(lab)}</b></div>
+      <div class="ic">${wxIcon(d.kind_name,40)}</div>
+      <div class="kn" style="color:${WX_KIND_COLOR[d.kind_name]||'#9fb4c8'}">${esc(d.kind_name)}</div>
+      <div class="tt"><span class="lo">${wxF(d.low_c,0)}°</span> / <span class="hi">${wxF(d.high_c,0)}°</span></div>
+      <div class="wt">水 ${wxF(d.water_low_c,0)}~${wxF(d.water_high_c,0)}℃</div>
+      <div class="rn">${d.rain_hours>0?'降雨 '+d.rain_hours+' 小时':'无降雨'}</div>
+    </div>`;
+  }).join('');
+  $('#wxDayLabel').textContent=(()=>{const d=p.days.find(x=>x.day===WX_PICK_DAY);return d?wxDayLabel(d.day,p.now_day)[0]:''})();
+}
+
+function wxPickDay(day){WX_PICK_DAY=day;renderWeatherDays();renderWeatherChart()}
+
+// 24 小时温度曲线：气温 / 表层 / 中层 / 底层 + 降水雷暴柱。
+// 用 SVG 手绘（无第三方图表库），宽高按 24 列等分，横轴每 3 小时一个刻度。
+function renderWeatherChart(){
+  const p=WX_CUR;if(!p){return}
+  const day=p.days.find(d=>d.day===WX_PICK_DAY)||p.days[0];
+  const hs=p.hours.filter(h=>h.day===day.day);
+  if(!hs.length){$('#wxChart').innerHTML='<div class="empty">该日无逐时数据</div>';return}
+  const W=1180,H=300,padL=44,padR=16,padT=18,padB=34;
+  const iw=W-padL-padR,ih=H-padT-padB;
+  // 纵轴范围：四条温度线一起取，上下各留 2℃。
+  let lo=Infinity,hi=-Infinity;
+  for(const h of hs)for(const v of [h.air_temp_c,h.surface_c,h.water_c,h.deep_c]){if(v<lo)lo=v;if(v>hi)hi=v}
+  lo=Math.floor(lo-2);hi=Math.ceil(hi+2);
+  if(hi-lo<6)hi=lo+6;
+  const x=i=>padL+iw*(i/(hs.length-1||1));
+  const y=v=>padT+ih-(ih*(v-lo)/(hi-lo||1));
+  // 横向网格 + 温度刻度
+  const grid=[];const step=(hi-lo)>40?10:((hi-lo)>18?5:2);
+  for(let t=Math.ceil(lo/step)*step;t<=hi;t+=step){
+    grid.push(`<line x1="${padL}" y1="${y(t).toFixed(1)}" x2="${W-padR}" y2="${y(t).toFixed(1)}" stroke="#1b2e42" stroke-width="1"/>`);
+    grid.push(`<text x="${padL-7}" y="${(y(t)+3.5).toFixed(1)}" fill="#6d8299" font-size="10" text-anchor="end">${t}</text>`);
+  }
+  // 降水/雷暴柱：占下方 22% 高度，避免压住温度线。
+  const bars=[];
+  const bw=Math.max(3,(iw/hs.length)*0.62);
+  for(let i=0;i<hs.length;i++){
+    const h=hs[i];
+    const bx=x(i)-bw/2;
+    const base=padT+ih;
+    if(h.rain>0.01){
+      const bh=ih*0.22*Math.min(1,h.rain);
+      bars.push(`<rect x="${bx.toFixed(1)}" y="${(base-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="#ffd479" opacity=".55" rx="1.5"/>`);
+    }
+    if(h.thunder>0.01){
+      const bh=ih*0.22*Math.min(1,h.thunder);
+      bars.push(`<rect x="${bx.toFixed(1)}" y="${(base-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="#ff8fa3" opacity=".8" rx="1.5"/>`);
+    }
+  }
+  const line=(key,color,dash)=>{
+    const pts=hs.map((h,i)=>`${x(i).toFixed(1)},${y(h[key]).toFixed(1)}`).join(' ');
+    return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"${dash?' stroke-dasharray="'+dash+'"':''}/>`;
+  };
+  // 横轴刻度：每 3 小时，并标注昼夜段背景带。
+  const ticks=[];const segs=[];
+  const segColor={夜:'#0b1a2a',晨:'#12303f',昼:'#173a44',昏:'#1a2c3c'};
+  for(let i=0;i<hs.length;i+=1){
+    if(hs[i].hour%3===0){
+      ticks.push(`<line x1="${x(i).toFixed(1)}" y1="${padT+ih}" x2="${x(i).toFixed(1)}" y2="${padT+ih+5}" stroke="#2a465f"/>`);
+      ticks.push(`<text x="${x(i).toFixed(1)}" y="${padT+ih+18}" fill="#6d8299" font-size="10" text-anchor="middle">${String(hs[i].hour).padStart(2,'0')}:00</text>`);
+    }
+  }
+  // 昼夜段背景（按小时连续性切段）
+  let start=0;
+  for(let i=1;i<=hs.length;i++){
+    if(i===hs.length||hs[i].segment!==hs[start].segment){
+      const x0=x(start)-(i>1?(x(1)-x(0))/2:0);
+      const x1=x(i-1)+((i<hs.length)?(x(1)-x(0))/2:0);
+      segs.push(`<rect x="${x0.toFixed(1)}" y="${padT}" width="${(x1-x0).toFixed(1)}" height="${ih}" fill="${segColor[hs[start].segment_name]||'#101d2b'}" opacity=".55"/>`);
+      if(x1-x0>28)segs.push(`<text x="${((x0+x1)/2).toFixed(1)}" y="${padT+11}" fill="#5b7690" font-size="10" text-anchor="middle">${esc(hs[start].segment_name)}</text>`);
+      start=i;
+    }
+  }
+  // 当前时刻竖线（该日在窗口内才画）
+  let nowLine='';
+  const nowIdx=hs.findIndex(h=>h.is_now);
+  if(nowIdx>=0){
+    nowLine=`<line x1="${x(nowIdx).toFixed(1)}" y1="${padT}" x2="${x(nowIdx).toFixed(1)}" y2="${padT+ih}" stroke="#42b8ff" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <circle cx="${x(nowIdx).toFixed(1)}" cy="${y(hs[nowIdx].water_c).toFixed(1)}" r="3.5" fill="#42b8ff"/>`;
+  }
+  $('#wxChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(day.kind_name)}日的温度曲线">
+    ${segs.join('')}${grid.join('')}${bars.join('')}
+    ${line('air_temp_c','#ffb27a')}${line('surface_c','#8fe6ff')}
+    ${line('water_c','#37e2b0')}${line('deep_c','#9d8bff')}
+    ${nowLine}${ticks.join('')}
+  </svg>`;
+}
+
+function renderWeatherBands(){
+  const p=WX_CUR;if(!p||!p.bands||!p.bands.length){$('#wxBandBox').innerHTML='<div class="empty">无分档数据</div>';return}
+  const bands=p.bands;
+  const maxCnt=Math.max(...bands.map(b=>b.count),1);
+  const total=bands.reduce((s,b)=>s+b.count,0)||1;
+  // 分档条：宽度按占比，颜色按温度从冷到暖（蓝→青→橙）。
+  const bar=bands.map(b=>{
+    const pct=(b.count/total*100);
+    if(pct<=0)return '';
+    const t=(b.from_c-p.water_min_c)/Math.max(1,(p.water_max_c-p.water_min_c));
+    const col=`hsl(${Math.round(205-165*t)},72%,${Math.round(52+8*t)}%)`;
+    return `<i style="width:${pct.toFixed(2)}%;background:${col}" title="${wxF(b.from_c,0)}~${wxF(b.to_c,0)}℃：${b.count} 小时（${(b.share*100).toFixed(1)}%）"></i>`;
+  }).join('');
+  const rows=bands.filter(b=>b.count>0).map(b=>`<div class="wx-band-row"><span>${wxF(b.from_c,0)} ~ ${wxF(b.to_c,0)}℃</span><span>${b.count} 小时 · ${(b.share*100).toFixed(1)}%</span></div>`).join('');
+  $('#wxBandBox').innerHTML=`
+    <div class="wx-band">${bar||'<i style="width:100%;background:#1b2e42"></i>'}</div>
+    <div class="wx-band-row"><span>冷 ${wxF(p.water_min_c)}℃</span><span>暖 ${wxF(p.water_max_c)}℃</span></div>
+    <div class="wx-band-list">${rows||'<div class="empty" style="padding:16px">窗口内无数据</div>'}</div>
+    <p class="muted" style="margin:10px 0 0;font-size:11.5px;line-height:1.6">
+      按<b>中层水温</b>每 2℃ 分档统计本窗口 ${p.days.length} 天 × 24 小时 = ${total} 个采样点。
+      区间（${wxF(p.water_min_c)}~${wxF(p.water_max_c)}℃）取<b>全水层</b>，所以比这里的分档更宽——
+      底钓看到的水温比中层低，表层比中层高。
+    </p>`;
+}
+
+function renderWeatherSeasons(){
+  const p=WX_CUR;if(!p||!p.seasons||!p.seasons.length){$('#wxSeasonBox').innerHTML='<div class="empty">无季节数据</div>';return}
+  // 四条共用一根轴：以全部季节的最低/最高水温为界，横向位置才有可比性。
+  const lo=Math.min(...p.seasons.map(s=>s.water_min_c));
+  const hi=Math.max(...p.seasons.map(s=>s.water_max_c));
+  const span=Math.max(1,hi-lo);
+  const pos=v=>((v-lo)/span*100).toFixed(1);
+  const nowS=p.seasons.find(s=>s.is_now);
+  // 当前季的提示单拎出来拼，避免在模板字符串里再嵌一层反引号。
+  const nowHint=nowS
+    ? '；当前<b style="color:#8fe6ff">'+esc(nowS.season_name)+'季</b> '+wxF(nowS.water_min_c)+'~'+wxF(nowS.water_max_c)+'℃'
+    : '';
+  $('#wxSeasonBox').innerHTML=`
+    <div class="wx-season">${p.seasons.map(s=>{
+      const l=pos(s.water_min_c), w=Math.max(1.5,(s.water_max_c-s.water_min_c)/span*100);
+      return `<div class="sr${s.is_now?' now':''}">
+        <span class="sn">${esc(s.season_name)}${s.is_now?' ●':''}</span>
+        <span class="sb"><i style="left:${l}%;width:${w.toFixed(1)}%"></i></span>
+        <span class="sv">${wxF(s.water_min_c)}~${wxF(s.water_max_c)}℃</span>
+      </div>`;
+    }).join('')}
+      <div class="wx-axis"><span></span><span><span>${wxF(lo,0)}℃</span><span>${wxF((lo+hi)/2,0)}℃</span><span>${wxF(hi,0)}℃</span></span><span></span></div>
+    </div>
+    <p class="muted" style="margin:14px 0 0;font-size:11.5px;line-height:1.6">
+      全年水温 ${wxF(lo)}~${wxF(hi)}℃，跨度 <b>${wxF(hi-lo)}℃</b>${nowHint}。
+      四季扫描用该图 8 天预报模板 × 24 小时 × 5 个水层（0 / .2 / .45 / .7 / .93），
+      与判鱼的水层口径一致。<b>水温的季节项是全局硬编码</b>，地图差异经热响应衰减后传导，
+      所以各图四季跨度相近、绝对温度不同。
+    </p>`;
+}
+
+async function loadWeatherOverview(){
+  $('#wxCmpBox').innerHTML='<div class="empty">读取中…</div>';
+  try{
+    const days=$('#wxDays').value||'7';
+    const d=await api('/api/weather/preview?days='+days);
+    WX_CMP=d.maps||[];
+    if(!WX_CMP.length){$('#wxCmpBox').innerHTML='<div class="empty">没有数据</div>';return}
+    const lo=Math.min(...WX_CMP.map(m=>m.water_min_c));
+    const hi=Math.max(...WX_CMP.map(m=>m.water_max_c));
+    const span=Math.max(1,hi-lo);
+    const cur=$('#wxMap').value;
+    $('#wxCmpBox').innerHTML=`<table class="wx-cmp"><thead><tr>
+      <th>水域</th><th>气温区间</th><th>水温区间</th><th style="width:34%">相对位置（全局 ${wxF(lo)}~${wxF(hi)}℃）</th><th>本季</th>
+    </tr></thead><tbody>${WX_CMP.map(m=>{
+      const l=(m.water_min_c-lo)/span*100, w=(m.water_max_c-m.water_min_c)/span*100;
+      return `<tr class="${m.map===cur?'on':''}" data-map="${esc(m.map)}" onclick="wxJumpTo('${esc(m.map)}')">
+        <td><b>${esc(m.map_name)}</b><div class="muted mono" style="font-size:10.5px">${esc(m.map)}</div></td>
+        <td class="mono">${wxF(m.air_min_c)}~${wxF(m.air_max_c)}℃</td>
+        <td class="mono"><b style="color:#37e2b0">${wxF(m.water_min_c)}~${wxF(m.water_max_c)}℃</b></td>
+        <td><span class="rng"><i style="left:${l.toFixed(1)}%;width:${Math.max(1.5,w).toFixed(1)}%"></i></span></td>
+        <td><span class="pill">${esc(m.season_name)}</span></td>
+      </tr>`;
+    }).join('')}</tbody></table>
+    <p class="muted" style="margin:12px 0 0;font-size:11.5px;line-height:1.6">
+      窗口 ${days} 天，区间取<b>全水层</b>。水温跨度最小的图（${esc(WX_CMP.reduce((a,b)=>(b.water_max_c-b.water_min_c)<(a.water_max_c-a.water_min_c)?b:a).map_name)}）
+      与最大的图（${esc(WX_CMP.reduce((a,b)=>(b.water_max_c-b.water_min_c)>(a.water_max_c-a.water_min_c)?b:a).map_name)}）
+      相差 ${wxF(Math.max(...WX_CMP.map(m=>m.water_max_c-m.water_min_c))-Math.min(...WX_CMP.map(m=>m.water_max_c-m.water_min_c)))}℃。
+    </p>`;
+  }catch(e){$('#wxCmpBox').innerHTML='<div class="empty">读取失败：'+esc(e.message)+'</div>'}
+}
+
+function wxJumpTo(mapKey){
+  const sel=$('#wxMap');if(!sel)return;
+  sel.value=mapKey;
+  loadWeather().catch(()=>{});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// 只切高亮行，不重发表格请求——切图时对比表数据本身没变。
+function markWeatherCompare(){
+  const cur=$('#wxMap').value;
+  document.querySelectorAll('#wxCmpBox tbody tr').forEach(tr=>{
+    tr.classList.toggle('on',tr.dataset.map===cur);
+  });
+}
+
 // ---- 发鱼模式三选一（档位比例 / 鱼猎四阶段 / 两档制）----
 const SPAWN_MODE_OPTIONS=[
  ['grade_ratio','档位比例','按下方四档滑杆出鱼，覆盖鱼猎阶段权重与钩型发鱼软匹配'],
@@ -1662,6 +2431,25 @@ async function loadPlayers(keep=false){
   playerCache=await api('/api/players?q='+encodeURIComponent(q));
   $('#playerList').innerHTML=playerCache.map(p=>`<div class="player-row ${PLAYER?.uid===p.uid?'on':''}" data-uid="${p.uid}" onclick="selectPlayer(${p.uid})"><div><div class="n">${esc(p.name)}</div><div class="id">UID ${p.uid} · Lv.${p.level}</div></div><div class="player-flags"><span class="online-dot ${p.online?'on':'off'}" title="${p.online?'在线':'不在线'}" aria-label="${p.online?'在线':'不在线'}"></span>${p.banned?'<span class="pill bad">封禁</span>':'<span class="pill ok">正常</span>'}</div></div>`).join('')||'<div class="empty">没有匹配玩家</div>';
   if(!keep && playerCache.length && !PLAYER)selectPlayer(playerCache[0].uid);
+}
+// 手工预建玩家档案：本服没有密码，客户端登录名就是账号，同名登录会绑定到这份档案；
+// 没建过的名字仍落到本机固定号。新手装备由主服首登时发放。
+function showCreatePlayer(){
+  showModal('新建玩家','没有密码：客户端用同名登录即进入这个档案，等于登记账号',`<div class="form-grid">
+    <div class="field span2"><label>UID</label><input id="np_uid" type="number" min="1" placeholder="留空 = 现有最大 UID + 1"></div>
+    <div class="field span2"><label>昵称</label><input id="np_name" maxlength="32" placeholder="player"></div>
+    <div class="field"><label>等级</label><input id="np_level" type="number" min="1" max="58" value="1"></div>
+    <div class="field"><label>银币（分）</label><input id="np_silver" type="number" min="0" value="5000"></div>
+    <div class="field"><label>金币（分）</label><input id="np_gold" type="number" min="0" value="0"></div>
+  </div><p class="muted">玩家用同名登录时会绑定到这份档案（大小写不敏感）；没建过的名字仍落到本机固定号，不会自动建档。新手装备由主服首登时按清单发放。UID 留空按现有档案最大号 +1 分配，昵称留空按 player 建档。</p><div class="actions"><button class="btn good" onclick="createPlayer()">创建玩家</button></div>`);
+}
+async function createPlayer(){
+  const body={uid:Math.max(0,Math.floor(+$('#np_uid').value||0)),name:$('#np_name').value.trim(),level:Math.max(1,Math.floor(+$('#np_level').value||1)),silver:Math.max(0,Math.floor(+$('#np_silver').value||0)),gold:Math.max(0,Math.floor(+$('#np_gold').value||0))};
+  try{
+    const r=await api('/api/players/create',{method:'POST',body:JSON.stringify(body)});
+    closeModal();toast(`已创建 ${r.name} #${r.uid}`);
+    $('#playerSearch').value=String(r.uid);await loadPlayers(true);await selectPlayer(r.uid);
+  }catch(e){toast(e.message,'bad')}
 }
 async function selectPlayer(uid){
   try{PLAYER=await api('/api/players/detail?uid='+uid);PLAYER_TAB='profile';ITEM_FILTER='';renderPlayerDetail();await loadPlayers(true)}catch(e){toast(e.message,'bad')}

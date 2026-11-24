@@ -31,7 +31,7 @@ func TestWeatherAndBaitAffectActualBitesWithIndependentSwitches(t *testing.T) {
 		hits := 0
 		for range 128 {
 			if s.rollFishForRig(context.Background(), 0, "", "level_900_rules", bait, neutralFishingSkillBonus(),
-				fishRollContext{now: weatherTimeAt(12), weather: w, cache: cache}) != nil {
+				fishRollContext{now: weatherSeasonTimeAt(12), weather: w, cache: cache}) != nil {
 				hits++
 			}
 		}

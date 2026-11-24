@@ -21,12 +21,16 @@ Status: in-progress
 - `fishXPRateC`：168 组官服实测 (种,档)→c，155 组有唯一精确解（Fraction 区间交集 + 6dp 网格量化）。
   13 组同组样本不自洽（疑官服活动/加成乘子，如 ruffe 同重 ×2、atl_herring ×3）→ **取低值方向**（去加成），注释标 `[加成嫌疑]`。
 - `fishXPGradeFactor = [4]float64`：档位乘子（相对 g2），多种成档实测比例取中位：
-  g1=0.3063（10 种观测）、g3=6.25（10 种观测）、g4 无观测沿用 g3（保守，spec 开放项）。
+  g1=0.3063（10 种观测）、g3=6.25（10 种观测）、g4 无观测（按 2×g3 取 12.5）。
+  **现状（2026-11-23 定稿）**：本表已升级为全表统一阶梯，四档 = 1 : 3.265 : 20.40 : 40.81，
+  `fishXPGroupC` 只存 g1 基数，详见 `specs/changes/unified-grade-ladder`。
 - `fishXPAnchor`：146 个实测种的锚档（样本最多的档）。缺档 = 本种锚 × 档乘/锚档乘。
-- `fishXPGroupC`：16 个亲缘组 × 4 档锚（组名复用拉力 K 表 `fishPullSpeciesGroup`），
-  值 = 组内实测成员按档中位，缺档外推。**仅兜零实测种**（94 种）。
-- `fishXPRateFor(species, grade)` 优先级：
-  **本种实测 → 本种锚×档乘 → 皮肤别名→宿主整链 → 亲缘组 → 旧 valueRates → 0.4 缺省**。
+- `fishXPGroupC`：16 个亲缘组，**每组的未达标（g1）基数**（组名复用拉力 K 表 `fishPullSpeciesGroup`），
+  值 = 组内实测成员的 g1 中位；四档由统一阶梯生成，不再按档存。**仅兜零实测种**（94 种）。
+  （本提案初版是「16 组 × 4 档锚」，已随统一阶梯收成单值。）
+- `fishXPRateFor(species, grade)`：本种未达标基数 × 统一阶梯；锚档直接回实测值。
+  基数的确定优先级：
+  **本种实测 → 本种锚÷档乘 → 皮肤别名→宿主整链 → 亲缘组 → 旧 valueRates → 0.4 缺省**。
 
 关键实测修正：皮肤变种（common_carp/l_carp 等）官服有**独立经济数值**
 （common_carp g3 = 6.24/g ≠ 宿主 carp g3 = 3.25/g），故本种实测/锚必须排在别名继承之前。
@@ -72,7 +76,9 @@ atl_cod 4200g 官服 XP=13229 会连升触发 6 级礼物 worm_01×30 并入饵�
 ## Risks
 
 - 单点组的 c 未被第二条鱼验证「恒定」（115 组）；官服加成事件可能污染个别锚（已在表中标注）。
-- g4 乘子沿用 g3（无观测）；后续拿到 g4 结算样本后更新 `fishXPGradeFactor` 并删此备注。
+- g4 乘子「2×g3」已随统一阶梯**定稿**（2026-11-23 用户确认不再补实测）：
+  四档形状固定为 1 : 3.265 : 20.40 : 40.81，见 `specs/changes/unified-grade-ladder`。
+  历史推导过程见 `specs/changes/xp-g4-above-g3`。
 - Round→Trunc 对所有鱼种生效，非实测路径（组/缺省）XP 尾数语义变化（与官服一致化）。
 
 ## Further Notes

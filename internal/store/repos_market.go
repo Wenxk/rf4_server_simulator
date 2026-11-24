@@ -258,29 +258,6 @@ func (d *DB) CompanionEvidence(ctx context.Context) map[string]int64 {
 
 // ---- 工坊 ----
 
-// ListWornItems 耐久低于 threshold 的物品（修理面板）。
-// 结果按 durability 升序排列。
-func (d *DB) ListWornItems(ctx context.Context, uid int64, threshold float64) ([]*Item, error) {
-	rows, err := d.SQL.QueryContext(ctx,
-		`SELECT `+itemCols+` FROM item WHERE uid=? AND durability<? ORDER BY durability`,
-		uid, threshold)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []*Item
-	for rows.Next() {
-		it := &Item{}
-		if err := rows.Scan(&it.GUID, &it.UID, &it.ItemID, &it.NumericID, &it.WireClass,
-			&it.TypeID, &it.Container, &it.Slot, &it.RigGUID, &it.Qty, &it.BuyPrice,
-			&it.FieldsJSON, &it.Durability, &it.Workmanship, &it.CreatedTS); err != nil {
-			return nil, err
-		}
-		out = append(out, it)
-	}
-	return out, rows.Err()
-}
-
 // ListRepairItems 返回修理面板所需的完整物品清单（全部随身物品，含满耐久）。
 //
 // 客户端修理页左侧展示的是“随身物品表”，点击任意一件都会在 21/1 的返回列表里

@@ -46,10 +46,17 @@ var RuntimeTables = []string{
 	// 生态档案的水域覆盖（后台可写）与判鱼决策追踪（诊断环切表）：
 	// 两者都是运营数据，既不随存档回滚，也不属于静态资料镜像。
 	"fish_ecology_loc", "fish_roll_trace", "fish_weight_preset",
+	// 生态档案的鱼种级覆盖（后台可写）：资产基线之上、水域覆盖之下的一层。
+	// 单独建表是因为 fish_ecology 由资产种子按 profile_version 重灌，
+	// 手工值放那张表会被版本升级覆盖（见 00082 迁移注释）。
+	"fish_ecology_species",
 	// 钓法倾向矩阵：钓法族 × 鱼种水层档的判鱼乘子（后台可改，20 行）。
 	// rf4records 官方周纪录捕获表：tools/fetch_rf4records.py（外部证据管道）写入，
 	// 运营数据，非静态资料也非玩家存档。
 	"rf4records_catch",
+	// 鱼种经济覆盖：后台按 (鱼种, 档位) 改经验与基准鱼价。
+	// 属于运营配置——不跟玩家存档回滚，也不随静态库发布覆盖。
+	"species_econ",
 }
 
 // TableOwnership 返回每张用户表的唯一归属。静态、玩家、运行时三组必须互不相交。

@@ -18,8 +18,8 @@ Status: ready
 
 ## Implementation Decisions
 
-- `internal/gameserver/assets/fish_market_prices.json`：只保留基准水域 `level_009_ahtuba`（`market_pct = 1.0`）的 251 个鱼种四档价格，`source` 保留 rf4db URL。
-- `internal/gameserver/assets/map_market_multipliers.json`：拉多加湖 `market_pct` 由 1.0 校正为 1.10，与鱼市倍率表一致。
+- `internal/gameserver/assets/fish_market_prices.json`：只保留基准水域 `level_009_ahtuba`（`market_pct = 1.0`）的鱼种**未达标单价**（键 `"1"`，2026-11-23 补齐后为 253 种）；达标/上星/蓝冠三档由代码按 `speciesPriceGradeFactor = {1, 1.5, 3, 6}` 生成，表里不再存，`source` 保留 rf4db URL。
+- `internal/gameserver/assets/map_market_multipliers.json`：各图 `market_pct` 直接存该图倍率；拉多加湖现为 1.0（早期「1.0 → 1.10」的校正方案已作废，不要再按 1.10 推算）。
 - `marketSilverPerKgOverlay`：新增 `normalizeMarketMapKey`，把 `<map>_fishmarket` 归一到真实地图键；命中其他水域表时按 `v / basePct × targetPct` 折算。
 - `dailyMarketFactor`：按 UTC 日期与鱼种做 FNV 哈希，取值 0.95–1.05；日期来源为包级变量，可用环境变量 `RF4_MARKET_DAY` 覆盖，计价路径不做文件 I/O。
 - 不改表结构、不改协议字段；20/1 与 20/2 共用 `marketPriceCentsForMap`。
@@ -35,4 +35,4 @@ Status: ready
 
 - 稀有 / 超稀有鱼的倍数与蓝冠价维持现有截图口径，不在本次调整范围。
 - 未按真实逐图成交价重建价格表，只保留基准价 + 倍率折算。
-- 小欧鳊没有价格数据，继续走基础速率兜底。
+- 小欧鳊当时没有价格数据走基础速率兜底；2026-11-23 已补齐（见 `species-econ-default-audit`）。

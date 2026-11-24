@@ -68,6 +68,9 @@ type Server struct {
 	// 生态档案的水域覆盖：stat_loc -> fish_key -> 覆盖（nil 字段继承全局）。
 	// 与 fishEcologyCache 共用同一把锁，后台保存后由管理队列 reload_fish_ecology 失效。
 	fishEcologyLocCache map[string]map[string]fishEcologyLocOverride
+	// 生态档案的鱼种级覆盖：fish_key -> 覆盖（nil 字段继承资产基线）。
+	// 合并顺序是 资产基线 → 本层 → 水域覆盖，与 store 侧 00082 迁移注释一致。
+	fishEcologySpeciesCache map[string]fishEcologySpeciesOverride
 
 	// 海图鱼种集合：唯一海图（loc_alias 把 level_012_north_sea 解析到
 	// 「挪威海」）在 loc_fish 里的全部鱼种。启动时一次加载、之后只读；
@@ -91,6 +94,15 @@ type Server struct {
 	tunCache map[string]float64
 	tunText  map[string]string
 	tunAt    time.Time
+
+	// 鱼种经济覆盖（后台「鱼种经济」页）：按 (鱼种, 档位) 覆盖经验速率与基准鱼价。
+	// TTL 30 秒对齐 tunables；后台保存会投递 reload_tunables 主动失效。
+	// 覆盖缺失时完全走内置表，读到空表也不影响结算。
+	econOvMu     sync.RWMutex
+	econOvXP     map[vgKey]float64
+	econOvPrice  map[vgKey]float64
+	econOvAt     time.Time
+	econOvLoaded bool
 
 	// 鱼饵规则覆盖缓存（后台可编辑，TTL 兜底 + 写操作主动失效）
 	baitOvMu    sync.RWMutex

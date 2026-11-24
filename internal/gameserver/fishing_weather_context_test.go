@@ -22,8 +22,22 @@ func weatherIRHour(day, hour uint64, temp, wind, fog float32) irNode {
 		uint64(math.Float32bits(wind)), 8, uint64(math.Float32bits(fog)), 2)
 }
 
+// weatherTimeAt 返回「协议锚点起第 hour 个游戏小时」的时刻。
+//
+// 这是**天气预报查表用的绝对坐标**：reanchorWeather 按 weatherPlanDay
+// （协议锚点起算）生成逐时计划的 day 字段，weatherAt 也按同一个锚点算 at，
+// 两边必须同一个起算点。
+// 想构造「某个季节的时刻」请用 weatherSeasonTimeAt。
 func weatherTimeAt(hour float64) time.Time {
-	return time.Unix(worldDayEpochUnix, 0).Add(time.Duration(hour * realSecPerGameHour * float64(time.Second)))
+	return time.Unix(worldProtocolEpochUnix, 0).Add(time.Duration(hour * realSecPerGameHour * float64(time.Second)))
+}
+
+// weatherSeasonTimeAt 返回「季节锚点起第 hour 个游戏小时」的时刻。
+//
+// 用在只关心「哪个季节、什么水位」的判鱼测试里：日号纪元会随开服重置，
+// 用它构造时间会让季节随重置漂移（2026-11-23 重置后冬→秋，吃口权重跟着变）。
+func weatherSeasonTimeAt(hour float64) time.Time {
+	return time.Unix(worldSeasonEpochUnix, 0).Add(time.Duration(hour * realSecPerGameHour * float64(time.Second)))
 }
 
 func TestFishingWeatherReadsActualRainInsteadOfForecastOrWindDirection(t *testing.T) {
