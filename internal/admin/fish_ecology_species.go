@@ -33,6 +33,11 @@ type ecologySpeciesRow struct {
 	Origin   string `json:"origin"`
 	Overlaid bool   `json:"overlaid"`
 
+	// Locs 是该鱼出现过的水域（loc_wiki_fish.loc，截断 6 个）。
+	// 2026-11-25 从「饵料规则」表搬来：水域归属是鱼种属性，不是饵料属性，
+	// 放在这里才能和稀有度、水温、水层一起看。
+	Locs []string `json:"locs"`
+
 	// Base 是资产基线，全部字段都有值（fish_ecology 的列都是 NOT NULL）。
 	Base store.FishEcologySpecies `json:"base"`
 	// Override 是覆盖行原文，nil 字段表示继承基线；整条 nil = 从未覆盖过。
@@ -138,9 +143,28 @@ func (s *Server) handleFishEcologySpecies(w http.ResponseWriter, r *http.Request
 		ovMap[overrides[i].FishKey] = &overrides[i]
 	}
 
+	// 水域归属：loc_wiki_fish 的 loc 列。水层在 base 里已经有了，
+	// 这里只补「这张图上有哪些鱼」这一维——两列原本都在「饵料规则」页，
+	// 但都不是饵料属性，搬回鱼种档案才归位。
+	// 游标必须读完就关：SQLite 单写连接下留着游标会把后续查询卡死。
+	locsByFish := map[string][]string{}
+	if locRows, lerr := s.db.SQL.QueryContext(ctx,
+		`SELECT fish_key, loc FROM loc_wiki_fish WHERE loc <> '' ORDER BY loc`); lerr == nil {
+		for locRows.Next() {
+			var fk, l string
+			if locRows.Scan(&fk, &l) == nil {
+				if len(locsByFish[fk]) < 6 {
+					locsByFish[fk] = append(locsByFish[fk], l)
+				}
+			}
+		}
+		locRows.Close()
+	}
+
 	out := make([]ecologySpeciesRow, 0, len(basics))
 	for _, b := range basics {
 		item := b.row
+		item.Locs = locsByFish[item.FishKey]
 		if ov := ovMap[b.row.FishKey]; ov != nil {
 			item.Overlaid = true
 			item.Origin = ov.Origin

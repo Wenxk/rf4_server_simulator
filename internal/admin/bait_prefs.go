@@ -29,12 +29,13 @@ type baitPrefRow struct {
 	BottomOh []string        `json:"bottom_only"` // 底钓只吃
 	Cond     string          `json:"condition"`
 	Official []baitPrefShare `json:"official"`  // 官方纪录里的饵料占比（rf4records_catch），仅参考
-	Locs     []string        `json:"locs"`      // 出现水域（截断）
 	InStrict bool            `json:"in_strict"` // 严格模式下是否还能咬（只看 allow）
 
-	// 鱼口画像（fish_ecology，与判鱼 G 层同表同源）：只留水层，
-	// 偏好口那一组 diet 权重已从界面移除。
-	Layer  [3]float64 `json:"layer"`  // min/pref/max（0水面~1水底）
+	// 鱼口画像（fish_ecology，与判鱼 G 层同表同源）。
+	// 2026-11-25：水层（Layer）连「水域」（Locs）一起搬到「生态基线」页签，
+	// 两者都不是饵料属性。这里保留字段但不再输出 Locs——需要时从
+	// /api/fish/ecology-species 取，那里是按鱼种维度展示的正主。
+	Layer  [3]float64 `json:"layer"`  // min/pref/max（0水面~1水底），仅编辑器对照用
 	QualG  int64      `json:"qual_g"` // 合格档体重（钩容量适配计算用）
 	TrophG int64      `json:"trophy_g"`
 
@@ -135,20 +136,8 @@ func (s *Server) handleBaitPrefs(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 3) 水域归属（可选，用于筛选后的展示）
-	locsByFish := map[string][]string{}
-	if locRows, err := s.db.SQL.QueryContext(r.Context(),
-		`SELECT fish_key, loc FROM loc_wiki_fish WHERE loc <> '' ORDER BY loc`); err == nil {
-		for locRows.Next() {
-			var fk, l string
-			if locRows.Scan(&fk, &l) == nil {
-				if len(locsByFish[fk]) < 6 {
-					locsByFish[fk] = append(locsByFish[fk], l)
-				}
-			}
-		}
-		locRows.Close()
-	}
+	// 3) 水域归属已移到「生态基线」页签（fish_ecology_species.go 查同一张表），
+	//    这里不再重复查——同一份 loc_wiki_fish 扫两遍，2000 行时是白花的时间。
 
 	// 4) 后台覆盖：有覆盖时以覆盖为准，并把轮换状态一起带出去。
 	// 覆盖表主键是 fish_key（00083），按 key 索引，不再按中文名。
@@ -208,7 +197,7 @@ func (s *Server) handleBaitPrefs(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	out := make([]baitPrefRow, 0, len(fish))
 	for _, f := range fish {
-		row := baitPrefRow{FishKey: f.key, NameZh: f.name, Locs: locsByFish[f.key], Source: "default"}
+		row := baitPrefRow{FishKey: f.key, NameZh: f.name, Source: "default"}
 		if l, ok := layerByFish[f.key]; ok {
 			row.Layer = l
 		}

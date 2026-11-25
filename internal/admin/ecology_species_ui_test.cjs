@@ -34,8 +34,10 @@ test('ecology species page edits full ecology profile',async()=>{
   if(key==='/api/me')return json({username:'admin',item_categories:{}});
   if(key==='/api/fish/ecology-species'&&req.method==='GET')return json({
    items:[
-    {fish_key:'burbot',name_zh:'江鳕',rarity_tier:1,origin:'',overlaid:false,base,override:null},
-    {fish_key:'pike',name_zh:'狗鱼',rarity_tier:0,origin:'manual',overlaid:true,base,override:overridden},
+    {fish_key:'burbot',name_zh:'江鳕',rarity_tier:1,origin:'',overlaid:false,base,override:null,
+     locs:['旧奥斯特罗格湖','琥珀湖']},
+    {fish_key:'pike',name_zh:'狗鱼',rarity_tier:0,origin:'manual',overlaid:true,base,override:overridden,
+     locs:['铜湖']},
    ],count:2,total:2,
   });
   if(key==='/api/fish/ecology-species/reset'&&req.method==='POST'){
@@ -44,6 +46,12 @@ test('ecology species page edits full ecology profile',async()=>{
   if(key==='/api/fish/ecology-species'&&req.method==='POST'){
    let body='';req.on('data',c=>body+=c);req.on('end',()=>{posted=JSON.parse(body);json({ok:true})});return;
   }
+  // 饵料页只用来核对「水层/水域已从那里移走」，给一行最小数据即可。
+  if(key==='/api/bait/prefs')return json({rules_enabled:true,rule_count:0,
+   rows:[{fish_key:'burbot',name_zh:'江鳕',has_rule:false,allow:[],deny:[],bottom_only:[],
+          condition:'',official:[],source:'default',enabled:false,auto_rotation:false,
+          rotation:{enabled:false,pool_size:0,quota:0,active_baits:[],next_switch:0},
+          layer:[0.3,0.75,1],qual_g:0,trophy_g:0}]});
   if(key.startsWith('/api/'))return json({});
   res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html);
  });
@@ -70,6 +78,26 @@ test('ecology species page edits full ecology profile',async()=>{
   // 稀有度列读的是 rarity_tier 而不是 rarity：写错会渲染成 undefined。
   assert.doesNotMatch(text,/undefined/);
   assert.match(text,/稀有/);
+
+  // 水层与水域原本在「饵料规则」页，2026-11-25 搬到本页（都是鱼种属性，不是饵料属性）。
+  // 表头必须在，否则等于悄悄丢了这两列信息。
+  const heads=await table.locator('thead th').allInnerTexts();
+  assert.ok(heads.includes('水层'),`缺少水层列 → ${heads.join('|')}`);
+  assert.ok(heads.includes('水域'),`缺少水域列 → ${heads.join('|')}`);
+  // 水层要显示活动区间（min~max）而不只是偏好单值。
+  assert.match(text,/0\.30~1\.00/,'水层未显示活动区间');
+  // 水域要按鱼分别显示，不能两条都渲染成同一串。
+  assert.match(text,/旧奥斯特罗格湖/);
+  assert.match(text,/琥珀湖/);
+  assert.match(text,/铜湖/);
+  // 鱼饵页不再重复这两列。
+  await page.locator('#ecoTabs button[data-etab="bait"]').click();
+  await page.locator('#baitTable thead th').first().waitFor();
+  const baitHeads=await page.locator('#baitTable thead th').allInnerTexts();
+  assert.ok(!baitHeads.includes('水层'),`饵料页仍在展示水层 → ${baitHeads.join('|')}`);
+  assert.ok(!baitHeads.includes('水域'),`饵料页仍在展示水域 → ${baitHeads.join('|')}`);
+  await page.locator('#ecoTabs button[data-etab="eco"]').click();
+  await table.locator('text=江鳕').waitFor();
 
   // 筛选：只看已覆盖，只剩狗鱼。
   await page.locator('#ecoFilter').selectOption('overlaid');

@@ -342,9 +342,9 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
     <section class="view" id="view-ecology"><div class="card"><div class="section-head"><div><h2>鱼种档案</h2><small>一个入口维护全部鱼种设定：生态基线 · 饵料规则 · 经济四档 · 权重档位</small></div></div>
       <div class="tabs" id="ecoTabs"><button class="on" data-etab="eco" onclick="setEcoTab('eco')">生态基线</button><button data-etab="bait" onclick="setEcoTab('bait')">饵料规则</button><button data-etab="econ" onclick="setEcoTab('econ')">经济四档</button><button data-etab="weight" onclick="setEcoTab('weight')">权重档位</button></div>
 
-      <div id="ecoBodyEco"><div class="section-head"><div><h3 style="font-size:14px">生态基线</h3><small>按物种维护水温 · 季节 · 昼夜 · 水层 · 活跃度；留空＝跟随资产基线，只影响这个物种本身，对所有水域生效</small></div><span class="muted" id="ecoStatus"></span></div><div class="toolbar"><input class="grow" id="ecoSearch" placeholder="搜索鱼种 key / 中文名，如 burbot、江鳕" onkeydown="if(event.key==='Enter')loadEcology()"><select id="ecoFilter" style="max-width:170px" onchange="renderEcologyRows()"><option value="">全部鱼种</option><option value="overlaid">只看已覆盖</option><option value="cold">只看到冷水鱼</option><option value="warm">只看到暖水鱼</option></select><button class="btn" onclick="loadEcology()">查询</button><button class="btn alt" onclick="loadEcology()">刷新</button></div><p class="muted" style="margin:10px 0"><b style="color:#ffd479">金色</b>＝已覆盖，灰色＝资产基线。温度单位 ℃，窗口越窄温度对判鱼的影响越大；<b>窗口宽度直接决定「热响应」这根曲线的陡缓</b>——现在 253 种的中位宽度是 20.2℃，等于温度几乎不筛鱼。季节/昼夜掩码为位掩码（季节 1春2夏4秋8冬，昼夜 1夜2晨4昼8昏）。保存后投递刷新指令，最迟 30 秒生效。</p><div class="table-wrap" id="ecoTable"><div class="empty">读取中…</div></div></div>
+      <div id="ecoBodyEco"><div class="section-head"><div><h3 style="font-size:14px">生态基线</h3><small>按物种维护水温 · 季节 · 昼夜 · 水层 · 水域 · 活跃度；留空＝跟随资产基线，只影响这个物种本身，对所有水域生效</small></div><span class="muted" id="ecoStatus"></span></div><div class="toolbar"><input class="grow" id="ecoSearch" placeholder="搜索鱼种 key / 中文名，如 burbot、江鳕" onkeydown="if(event.key==='Enter')loadEcology()"><select id="ecoFilter" style="max-width:170px" onchange="renderEcologyRows()"><option value="">全部鱼种</option><option value="overlaid">只看已覆盖</option><option value="cold">只看到冷水鱼</option><option value="warm">只看到暖水鱼</option></select><button class="btn" onclick="loadEcology()">查询</button><button class="btn alt" onclick="loadEcology()">刷新</button></div><p class="muted" style="margin:10px 0"><b style="color:#ffd479">金色</b>＝已覆盖，灰色＝资产基线。温度单位 ℃，窗口越窄温度对判鱼的影响越大；<b>窗口宽度直接决定「热响应」这根曲线的陡缓</b>——现在 253 种的中位宽度是 20.2℃，等于温度几乎不筛鱼。季节/昼夜掩码为位掩码（季节 1春2夏4秋8冬，昼夜 1夜2晨4昼8昏）。<b>水层</b> 0=水面 1=水底，浅色带是 ±0.15 容差，钓层落在带外权重×0.01。<b>水域</b>是这条鱼在静态库里出现过的图（最多列 6 个），只作对照、不可在此编辑。保存后投递刷新指令，最迟 30 秒生效。</p><div class="table-wrap" id="ecoTable"><div class="empty">读取中…</div></div></div>
 
-      <div id="ecoBodyBait" hidden><div class="section-head"><div><h3 style="font-size:14px">饵料规则</h3><small id="baitSummary" class="muted">正在读取…</small></div></div><div class="toolbar"><input class="grow" id="baitSearch" placeholder="搜索鱼种 key / 中文名，如 pike、狗鱼" onkeydown="if(event.key==='Enter')loadBaitPrefs()"><input id="baitLoc" placeholder="水域（可选）" onkeydown="if(event.key==='Enter')loadBaitPrefs()"><select id="baitFilter" onchange="loadBaitPrefs()"><option value="">全部鱼种</option><option value="norule">规则表无条目</option><option value="rule">规则表有条目</option><option value="overlaid">只看已覆盖</option></select><button class="btn" onclick="loadBaitPrefs()">查询</button><button class="btn alt" onclick="rerollBaitAuto()" title="给所有开了「自动抽取」的鱼立刻换一批本期开口饵；周期与下次切换时刻不变">↻ 立即重抽本期</button></div><p class="muted" style="margin:10px 0">判定只用<b>规则</b>：来自编译进服务端的 fishing_bait_rules.txt（严格模式生效），后台可逐鱼覆盖成「吃 / 不吃 / 底钓只吃」。<b>官服占比</b>取自 rf4records.com 渔获纪录，只作参考展示，<b>不参与判鱼</b>。「自动抽取」按<b>型号</b>抽签：抽中「红蚯蚓（10/14/18）· Pop-up」表示这三个尺寸都开口，同型号不同规格在判鱼上等价；<b>名单里只写了一个尺寸也整组开</b>。折叠名一律带形态后缀（煮饵/Pop-up/颗粒/玉米/活饵…），因为「玉米」光看名字分不出是颗粒还是玉米粒。点击行展开水层与钩容量；点右侧「编辑」可改吃/不吃/底钓只吃。</p><div class="table-wrap" id="baitTable"></div></div>
+      <div id="ecoBodyBait" hidden><div class="section-head"><div><h3 style="font-size:14px">饵料规则</h3><small id="baitSummary" class="muted">正在读取…</small></div></div><div class="toolbar"><input class="grow" id="baitSearch" placeholder="搜索鱼种 key / 中文名，如 pike、狗鱼" onkeydown="if(event.key==='Enter')loadBaitPrefs()"><input id="baitLoc" placeholder="水域（可选）" onkeydown="if(event.key==='Enter')loadBaitPrefs()"><select id="baitFilter" onchange="loadBaitPrefs()"><option value="">全部鱼种</option><option value="norule">规则表无条目</option><option value="rule">规则表有条目</option><option value="overlaid">只看已覆盖</option></select><button class="btn" onclick="loadBaitPrefs()">查询</button><button class="btn alt" onclick="rerollBaitAuto()" title="给所有开了「自动抽取」的鱼立刻换一批本期开口饵；周期与下次切换时刻不变">↻ 立即重抽本期</button></div><p class="muted" style="margin:10px 0">判定只用<b>规则</b>：来自编译进服务端的 fishing_bait_rules.txt（严格模式生效），后台可逐鱼覆盖成「吃 / 不吃 / 底钓只吃」。<b>官服占比</b>取自 rf4records.com 渔获纪录，只作参考展示，<b>不参与判鱼</b>。「自动抽取」按<b>型号</b>抽签：抽中「红蚯蚓（10/14/18）· Pop-up」表示这三个尺寸都开口，同型号不同规格在判鱼上等价；<b>名单里只写了一个尺寸也整组开</b>。折叠名一律带形态后缀（煮饵/Pop-up/颗粒/玉米/活饵…），因为「玉米」光看名字分不出是颗粒还是玉米粒。点击行展开钩容量。点右侧「编辑」可改吃/不吃/底钓只吃。<b>水层与水域</b>不在这里，已归到「生态基线」页签——它们描述的是鱼种本身，与用什么饵无关。</p><div class="table-wrap" id="baitTable"></div></div>
 
       <div id="ecoBodyEcon" hidden><div class="section-head"><div><h3 style="font-size:14px">经验与鱼价</h3><small>按鱼种逐档覆盖：经验单位 XP/克，鱼价单位 银/公斤（基准水域，其他水域按倍率折算）</small></div><span class="muted" id="econStatus"></span></div><div class="toolbar"><input class="grow" id="econSearch" placeholder="搜索鱼种 key / 中文名，如 bream、欧鳊" onkeydown="if(event.key==='Enter')loadEcon()"><select id="econFilter" style="max-width:160px" onchange="renderEconRows()"><option value="">全部鱼种</option><option value="overridden">只看已覆盖</option></select><button class="btn" onclick="loadEcon()">查询</button><button class="btn alt" onclick="loadEcon()">刷新</button></div><p class="muted" style="margin:10px 0"><b style="color:#ffd479">金色</b>＝已覆盖，灰色＝内置默认。留空＝跟随内置表。经验按 <b>trunc(速率 × 克重)</b> 结算；鱼价在基准价之上再叠当日系数（±5%）与新鲜度（24h 内全额）。<b>四档统一阶梯</b>：经验 1 : 3.27 : 20.4 : 40.8、鱼价 1 : 1.5 : 3 : 6（都相对未达标），每种鱼只有未达标基数是独立数据。这两条阶梯是<b>游戏内结算基准</b>（2026-11-23 定稿），改档位溢价须走提案并同步测试，不要用逐鱼种覆盖绕过。保存后投递刷新指令，正常情况下立即生效，最迟 30 秒。</p><div class="table-wrap" id="econTable"><div class="empty">读取中…</div></div></div>
 
@@ -387,7 +387,7 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
         <div class="table-wrap" id="wxCmpBox"><div class="empty">点「全部水域对比」加载</div></div>
       </div>
     </section>
-    <section class="view" id="view-hooks"><div class="card"><div class="section-head"><div><h2>真实钩子型号档案</h2><small>物理数据来自 item_def；倍率和兜底值只影响咬口，不改钩子拉力</small></div></div><div class="toolbar"><input class="grow" id="hookSearch" placeholder="搜索 item_id / 厂牌，如 triple_20686、simmons" onkeydown="if(event.key==='Enter')loadHookProfiles()"><select id="hookSize"><option value="">全部尺寸</option></select><select id="hookFamily"><option value="">全部钩型族</option><option value="classic">Classic</option><option value="carp">Carp</option><option value="treble">Treble</option><option value="jighead">Jighead</option><option value="offset">Offset</option><option value="marine">Marine</option><option value="other">Other</option></select><button class="btn" onclick="loadHookProfiles()">查询</button></div><p class="muted" style="margin:10px 0">默认倍率 1.0、兜底值 0；修改后写入审计，最多 30 秒由主服热加载。入口容量按真实钩体长度计算。</p><div class="table-wrap" id="hookProfilesTable"><div class="empty">读取中…</div></div></div></section>
+    <section class="view" id="view-hooks"><div class="card"><div class="section-head"><div><h2>真实钩子型号档案</h2><small>物理数据来自 item_def；倍率和兜底值只影响咬口，不改钩子拉力</small></div></div><div class="toolbar"><input class="grow" id="hookSearch" placeholder="搜索 item_id / 厂牌 / 游戏钩号，如 triple_20686、simmons、S16" onkeydown="if(event.key==='Enter')loadHookProfiles()"><select id="hookSize"><option value="">全部钩号</option></select><select id="hookFamily"><option value="">全部钩型族</option><option value="classic">Classic</option><option value="carp">Carp</option><option value="treble">Treble</option><option value="jighead">Jighead</option><option value="offset">Offset</option><option value="marine">Marine</option><option value="other">Other</option></select><button class="btn" onclick="loadHookProfiles()">查询</button></div><p class="muted" style="margin:10px 0">默认倍率 1.0、兜底值 0；修改后写入审计，最多 30 秒由主服热加载。入口容量按真实钩体长度计算。<b>游戏钩号</b>是客户端显示、攻略里写的号（S20 / S16 / S1/0），后面小字是库里的内部刻度 0~33；两者一一对应，同号即同钩长（如 S16 恒为 3.30mm），与厂牌无关。</p><div class="table-wrap" id="hookProfilesTable"><div class="empty">读取中…</div></div></div></section>
     <section class="view" id="view-mail"><div class="mail-box"><div class="card"><div class="section-head"><h2>撰写邮件</h2><small>队列约 2 秒内由主服投递</small></div><div class="form-grid" style="grid-template-columns:1fr 1fr"><div class="field"><label>收件人 UID</label><input id="mailUid" type="number"></div><div class="field"><label>快捷载入玩家</label><input id="mailPlayerSearch" placeholder="搜索并回车" onkeydown="if(event.key==='Enter')findMailPlayer()"></div></div><div class="field" style="margin-top:12px"><label>邮件正文</label><textarea id="mailText" placeholder="写给玩家的消息…"></textarea></div><div class="section-head" style="margin-top:14px"><h2>附件</h2><button class="btn alt sm" onclick="addAttachment()">+ 添加附件</button></div><div id="attachments"></div><div class="actions"><button class="btn good" onclick="sendMail()">发送邮件</button><button class="btn alt" onclick="previewMail()">预览</button></div></div><div class="card"><div class="section-head"><h2>发送预览</h2></div><div id="mailPreview" class="empty">填写邮件后点击预览</div><div class="section-head" style="margin-top:20px"><h2>常用模板</h2></div><div class="actions"><button class="btn alt sm" onclick="mailTemplate('补偿')">补偿邮件</button><button class="btn alt sm" onclick="mailTemplate('活动奖励')">活动奖励</button><button class="btn alt sm" onclick="mailTemplate('测试')">测试邮件</button></div></div></div></section>
     <section class="view" id="view-params"><div class="card"><div class="section-head"><h2>游戏参数</h2><small>保存后按参数类型生效；部分服务端参数约 30 秒生效，活动奖励必须重启游戏客户端并重新登录</small></div><div class="params-tabs" id="paramsTabs"></div><div id="paramsBody"></div></div></section>
     <section class="view" id="view-release"><div class="card release-card"><div class="section-head"><div><h2>发布说明</h2><p class="muted">读取发布包内的 发布说明.md</p></div><button class="btn alt sm" onclick="loadReleaseNotes()">刷新</button></div><div class="markdown-body release-markdown" id="releaseBody"><div class="empty">读取中…</div></div></div></section>
@@ -729,22 +729,48 @@ function renderEcologyRows(){
   else if(f==='cold'){const cut=ecoTempQuartile(0.25);rows=rows.filter(r=>{const e=ecoEffective(r);return e.temp_pref_c!=null&&Number(e.temp_pref_c)<=cut})}
   else if(f==='warm'){const cut=ecoTempQuartile(0.75);rows=rows.filter(r=>{const e=ecoEffective(r);return e.temp_pref_c!=null&&Number(e.temp_pref_c)>=cut})}
   if(!rows.length){$('#ecoTable').innerHTML='<div class="empty">没有符合条件的鱼种</div>';return}
-  $('#ecoTable').innerHTML=`<table><thead><tr><th>鱼种</th><th>稀有度</th><th>水温窗口 ℃</th><th>窗宽 ℃</th><th>季节</th><th>昼夜</th><th>水层偏好</th><th>活跃度</th><th>状态</th><th></th></tr></thead><tbody>${rows.map(r=>{
+  $('#ecoTable').innerHTML=`<table><thead><tr><th>鱼种</th><th>稀有度</th><th>水温窗口 ℃</th><th>窗宽 ℃</th><th>季节</th><th>昼夜</th><th title="0=水面 1=水底；浅色带=±0.15 容差，黄线=偏好">水层</th><th>水域</th><th>活跃度</th><th>状态</th><th></th></tr></thead><tbody>${rows.map(r=>{
     const e=ecoEffective(r);
     const w=(e.temp_max_c!=null&&e.temp_min_c!=null)?(Number(e.temp_max_c)-Number(e.temp_min_c)):null;
     // 窗宽是「温度能不能筛鱼」的关键：热响应容差 = max(2.2, 窗宽/2)，窗宽 20℃ 时曲线极平。
     const wCell=w==null?'—':(w<=8?`<b style="color:#6ff0b7">${ecoF(w,1)}</b>`:w<=14?`<span style="color:#ffd479">${ecoF(w,1)}</span>`:`<span class="danger-text">${ecoF(w,1)}</span>`);
+    const layerCell=ecoLayerCell(r);
+    // 水域：一条鱼最多出现 6 张图，超出用「等 N 图」收口，避免把行撑高。
+    const locs=r.locs||[];
+    const locCell=locs.length
+      ? `<div style="font-size:12px;line-height:1.55">${locs.map(l=>esc(l)).join('<span class="muted"> · </span>')}</div>`
+      : '<span class="muted">—</span>';
     return `<tr><td><b>${esc(r.name_zh)}</b><div class="muted mono">${esc(r.fish_key)}</div></td>
       <td><span class="tag ${r.rarity_tier>=2?'gold':(r.rarity_tier>=1?'blue':'')}">${ECO_RARITY[r.rarity_tier]||r.rarity_tier}</span></td>
       <td class="mono">${ecoCellOf(r,'temp_min_c',1)} ~ ${ecoCellOf(r,'temp_max_c',1)}<span class="muted">（偏好 ${ecoCellOf(r,'temp_pref_c',1)}）</span></td>
       <td class="mono">${wCell}</td>
       <td>${ecoMaskCell(r.override?.season_mask,r.base?.season_mask,ECO_SEASON_NAMES)}</td>
       <td>${ecoMaskCell(r.override?.diel_mask,r.base?.diel_mask,ECO_DIEL_NAMES)}</td>
-      <td class="mono">${ecoCellOf(r,'layer_pref',2)}</td>
+      <td>${layerCell}</td>
+      <td>${locCell}</td>
       <td class="mono">${ecoCellOf(r,'activity',2)}</td>
       <td><span class="pill ${r.overlaid?'ok':''}">${r.overlaid?(r.origin==='curated'?'文献值':'已覆盖'):'基线'}</span></td>
       <td class="right"><button class="btn sm" onclick="openEcologyEditor('${esc(r.fish_key)}')">编辑</button></td></tr>`;
   }).join('')}</tbody></table>`;
+}
+// 水层单元格：三段（min/pref/max）+ 迷你条形图。
+// 原来只显示 layer_pref 一个数，看不出「这条鱼的活动范围有多宽」——
+// 而范围宽窄直接决定钓层偏离时会不会掉权重，和窗宽是同一类信息。
+// 覆盖取值时整块标金色，与其它列口径一致。
+function ecoLayerCell(r){
+  const ov=r.override?r.override.layer_pref:null;
+  const e=ecoEffective(r);
+  const lo=Number(e.layer_min),pf=Number(e.layer_pref),hi=Number(e.layer_max);
+  if(!isFinite(lo)||!isFinite(hi))return '<span class="muted">—</span>';
+  const gold=ov!=null;
+  const cl=gold?'#ffd479':'#8fa8bd';
+  const width=Math.max(2,(Math.min(1,hi)-Math.max(0,lo))*100);
+  const bar=`<div title="活动 ${lo.toFixed(2)}~${hi.toFixed(2)} 偏好 ${isFinite(pf)?pf.toFixed(2):'—'}（0=水面 1=水底）" style="position:relative;height:12px;border-radius:6px;background:#0a1521;min-width:64px;margin-bottom:3px">
+    <div style="position:absolute;left:${Math.max(0,(lo-0.15)*100)}%;right:${Math.max(0,100-Math.min(1,hi+0.15)*100)}%;top:1px;bottom:1px;background:#1b4f6f44;border-radius:5px"></div>
+    <div style="position:absolute;left:${Math.max(0,lo*100)}%;width:${width}%;top:1px;bottom:1px;background:linear-gradient(90deg,#2f7d5f,#2f7d9f);border-radius:5px"></div>
+    ${isFinite(pf)?`<div style="position:absolute;left:calc(${Math.max(0,Math.min(1,pf)*100)}% - 1.5px);top:0;bottom:0;width:3px;background:#ffe3a0;border-radius:2px"></div>`:''}
+  </div>`;
+  return bar+`<div class="mono" style="font-size:11.5px;color:${cl}">${lo.toFixed(2)}~${hi.toFixed(2)}<span class="muted"> · 偏好 ${isFinite(pf)?pf.toFixed(2):'—'}</span></div>`;
 }
 // 掩码勾选组：4 个 checkbox，返回 {mode, mask}。继承时 mode=''，mask=null。
 // 注意别复用 .rules-strip —— 它只在 #fishRulesCard 里被定义成 flex，
@@ -1053,7 +1079,7 @@ const TUNABLE_DEFS=[
   ['reel_load_tick_seconds','负载上报兜底秒',1.9,'第一条14/8负载上报没有前序时刻时按此秒数起算。范围 0.01 ~ 600'],
   ['reel_load_max_tick_seconds','负载上报最大秒',5,'两条14/8之间最多折算的秒数，防止迟到上报一次烧完。范围 0.01 ~ 600'],
   ['hook_nibble_enabled','嘬饵机制',0,'0=默认关闭，普通鱼和奖杯鱼首次抬竿不判嘬饵；1=恢复钩型嘬饵判定。中钩后的保持率倍率始终生效'],
-  ['hook_spawn_match_strength','钩型发鱼软匹配强度',0,'0=默认关闭；1=标准；2=更偏向与钩型匹配的鱼重档位。只影响发鱼，不改后台咬口/保持率倍率'],
+  ['hook_spawn_match_strength','钩型发鱼软匹配强度',0,'0=关闭（默认）：钩号既不筛鱼、也不参与中钩后保钩，超过钩容量的鱼照样挂住；1=标准；2=更强。>0 时同时开启发鱼档位加权与中钩后按钩入口容量压保持率。不改后台咬口/保持率倍率'],
   ['grade_ratio_enabled','档位比例开关',1,'三选一发鱼模式之一（在「发鱼模式」卡片切换）；开启时按四档滑杆出鱼并覆盖鱼猎阶段权重与钩型发鱼软匹配'],
   ['grade_pct_below','未达标权重',3,'未达标档的相对权重，保存时自动归一'],
   ['grade_pct_qualified','合格权重',87.5,'合格档的相对权重，保存时自动归一'],
@@ -1431,40 +1457,28 @@ function baitRuleHTML(r){
 // 饵料表：只留判鱼真正用到的四列（鱼种 / 自动抽取 / 本期开口 / 规则）。
 // 2026-11-24 按用户要求删掉「偏好口（按类）」「饵效证据」「吃不吃」三列：
 // 前两者只在旧版节奏打分与护鱼网里间接生效、后台无需维护，后者是纯展示结论。
-// 展开区保留水层与钩容量——这两个是管理员配饵时真正要对照的。
+// 2026-11-25 又把「水域」「水层」搬到「生态基线」：两者都不是饵料属性，
+// 而是鱼种本身的归属与习性，和稀有度/水温放在一起才能横向对照。
+// 展开区保留钩容量——配饵时唯一真正要对照的物理量。
 function renderBaitTable(){
   const el=$('#baitTable');
   if(!BAIT_ROWS.length){el.innerHTML=baitBanner()+'<div class="empty">没有匹配的鱼种</div>';return}
-  const head='<table><colgroup><col style="width:15%"><col style="width:8%"><col style="width:20%"><col style="width:30%"><col style="width:12%"><col style="width:15%"></colgroup>'+
-    '<thead><tr><th>鱼种</th><th title="按稀有度抽本期开口饵：普通 3 款 / 稀有 2 款 / 超稀有 1 款">自动抽取</th><th>本期开口</th><th>规则（严格模式）</th><th>水域</th><th>水层</th></tr></thead><tbody>';
+  const head='<table><colgroup><col style="width:20%"><col style="width:10%"><col style="width:25%"><col style="width:45%"></colgroup>'+
+    '<thead><tr><th>鱼种</th><th title="按稀有度抽本期开口饵：普通 3 款 / 稀有 2 款 / 超稀有 1 款">自动抽取</th><th>本期开口</th><th>规则（严格模式）</th></tr></thead><tbody>';
   const body=BAIT_ROWS.map(r=>{
     const open=BAIT_OPEN.has(r.fish_key);
-    const layerHTML=r.layer&&(r.layer[2]||r.layer[0])?`<div title="活动 ${(r.layer[0]||0).toFixed(2)}~${(r.layer[2]||0).toFixed(2)} 偏好 ${(r.layer[1]||0).toFixed(2)}（0水面~1水底，黄线=偏好）" style="position:relative;height:14px;border-radius:7px;background:#0a1521;min-width:64px">
-      <div style="position:absolute;left:${Math.max(0,r.layer[0]*100)}%;width:${Math.max(2,(Math.min(1,r.layer[2])-Math.max(0,r.layer[0]))*100)}%;top:2px;bottom:2px;background:linear-gradient(90deg,#2f7d5f,#2f7d9f);border-radius:5px"></div>
-      <div style="position:absolute;left:calc(${Math.max(0,Math.min(1,r.layer[1])*100)}% - 1.5px);top:0;bottom:0;width:3px;background:#ffe3a0;border-radius:2px"></div>
-    </div>`:'<span class="muted">—</span>';
-    const detail=(!open)?'':`<tr><td colspan="6" style="background:#0b1623;padding:14px 18px">
-      <b style="font-size:12px;color:#7a92aa">水层（G2 地板判定源 · 浅色带=±0.15 容差）</b>
-      <div style="margin-top:8px;position:relative;height:22px;border-radius:11px;background:#0a1521;overflow:hidden">
-        <div style="position:absolute;left:${Math.max(0,(r.layer[0]-0.15)*100)}%;right:${Math.max(0,100-Math.min(1,r.layer[2]+0.15)*100)}%;top:3px;bottom:3px;background:#1b4f6f55;border-radius:8px"></div>
-        <div style="position:absolute;left:${Math.max(0,r.layer[0]*100)}%;width:${Math.max(2,(Math.min(1,r.layer[2])-Math.max(0,r.layer[0]))*100)}%;top:3px;bottom:3px;background:linear-gradient(90deg,#2f7d5f,#2f7d9f);border-radius:8px"></div>
-        <div style="position:absolute;left:calc(${Math.max(0,Math.min(1,r.layer[1])*100)}% - 1.5px);top:0;bottom:0;width:3px;background:#ffe3a0"></div>
-        <span style="position:absolute;left:6px;top:4px;font-size:10px;color:#6f88a0">水面</span>
-        <span style="position:absolute;right:6px;top:4px;font-size:10px;color:#6f88a0">水底</span>
-      </div>
-      <div class="muted" style="font-size:11px;margin-top:4px">活动 ${(r.layer[0]||0).toFixed(2)}~${(r.layer[2]||0).toFixed(2)} · 偏好 ${(r.layer[1]||0).toFixed(2)}；钓层在容差带外权重×0.01（只剩极小杂口）</div>
-      ${r.qual_g?`<div style="margin-top:10px"><b style="font-size:12px;color:#7a92aa">钩容量适配（物理计算）</b>
+    const detail=(!open)?'':`<tr><td colspan="4" style="background:#0b1623;padding:14px 18px">
+      ${r.qual_g?`<div><b style="font-size:12px;color:#7a92aa">钩容量适配（物理计算）</b>
       <div class="muted" style="font-size:11.5px;margin-top:4px">合格档 <b style="color:var(--text)">${fmt(r.qual_g)}g</b> → 钩入口容量 <b style="color:var(--text)">${fmt(r.qual_g)}~${fmt(r.qual_g*4)}g</b> 全兼容${r.trophy_g?`；奖杯档 ${fmt(r.trophy_g)}g → ${fmt(r.trophy_g)}~${fmt(r.trophy_g*4)}g`:''}</div>
       <div class="muted" style="font-size:11px">在「钩子手感」页按入口容量对照；容量<鱼重掉保持率，>4×鱼重小口钩化</div></div>`:''}
+      <div class="muted" style="font-size:11px;margin-top:10px">水层与水域已移到「生态基线」页签；配饵不需对照这两项。</div>
     </td></tr>`;
     const row=`<tr class="${open?'ba-open':''}" onclick="toggleBaitRow('${esc(r.fish_key)}')" style="cursor:pointer">`+
       `<td><div class="bait-head"><div><b>${esc(r.name_zh)}</b><div class="muted" style="font-size:12px">${esc(r.fish_key)}</div></div>`+
       `<button class="btn alt sm bait-edit" onclick="event.stopPropagation();editBaitRule('${esc(r.fish_key)}')">编辑</button></div></td>`+
       `<td onclick="event.stopPropagation()"><label style="display:flex;align-items:center;gap:5px;cursor:pointer" title="勾选=参与自动抽取；还需在「游戏参数 → 自动轮换」打开总开关"><input class="switch" type="checkbox"${r.auto_rotation?' checked':''} onchange="toggleBaitAuto('${esc(r.fish_key)}',this)"></label></td>`+
       `<td>${baitAutoPickHTML(r)}</td>`+
-      `<td>${baitRuleHTML(r)}</td>`+
-      `<td class="muted" style="font-size:12px"><div class="clamp">${esc((r.locs||[]).join('、')||'—')}</div></td>`+
-      `<td>${layerHTML}</td></tr>`;
+      `<td>${baitRuleHTML(r)}</td></tr>`;
     return row+detail;
   }).join('');
   el.innerHTML=baitBanner()+head+body+'</tbody></table>';
@@ -4301,17 +4315,27 @@ async function loadHookProfiles(){
   const family=encodeURIComponent($('#hookFamily')?.value||'');
   const data=await api(`/api/hooks/profiles?q=${q}&size=${size}&family=${family}&limit=500`);
   HOOK_PROFILES=data.profiles||[];
+  renderHookSizeOptions(data.sizes||[]);
   renderHookProfiles(data.total||HOOK_PROFILES.length);
+}
+// 尺寸下拉按游戏钩号显示：玩家和攻略里用的是 S20 / S16 这种号，直接显示内部
+// 刻度会让人对不上客户端。value 仍是内部刻度，后端筛选口径不变。
+function renderHookSizeOptions(sizes){
+  const el=$('#hookSize');if(!el)return;
+  const cur=el.value;
+  el.innerHTML='<option value="">全部钩号</option>'+sizes.map(s=>`<option value="${s.size}">${esc(s.display_size||s.size)}（${s.count}）</option>`).join('');
+  if(cur)el.value=cur;
 }
 function renderHookProfiles(total){
   const rows=HOOK_PROFILES.map(p=>`<tr>
     <td><b class="mono">${esc(p.item_id)}</b><div class="muted">${esc(p.brand||'-')}</div></td>
-    <td>${esc(p.family)}</td><td>${p.size}</td><td>${Number(p.length_mm).toFixed(2)} mm</td>
+    <td><b>${esc(p.display_size||'-')}</b><div class="muted mono">刻度 ${p.size}</div></td>
+    <td>${esc(p.family)}</td><td>${Number(p.length_mm).toFixed(2)} mm</td>
     <td>${Number(p.strength_kg).toFixed(2)} kg</td><td>${fmt(Math.round(p.entry_capacity_g))} g</td>
     <td>${Number(p.solid_scale).toFixed(3)}</td><td>${Number(p.hold_scale).toFixed(3)}</td>
     <td>${(Number(p.small_fish_floor)*100).toFixed(1)}%</td><td>${(Number(p.over_capacity_hold_floor)*100).toFixed(1)}%</td>
     <td><button class="btn alt sm" onclick="editHookProfile('${esc(p.item_id)}')">调整</button></td></tr>`).join('');
-  $('#hookProfilesTable').innerHTML=`<div class="muted" style="margin-bottom:8px">匹配 ${fmt(total)} 个型号，当前显示 ${fmt(HOOK_PROFILES.length)} 个</div><table class="fish-table"><thead><tr><th>型号</th><th>钩型族</th><th>尺寸</th><th>长度</th><th>真实拉力</th><th>入口容量</th><th>咬口倍率</th><th>保持倍率</th><th>小鱼下限</th><th>超载保持下限</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="11" class="empty">没有匹配型号</td></tr>'}</tbody></table>`;
+  $('#hookProfilesTable').innerHTML=`<div class="muted" style="margin-bottom:8px">匹配 ${fmt(total)} 个型号，当前显示 ${fmt(HOOK_PROFILES.length)} 个</div><table class="fish-table"><thead><tr><th>型号</th><th>游戏钩号</th><th>钩型族</th><th>长度</th><th>真实拉力</th><th>入口容量</th><th>咬口倍率</th><th>保持倍率</th><th>小鱼下限</th><th>超载保持下限</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="11" class="empty">没有匹配型号</td></tr>'}</tbody></table>`;
 }
 function editHookProfile(itemID){
   const p=HOOK_PROFILES.find(x=>x.item_id===itemID);if(!p)return;

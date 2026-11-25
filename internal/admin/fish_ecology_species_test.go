@@ -24,6 +24,14 @@ func TestFishEcologySpeciesAdminAPI(t *testing.T) {
 		`INSERT INTO species_weight(fish_key,min_g,max_g,trophy_g,trophy_line_g,super_trophy_line_g,length_k,length_p)
 		 VALUES('burbot',100,5000,2000,6000,9000,0.033,0.33)`,
 		`INSERT INTO loc_fish(loc,fish_key,name_zh,catches) VALUES('loc_test','burbot','江鳕',10)`,
+		// 水域归属（列表里的「水域」列）读的是 loc_wiki_fish.loc，不是 loc_fish.loc：
+		// 前者是静态库的「这张图上有没有这种鱼」，后者是运行时渔获归属。
+		// 造 7 条，顺手验证后端确实按 6 条截断。
+		`INSERT INTO loc_wiki_fish(loc,fish_key,fish_zh,in_map_roster) VALUES
+		    ('旧奥斯特罗格湖','burbot','江鳕',1),('琥珀湖','burbot','江鳕',1),
+		    ('铜湖','burbot','江鳕',1),('苏拉河','burbot','江鳕',1),
+		    ('梅德韦杰湖','burbot','江鳕',1),('克马羚诺也湖','burbot','江鳕',1),
+		    ('埃尔克湖','burbot','江鳕',1)`,
 		// 资产基线故意给成合成值（18.9℃），正是要纠正的那类数据。
 		`INSERT INTO fish_ecology(fish_key, layer_min, layer_pref, layer_max,
 		    temp_min_c, temp_pref_c, temp_max_c, activity, diel_mask, diel_curve, season_mask)
@@ -74,6 +82,7 @@ func TestFishEcologySpeciesAdminAPI(t *testing.T) {
 			FishKey  string                    `json:"fish_key"`
 			NameZh   string                    `json:"name_zh"`
 			Overlaid bool                      `json:"overlaid"`
+			Locs     []string                  `json:"locs"`
 			Base     store.FishEcologySpecies  `json:"base"`
 			Override *store.FishEcologySpecies `json:"override"`
 		} `json:"items"`
@@ -91,6 +100,14 @@ func TestFishEcologySpeciesAdminAPI(t *testing.T) {
 	}
 	if row.Overlaid || row.Override != nil {
 		t.Fatal("还没保存过，不该有 override")
+	}
+	// 水域归属（2026-11-25 从「饵料规则」搬来）：必须非空，且不能混进别的鱼。
+	// 这条防的是 SQL 漏 JOIN 或把整张表的 loc 都塞给第一条鱼。
+	if len(row.Locs) == 0 {
+		t.Fatalf("burbot 的水域列表为空，期望至少一张图（实际 %+v）", row.Locs)
+	}
+	if len(row.Locs) > 6 {
+		t.Fatalf("水域最多截断 6 个，实际 %d 个：%+v", len(row.Locs), row.Locs)
 	}
 	// base 必须是全字段（不只是温度），否则弹窗没法显示「继承 XX」。
 	if row.Base.TempPrefC == nil || *row.Base.TempPrefC != 18.9 {
