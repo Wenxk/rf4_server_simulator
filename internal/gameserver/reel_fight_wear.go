@@ -38,8 +38,9 @@ const (
 	// 拉力 ≤ 泄力×该值不算打滑。官服边界样本：1.04× 零磨损，缺省取 1.05。
 	reelSlipDeadbandRatioDefault = 1.05
 	// leaderStressWearPerSecDefault 是前导受力磨损速率（百分点/受力秒，
-	// tunable wear_leader_per_stress_sec）：底钓2 单场实测 ≈0.000047（412s 磨 0.019%）。
-	leaderStressWearPerSecDefault = 0.00005
+	// tunable wear_leader_per_stress_sec）。
+	// 2026-11-26 用户要求所有装备单次损耗统一 1e-7，原底钓2 实测值 0.00005 已下调。
+	leaderStressWearPerSecDefault = 0.0000001
 )
 
 // fightReelWear 是本竿搏鱼期间的装备受力账：承力参数缓存 + 累计磨损。

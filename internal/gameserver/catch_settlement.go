@@ -42,7 +42,22 @@ type catchWear struct {
 	log        store.ItemDamageLog
 }
 
+// catchWearAggregateTolerance 是「聚合值可以当作外层真值」的容差，单位是耐久比例。
+// 零件从未物化的老档（内部件缺失按满寿命读）聚合出来会虚高到 1.0，直接采信等于免费
+// 大修；所以只有聚合值不超过「外层现值 + 该容差」时才采信，否则沿用外层固定扣减。
+// 注意方向：判定的是**上限**不是下限 —— 聚合值偏低于外层是正常的磨损结果（零件比
+// 外层先掉），只有偏高才是数据不可信。
+const catchWearAggregateTolerance = 0.05
+
 // prepareCatchWear 只准备字段快照；结算事务提交前不改物品或损伤历史。
+//
+// 2026-11-26 单层化：渔轮与鱼竿的「每尾固定磨损」不再只扣外层，而是先扣内部零件
+// （轮内 轮油/主齿轮/轴承/线杯，竿侧 竿坯+导环），再把零件聚合值并进外层那一格。
+// 历史缺陷是两条通道各扣各的：外层按每尾固定率线性掉，零件只在搏鱼受力时掉，
+// 于是同一件装备有两本账（conv_5706 外层 0.99302 vs 聚合 0.99915，差 0.61%；
+// cast_10059 外层 -0.22% 而导环 -0.093%；spin_10158 外层 -0.06% 而导环 -0.171%，
+// 两个方向都有）。现在两边同时扣、外层取两者的较小值，只会单调下降、不会凭空回血。
+// 其余品类（线/钩/饵/浮漂/拟饵）没有内部件，仍按外层固定扣减。
 func (s *Server) prepareCatchWear(ctx context.Context, uid int64, rigGUID string) ([]catchWear, error) {
 	if rigGUID == "" {
 		return nil, nil
@@ -68,10 +83,48 @@ func (s *Server) prepareCatchWear(ctx context.Context, uid int64, rigGUID string
 		if row == nil || amount <= 0 || row.Durability <= 0 {
 			return nil
 		}
-		durability := math.Max(0, row.Durability-amount)
 		fields, err := FieldsFromJSON(row.FieldsJSON)
 		if err != nil {
 			return err
+		}
+		durability := math.Max(0, row.Durability-amount)
+		via := "outer"
+		var parts map[string]float64
+		// 先判定零件树能不能当权威，再决定要不要动它 —— 顺序反了会在"聚合不可信"
+		// 的分支里留下已经被磨掉的内部件，账只会更乱。
+		// 采信聚合后外层**不再做固定扣减**，改为 min(现值, 零件聚合)：现值那一项只用来
+		// 防回血（老档聚合虚高时不能把外层抬高），磨损量完全由零件决定，与
+		// applyFightReelWear 同口径；否则外层继续独立计数，两本账迟早再发散。
+		switch key {
+		case "reel":
+			// reelPartLivesInFields 在摩擦片缺失时返回 ok=false（老档没物化子件），
+			// 那种树读不出本体耐久，只能沿用外层扣减，不能按满寿命瞎猜。
+			if _, ok := s.reelPartLivesInFields(ctx, row, fields); ok {
+				if body, ok := s.reelBodyDurabilityInFields(ctx, row, fields); ok &&
+					body <= row.Durability+catchWearAggregateTolerance {
+					// 摩擦片是烧件走泄力打滑账、旋钮/手柄官服不磨损，均不在扣减名单里。
+					if worn := s.reelCatchWearPartsInFields(ctx, fields, amount); len(worn) > 0 {
+						parts, via = worn, "parts"
+						if after, aok := s.reelBodyDurabilityInFields(ctx, row, fields); aok {
+							durability = math.Min(row.Durability, after)
+						}
+					}
+				}
+			}
+		case "rod":
+			// 竿侧没有摩擦片那种权威量，先补齐出厂子件再取最弱件（竿坯/导环）。
+			// buildFactoryChild 的子件耐久继承母竿现值，所以补齐本身不会产生免费修复。
+			if s.ensureRodWearChildren(ctx, row, fields) {
+				if body, ok := s.rodBodyDurabilityInFields(ctx, fields); ok &&
+					body <= row.Durability+catchWearAggregateTolerance {
+					if worn := s.rodCatchWearPartsInFields(ctx, row, fields, amount); len(worn) > 0 {
+						parts, via = worn, "parts"
+						if after, aok := s.rodBodyDurabilityInFields(ctx, fields); aok {
+							durability = math.Min(row.Durability, after)
+						}
+					}
+				}
+			}
 		}
 		idx := fieldIdxByCS(row.WireClass, csDurability)
 		if idx >= 0 && !setWireFloat(fields, row.WireClass, idx, durability) {
@@ -83,10 +136,17 @@ func (s *Server) prepareCatchWear(ctx context.Context, uid int64, rigGUID string
 			return err
 		}
 		before := row.Durability
+		detail := map[string]any{"slot": slot, "ordinal": ordinal, "category": key}
+		if via != "" {
+			detail["via"] = via
+		}
+		if len(parts) > 0 {
+			detail["parts"] = parts
+		}
 		out = append(out, catchWear{row: row, fields: encoded, durability: durability,
 			log: store.ItemDamageLog{UID: row.UID, ItemGUID: row.GUID, ItemID: row.ItemID,
 				Event: damageEventWear, BeforeDurability: &before, AfterDurability: &durability,
-				DetailJSON: damageDetailJSON(map[string]any{"slot": slot, "ordinal": ordinal, "category": key})}})
+				DetailJSON: damageDetailJSON(detail)}})
 		return nil
 	}
 	components, err := s.DB.ListRigComponents(ctx, rigGUID)

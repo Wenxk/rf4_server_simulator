@@ -356,6 +356,13 @@ func TestGearAssistantToggleKeepsWearBoundaries(t *testing.T) {
 	st.mu.Unlock()
 	// 满红不爆保护只管断件（17/9），不再有磨损层语义（锁轮烧穿曲线已删）：
 	// 搏鱼受力磨损照常累计，开关只重置时间边界，切换后的一小时空窗不得补记。
+	//
+	// 2026-11-26 全类型单次损耗已压到 1e-7，毫秒级测试受力折算出的磨损量会落到
+	// float32 的 ulp 以下、被舍入吃掉。本用例验的是「受力磨损必须落库」这条通路，
+	// 所以先把轮油速率临时抬到 0.05%/s，让量级可观测；测完不影响其他用例。
+	if err := db.TunableSet(t.Context(), "wear_stress_oil_per_s", "0.05", "test"); err != nil {
+		t.Fatal(err)
+	}
 	sendGearAssistantForTest(t, s, sess, "1 开")
 	load := miscCtx(sess, 14, 8, nil)
 	for i := 0; i < 3; i++ {

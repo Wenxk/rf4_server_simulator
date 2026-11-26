@@ -38,13 +38,20 @@ var reelStressRateTunables = map[int64]string{
 
 // reelPartWearMatrix 是各件每受力秒的消耗速率缺省值（包级口径，测试与回落用）。
 // 旋钮（category 34）与手柄（4）官服实测不磨损，不入矩阵；电机（81）停扣待官服电轮数据。
+//
+// 2026-11-26 用户要求：所有类型装备的单次损耗统一压到 1e-7，钓鱼时不必持续关注磨损。
+// 原值取官服实测档位带（油/齿/导环 0.0004、轴承/线杯 0.00012、竿坯 0.00003 %/s），
+// 现全部改为 1e-7（%/受力秒）——一场 300 秒的拉扯也只磨 3e-5%。
+// 需要恢复官服手感时把这里的值改回去即可，tunable 覆盖优先级更高。
+const reelStressWearPerSec = 0.0000001
+
 var reelPartWearMatrix = map[int64]reelPartWearRates{
-	reelPartCatOil:      {perStressSec: 0.0004},
-	reelPartCatGear:     {perStressSec: 0.0004},
-	reelPartCatBearing:  {perStressSec: 0.00012},
-	reelPartCatSpool:    {perStressSec: 0.00012},
-	reelPartCatGuides:   {perStressSec: 0.0004},
-	reelPartCatRodBlank: {perStressSec: 0.00003},
+	reelPartCatOil:      {perStressSec: reelStressWearPerSec},
+	reelPartCatGear:     {perStressSec: reelStressWearPerSec},
+	reelPartCatBearing:  {perStressSec: reelStressWearPerSec},
+	reelPartCatSpool:    {perStressSec: reelStressWearPerSec},
+	reelPartCatGuides:   {perStressSec: reelStressWearPerSec},
+	reelPartCatRodBlank: {perStressSec: reelStressWearPerSec},
 }
 
 // reelPartCounts 是本竿攒下来要结算的受力账。
@@ -302,6 +309,49 @@ func (s *Server) reelBodyDurabilityInFields(ctx context.Context, reel *store.Ite
 	return clampUnit(math.Min(weighted, weakest+reelBodyWeakSpotTolerance)), true
 }
 
+// rodBodyFuseCategories 是竿侧熔断件：竿坯或导环磨穿即整竿不可用。
+// 手柄（cat 4）官方实测不磨损，不入熔断也不入加权。
+var rodBodyFuseCategories = []int64{reelPartCatRodBlank, reelPartCatGuides}
+
+// rodBodyDurabilityInFields 按「竿本体耐久 = 竿内零件综合」算竿此刻的耐久。
+// 竿没有摩擦片那种权威量，所以直接取最弱件：一根竿的可用性由最薄弱的环节决定
+// （导环断了线就过不去，竿坯断了整根报废），加权平均会把单点损坏掩盖掉。
+// 缺件（老档没有物化出厂子件）按满寿命处理，避免把读不懂的库存误判成损坏。
+func (s *Server) rodBodyDurabilityInFields(ctx context.Context, fields []proto.Field) (float64, bool) {
+	if s == nil {
+		return 0, false
+	}
+	found := false
+	weakest := 1.0
+	for _, category := range rodBodyFuseCategories {
+		child, def, _, ok := s.selectedReelPart(ctx, fields, category)
+		if !ok || child == nil || def == nil {
+			continue
+		}
+		found = true
+		life := reelChildDurability(child)
+		if life <= 0 {
+			return 0, true
+		}
+		if life < weakest {
+			weakest = life
+		}
+	}
+	return clampUnit(weakest), found
+}
+
+// rodBodyDurability 是 rodBodyDurabilityInFields 的建档入口（从行里解字段树）。
+func (s *Server) rodBodyDurability(ctx context.Context, row *store.Item) (float64, bool) {
+	if s == nil || row == nil {
+		return 0, false
+	}
+	fields, err := FieldsFromJSON(row.FieldsJSON)
+	if err != nil {
+		return 0, false
+	}
+	return s.rodBodyDurabilityInFields(ctx, fields)
+}
+
 // recalcReelBodyDurability 换件或修理之后重算本体耐久，并允许上调（不走单调保护）。
 // 本体是里面零件的综合：换掉烧穿的摩擦片必须能把外面那格抬起来，否则永远修不好。
 // 返回是否真的抬起来了。
@@ -322,6 +372,93 @@ func (s *Server) recalcReelBodyDurability(ctx context.Context, row *store.Item) 
 	}
 	row.Durability = body
 	return true
+}
+
+// ---------------------------------------------------------------------------
+// 钓获磨损的单层化（2026-11-26）
+//
+// 修掉的历史问题：外层 item.durability 原本按「每尾鱼固定率」线性扣，内部零件按
+// 搏鱼受力秒扣，两条路径互不校准，于是同一个装备有两本账。实测 conv_5706 外层
+// 0.99302 而零件聚合 0.99915（差 0.61%）；竿更明显——cast_10059 外层 -0.22% 而
+// 导环 -0.093%，spin_10158 外层 -0.06% 而导环 -0.171%，两个方向都有。
+//
+// 现在的口径：**外层不再单独扣减**，外层的值一律由内部零件聚合得出。
+// 「每次钓获」这条通道改为只扣内部零件（轮内四件 / 竿侧竿坯+导环），
+// 再由聚合把结果写回外层，这样背包里看到的那格与拆开看到的零件永远一致。
+// ---------------------------------------------------------------------------
+
+// reelCatchWearPartsInFields 按「每次钓获」给轮内零件扣耐久，返回零件定义 ID → 扣掉比例。
+// 只动轮侧磨损件（轮油/主齿轮/轴承/线杯）；摩擦片是烧件走泄力打滑，旋钮/手柄/电机不磨损。
+//
+// 口径：amountPerPart 是「绝对耐久比例」，与旧外层扣减（durability-1e-7）同一单位，
+// **不再按百分点除以 100**。受力通道的速率矩阵是「百分点/受力秒」才要除 100；
+// 这里若也除 100，1e-7 会变成 1e-9，低于 float32 在 1.0 附近的 1.192e-07 分辨率，
+// 每次舍回原值 —— 表面看是"永不磨损"，实际是精度把账吃掉了。
+func (s *Server) reelCatchWearPartsInFields(ctx context.Context, fields []proto.Field, amountPerPart float64) map[string]float64 {
+	out := map[string]float64{}
+	if s == nil || amountPerPart <= 0 {
+		return out
+	}
+	for _, category := range reelWearPartCategories {
+		child, def, _, ok := s.selectedReelPart(ctx, fields, category)
+		if !ok || child == nil || def == nil {
+			continue
+		}
+		cur := reelChildDurability(child)
+		if cur <= 0 {
+			continue
+		}
+		// 品质好的零件更耐：与受力通道同一口径，除以品质寿命系数。
+		worn := clampUnit(amountPerPart / reelPartLifeFactor(reelPartQuality(def)))
+		if worn <= 0 {
+			continue
+		}
+		next := cur - worn
+		if next < 0 {
+			next = 0
+		}
+		if !setReelChildDurability(child, next) {
+			continue
+		}
+		out[def.ItemID] = cur - next
+	}
+	return out
+}
+
+// rodCatchWearPartsInFields 按「每次钓获」给竿侧零件扣耐久（竿坯/导环），返回零件定义 ID → 扣掉比例。
+// 与 applyRodStressWear 同源：先补齐出厂子件，再按品类扣。amountPerPart 是绝对耐久比例，
+// 与 reelCatchWearPartsInFields 同口径（不除 100）。
+func (s *Server) rodCatchWearPartsInFields(ctx context.Context, row *store.Item, fields []proto.Field, amountPerPart float64) map[string]float64 {
+	out := map[string]float64{}
+	if s == nil || row == nil || amountPerPart <= 0 {
+		return out
+	}
+	if !s.ensureRodWearChildren(ctx, row, fields) {
+		return out
+	}
+	for _, category := range reelRodWearPartCategories {
+		child, def, _, ok := s.selectedReelPart(ctx, fields, category)
+		if !ok || child == nil || def == nil {
+			continue
+		}
+		cur := reelChildDurability(child)
+		if cur <= 0 {
+			continue
+		}
+		worn := clampUnit(amountPerPart / reelPartLifeFactor(reelPartQuality(def)))
+		if worn <= 0 {
+			continue
+		}
+		next := cur - worn
+		if next < 0 {
+			next = 0
+		}
+		if !setReelChildDurability(child, next) {
+			continue
+		}
+		out[def.ItemID] = cur - next
+	}
+	return out
 }
 
 // restoreReelInternalsInFields 把轮内零件恢复到额定状态，只改内存中的物品树。

@@ -511,7 +511,16 @@ func (s *Server) canFishWithBait(ctx context.Context, uid int64, gearGUID string
 	return rod == nil || rod.UID == uid && len(s.currentBaits(ctx, gearGUID)) > 0
 }
 
+// baitWearPerBite 是「可重复使用饵」每次咬口的耐久下降量。
+// 2026-11-26 用户要求：所有类型装备单次损耗统一 1e-7，钓鱼时不必持续关注磨损。
+// 原本软饵/复合亮片一类（cat17 LureType 3/8/9/13/14/16）每口 0.02（2%）、
+// 仿生饵（cat27 BaitType 17）每口 0.005（0.5%），是全部磨损通道里最猛的一条——
+// 16 口就能磨掉软饵三分之一。现统一压到 1e-7，与 wearPerCatchAmount 同值。
+// 咬口/嘬饵（鱼没咬上、饵被啃）走同一条规则，两者都按此值扣。
+const baitWearPerBite = 0.0000001
+
 // baitUseRule 区分可食饵、重复使用的仿生饵及入水消耗的窝料。
+// 返回 (是否消耗整份, 每次咬口的耐久磨损量)。
 func baitUseRule(def *store.ItemDef, cast bool) (bool, float64) {
 	if def == nil {
 		return false, 0
@@ -528,14 +537,14 @@ func baitUseRule(def *store.ItemDef, cast bool) (bool, float64) {
 	}
 	if def.Category == 27 {
 		if attrs.BaitType == 17 {
-			return false, 0.005
+			return false, baitWearPerBite
 		}
 		return true, 0
 	}
 	if def.Category == 17 {
 		switch attrs.LureType {
 		case 3, 8, 9, 13, 14, 16:
-			return false, 0.02
+			return false, baitWearPerBite
 		}
 	}
 	return false, 0

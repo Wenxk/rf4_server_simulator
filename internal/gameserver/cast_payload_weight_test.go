@@ -154,19 +154,42 @@ func TestRigWearKeyFollowsAssemblyCategory(t *testing.T) {
 		catLure:  "lure",
 		catBait:  "bait",
 		catFloat: "float",
+		catReel:  "reel",
 		29:       "default",
-		catReel:  "default",
 	}
 	for slot, want := range cases {
 		if got := wearKey(slot); got != want {
 			t.Fatalf("slot %d 应映射到 %q，实得 %q", slot, want, got)
 		}
 	}
-	if !(wearPerCatch[wearKey(catLine)] > wearPerCatch[wearKey(catHook)] &&
-		wearPerCatch[wearKey(catHook)] > wearPerCatch[wearKey(catLure)]) {
-		t.Fatal("主线应比鱼钩磨得快，鱼钩应比拟饵磨得快")
-	}
 	if wearPerCatch[wearKey(catBait)] != 0 {
 		t.Fatal("鱼饵是消耗品，不应按耐久磨损")
+	}
+	// 2026-11-26 用户要求全类型单次损耗统一，不再有「线磨得快、竿磨得慢」的阶梯。
+	for _, key := range []string{"rod", "line", "hook", "lure", "float", "reel", "default"} {
+		if wearPerCatch[key] != wearPerCatchAmount {
+			t.Fatalf("%s 单次磨损应为统一值 %g，实得 %g", key, wearPerCatchAmount, wearPerCatch[key])
+		}
+	}
+}
+
+// TestWearPerCatchSurvivesFloat32Rounding 守住 1e-7 这个量级的可用性：
+// 耐久以 float32 承载，1.0 附近 ulp = 1.192e-07。若有人把速率再调小到 ulp 以下，
+// 扣减会被舍入吃掉，变成「永远不掉耐久」的静默失效。
+func TestWearPerCatchSurvivesFloat32Rounding(t *testing.T) {
+	t.Parallel()
+	cur := float32(1.0)
+	next := cur - float32(wearPerCatchAmount)
+	if next >= cur {
+		t.Fatalf("单次磨损 %g 被 float32 舍入吃掉（ulp=%g），装备将永不磨损",
+			wearPerCatchAmount, float64(cur)-float64(next))
+	}
+	// 连续扣 10 次必须单调下降，不能卡在同一个值上。
+	for i := 0; i < 10; i++ {
+		after := cur - float32(wearPerCatchAmount)
+		if after >= cur {
+			t.Fatalf("第 %d 次扣减未生效：%g -> %g", i+1, cur, after)
+		}
+		cur = after
 	}
 }

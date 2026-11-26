@@ -95,9 +95,10 @@ func TestFightReelSlipWearFlatAcrossSettings(t *testing.T) {
 	}
 }
 
-// TestFightReelSlipWearMatchesOfficial 钉住官服校准点：连续出线的磨损率
-// ≈0.00024%/s——W5 实测 112s 重度打滑磨 0.027%。期望值取抓包字面量，不用实现复算。
-// 拍平后（2026-11-12）速率不分档位，这里仍以 29 档（锁轮）走过同一通道作代表。
+// TestFightReelSlipWearMatchesOfficial 原本钉住官服校准点（W5 实测 112s 重度打滑磨 0.027%）。
+// 2026-11-26 用户要求全类型单次损耗统一压到 1e-7，该官服量级已不适用，本用例改为
+// 守住「打滑通道仍然生效且速率等于 基准/校准秒数」——基准是 reelSlipWear，校准是
+// reelSlipCalibrationSeconds，两者都仍是 tunable 可调，改任一个必须复核另一个。
 func TestFightReelSlipWearMatchesOfficial(t *testing.T) {
 	srv := &Server{}
 	w := newFightWearForTest(7.7, 5, 50, 1)
@@ -107,16 +108,15 @@ func TestFightReelSlipWearMatchesOfficial(t *testing.T) {
 		_, slip, _, _ := srv.fightReelTickWear(w, 1)
 		total += slip
 	}
-	// 0.027% = 0.00027 寿命比例；官服单样本，给 ±25% 容差。
-	const want = 0.00027
-	if math.Abs(total-want) > want*0.25 {
-		t.Fatalf("112s 重度打滑应磨 %.5f（官服 W5 实测 0.027%%），实得 %.5f", want, total)
+	wantPerSec := reelSlipWear / reelSlipCalibrationSeconds
+	want := wantPerSec * 112
+	if math.Abs(total-want) > 1e-15 {
+		t.Fatalf("112s 重度打滑应磨 %.12f（基准 %g / 校准 %gs），实得 %.12f",
+			want, reelSlipWear, reelSlipCalibrationSeconds, total)
 	}
-	// 换算口径：连续打滑烧完一套摩擦片约 115 小时，不再是旧的 5 小时。
-	hours := 1 / (total / 112) / 3600
-	if hours < 60 || hours > 180 {
-		t.Fatalf("摩擦片按打滑小时数寿命应落在 60~180h（官服口径），实得 %.0fh", hours)
-	}
+	// 换算口径：按当前速率连续打滑烧完一套摩擦片的小时数（仅作量级记录，不再限定区间）。
+	hours := 1 / wantPerSec / 3600
+	t.Logf("按当前速率，连续重度打滑约 %.0f 小时烧完一套摩擦片", hours)
 }
 
 func TestFightReelOilLowersSlipWear(t *testing.T) {

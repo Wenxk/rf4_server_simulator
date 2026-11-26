@@ -221,8 +221,17 @@ func loadMarketOverlay() {
 	}
 }
 
-// applyPriceGradeLadder 用未达标基准价（"1"）重算四档价，忽略表里可能残留的 2/3/4 列。
-// 价表已只存 "1"，这里是唯一的档位推导点：改动只会影响基准价本身。
+// applyPriceGradeLadder 补齐四档价：表里**显式给出的档位以表为准**，缺的才按
+// 未达标基准价（"1"）× speciesPriceGradeFactor 推算。
+//
+// 2026-11-25 改口径（原先是无条件重算、忽略表里的 2/3/4）。原因是后台
+// species_econ 那 30 行覆盖里有 5 种鱼故意不服从阶梯（frog 四档 8.88 / 48.88 /
+// 588.88 / 1000.88、chimaera 329.88 / 568.88 / 888.88 / 1488.88 等），把它们
+// 合并进资产时若仍按阶梯重算，frog 蓝冠会从 1000.88 掉到 53.28（差 19 倍）。
+// 逐档实价是刻意的经济调控，不是噪声，不能拿「统一形状」去覆盖它。
+//
+// 阶梯仍是缺省：253 种里只有这 5 种显式写了 2/3/4，其余 248 种照旧由
+// "1" × 阶梯生成。空值、0 与负数一律视为「未给」，避免把没填的档位打成 0 价。
 func applyPriceGradeLadder(table marketOverlayMap) {
 	for _, fishes := range table {
 		for _, rec := range fishes {
@@ -231,7 +240,11 @@ func applyPriceGradeLadder(table marketOverlayMap) {
 				continue
 			}
 			for i, f := range speciesPriceGradeFactor {
-				rec[strconv.Itoa(i+1)] = base * f
+				key := strconv.Itoa(i + 1)
+				if v, given := rec[key]; given && v > 0 {
+					continue // 表里显式给了这一档，尊重它
+				}
+				rec[key] = base * f
 			}
 		}
 	}
@@ -1920,59 +1933,36 @@ func deepInts(v *proto.Value) []int64 {
 // 耐久衰减与修复
 // ---------------------------------------------------------------------------
 
+// wearPerCatchAmount 是「每次成功钓获」对各类组件造成的耐久下降量。
+// 2026-11-26 用户要求：不管什么类型装备，单次损耗一律 1e-7，让钓鱼时不必
+// 持续关注装备磨损。这里刻意保持全类型同值（含 reel 新增档位），不要再按
+// 「线承力件磨得快、竿结构件磨得慢」的直觉分档。
+//
+// 精度说明：耐久以 float32 承载，1.0 附近的 ulp = 1.192e-07。1e-7 略小于一个
+// ulp，实际每次落到 1.192e-07（一次舍入），不会归零、也不会死循环，扣减真实生效。
+// 若未来再调小到 5e-8 以下，就会被 float32 吃掉变成「永远不掉」，见
+// TestWearPerCatchSurvivesFloat32Rounding。
+const wearPerCatchAmount = 0.0000001
+
 // wearPerCatch 定义每次成功钓获对各组件造成的耐久下降量。
+// 全部类型同值——包括 2026-11-26 补上的 "reel"（渔轮 cat 6）。
+// 此前渔轮不在 persistedSlotWearKey 里，落 default 0.0006，比鱼竿快 3 倍；
+// 现补专属档位，取值与其他类型一致，不再有「轮子比竿磨得快」的差异。
 var wearPerCatch = map[string]float64{
-	"rod":     0.0002, // 竿本体：结构件，磨损慢于线/钩
-	"line":    0.0015, // 鱼线：承力件，磨损最快
-	"hook":    0.0012, // 鱼钩
-	"bait":    0.0,    // 鱼饵是消耗品，由数量扣减而非耐久
-	"float":   0.0004, // 浮漂
-	"lure":    0.0008, // 路亚（反复抛投磨损）
-	"default": 0.0006, // 其它组件
+	"rod":     wearPerCatchAmount,
+	"line":    wearPerCatchAmount,
+	"hook":    wearPerCatchAmount,
+	"bait":    0.0, // 鱼饵是消耗品，由数量扣减而非耐久
+	"float":   wearPerCatchAmount,
+	"lure":    wearPerCatchAmount,
+	"reel":    wearPerCatchAmount,
+	"default": wearPerCatchAmount,
 }
 
 // slotWearKey 将组件槽位映射到磨损类别。
-var slotWearKey = map[int64]string{
-	1: "line", 2: "line", 3: "hook", 4: "bait", 5: "float",
-	6: "lure", 7: "lure", 8: "lure",
-}
-
-// wearRigForCatch 在 14/4 成功后降低钓组各组件的耐久。
-// 4/5 重建以 item.durability 列为准，更新该列即可同步字段。
-func (s *Server) wearRigForCatch(ctx context.Context, rigGUID string) {
-	if rigGUID == "" || s.DB == nil {
-		return
-	}
-	comps, err := s.DB.ListRigComponents(ctx, rigGUID)
-	if err != nil {
-		return
-	}
-	for _, c := range comps {
-		if c.GUID == "" {
-			continue
-		}
-		key, ok := slotWearKey[c.Slot]
-		if !ok {
-			key = "default"
-		}
-		amount := wearPerCatch[key]
-		if amount <= 0 {
-			continue
-		}
-		row, err := s.DB.GetItemByGUID(ctx, c.GUID)
-		if err != nil || row == nil {
-			continue
-		}
-		newD := math.Max(0.0, row.Durability-amount)
-		if math.Abs(newD-row.Durability) < 1e-9 {
-			continue
-		}
-		if err := s.DB.SetItemDurability(ctx, row.GUID, newD); err == nil {
-			s.log.Info("钓获磨损", "guid", shortGUID(row.GUID),
-				"类别", key, "耐久", fmt.Sprintf("%.4f->%.4f", row.Durability, newD))
-		}
-	}
-}
+// 旧的 slotWearKey（按 1..8 客户端序号映射）与 wearRigForCatch 已于 2026-11-26
+// 一并删除：前者把主线/鱼钩/浮漂全部退化成 default，后者早已零调用点。
+// 生产口径只有 progress_ops.go 的 persistedSlotWearKey（按 item 品类号映射）。
 
 // ---------------------------------------------------------------------------
 // 17/12 设钓深（handlers/fishing/17_12.py + item_factory.rod_rig_set_depth）

@@ -110,6 +110,8 @@ func (s *Server) settleCatchXPWithQualifications(ctx context.Context, uid int64,
 
 // 磨损槽位使用 item category，而不是客户端序号。鱼线与前导按承力线计算，
 // 钩、拟饵和浮漂分别使用各自的磨损率。
+// 2026-11-26：补上 catReel（渔轮 cat 6）。此前渔轮不在此表，落 default，
+// 单次扣 0.0006、比鱼竿快 3 倍；现值与其他类型一致（见 wearPerCatchAmount）。
 var persistedSlotWearKey = map[int64]string{
 	catLine:  "line",
 	catLead:  "line",
@@ -117,6 +119,7 @@ var persistedSlotWearKey = map[int64]string{
 	catLure:  "lure",
 	catBait:  "bait",
 	catFloat: "float",
+	catReel:  "reel",
 }
 
 func (s *Server) wearRigForCatchPersisted(ctx context.Context, rigGUID string) {

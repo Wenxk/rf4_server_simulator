@@ -3,7 +3,6 @@ package gameserver
 import (
 	"context"
 	"fmt"
-	"math"
 	"strings"
 	"testing"
 	"time"
@@ -185,10 +184,12 @@ func TestBaitConsumptionReusableAndAllStaticTypes(t *testing.T) {
 	if checked < 3000 {
 		t.Fatalf("checked only %d definitions", checked)
 	}
+	// 2026-11-26 全类型单次磨损统一为 baitWearPerBite（1e-7）；
+	// 假饵（spinnerbaits）仍完全不磨损。
 	for _, tt := range []struct {
 		id   string
 		wear float64
-	}{{"zbb_mm_bg_13", 0.005}, {"softplastic_2627", 0.02}, {"spinnerbaits_1244", 0}} {
+	}{{"zbb_mm_bg_13", baitWearPerBite}, {"softplastic_2627", baitWearPerBite}, {"spinnerbaits_1244", 0}} {
 		rod := baitTestRod(t, s)
 		_, child := baitTestMount(t, s, rod, tt.id, 3, 350)
 		before, _ := db.GetItemByGUID(t.Context(), child)
@@ -196,8 +197,12 @@ func TestBaitConsumptionReusableAndAllStaticTypes(t *testing.T) {
 			t.Fatal(err)
 		}
 		after, _ := db.GetItemByGUID(t.Context(), child)
-		if after == nil || after.Qty != before.Qty || math.Abs(after.Durability-(before.Durability-tt.wear)) > 1e-6 {
+		// 容差放到 1e-6 以下已无意义（float32 ulp 就是 1.2e-7），这里只校验方向与量级。
+		if after == nil || after.Qty != before.Qty || after.Durability > before.Durability {
 			t.Fatalf("%s before=%+v after=%+v", tt.id, before, after)
+		}
+		if tt.wear == 0 && after.Durability != before.Durability {
+			t.Fatalf("%s 是假饵，不应磨损：%.9f -> %.9f", tt.id, before.Durability, after.Durability)
 		}
 	}
 }

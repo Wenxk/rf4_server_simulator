@@ -11,11 +11,10 @@ import (
 const reelDurabilityStep = 0.20
 
 // reelSlipWear 是泄力打滑的统一基准磨损率：除以打滑校准秒数 reelSlipCalibrationSeconds
-// 得每秒率 ≈ 0.00024%/s，对齐官服 W5 实测（112s 重度打滑磨 0.027%）。2026-11-12 拍平：
-// 官服只有这一个速率点（W5 当时不在锁轮档、档位号未记录），逐档阶梯没有任何对照数据，
-// 全部摘除（specs/changes/reel-slip-rate-flat）。旧直接磨损入口（damageReelSlip /
-// degradeFrictionWasher，仅测试引用）仍按"次"用同一基准。
-const reelSlipWear = 0.0001
+// 得每秒率。2026-11-26 用户要求所有装备单次损耗统一压到 1e-7，原值 0.0001（≈0.00024%/s，
+// 对齐官服 W5 实测 112s 重度打滑 0.027%）已下调为 1e-7 → ≈2.4e-9 %/s。
+// 官服逐档阶梯本就无对照数据（specs/changes/reel-slip-rate-flat 已拍平），此处只改量级。
+const reelSlipWear = 0.0000001
 
 // reelSlipWearBase 返回所有档位统一的打滑基准磨损率（tunable reel_slip_wear）：
 // 缺失、非数值、≤0 或非有限值一律回落到代码默认，保证未配置时行为不变。

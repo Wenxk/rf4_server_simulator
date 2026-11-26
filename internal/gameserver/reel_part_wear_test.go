@@ -31,14 +31,21 @@ func TestReelPartWearMatchesOfficialRates(t *testing.T) {
 	}
 	counts := reelPartCounts{StressSecs: fightSecs}
 	for _, tc := range official {
-		want := tc.rate * fightSecs / 100 // 官服实测的寿命比例
-		got := reelPartWearFor(tc.category, 100, counts, reelPartWearMatrix[tc.category].perStressSec)
+		// 2026-11-26 用户要求全类型单次损耗统一压到 1e-7，官服实测档位不再生效。
+		// 本用例改为校验「矩阵里的速率确实被用上了」：期望值取矩阵当前值，
+		// 只看量级与单调性，不再钉官服字面量（官服数值见上方 official 注释留档）。
+		rate := reelPartWearMatrix[tc.category].perStressSec
+		want := rate * fightSecs / 100
+		got := reelPartWearFor(tc.category, 100, counts, rate)
 		if got <= 0 {
 			t.Fatalf("品类 %d 受力 %vs 应耗耐久", tc.category, fightSecs)
 		}
-		if math.Abs(got-want) > want*0.2 {
-			t.Fatalf("品类 %d 官服 17s 应磨 %.6f（%.5f%%/s），实得 %.6f",
-				tc.category, want, tc.rate, got)
+		if math.Abs(got-want) > 1e-12 {
+			t.Fatalf("品类 %d 应按矩阵速率 %.9f%%/s 扣 %.9f，实得 %.9f",
+				tc.category, rate, want, got)
+		}
+		if rate != reelStressWearPerSec {
+			t.Fatalf("品类 %d 速率应为统一值 %g，实得 %g", tc.category, reelStressWearPerSec, rate)
 		}
 	}
 	// 摩擦片不参与受力矩阵：它的账由打滑单独结，再叠一层会变成第二个摩擦片。
@@ -66,9 +73,10 @@ func TestReelPartWearMatchesOfficialRates(t *testing.T) {
 		t.Fatal("消耗量必须除以品质寿命系数")
 	}
 	// 生产口径：速率走 tunable，非法值回落矩阵缺省。
+	// 2026-11-26 矩阵缺省已统一为 reelStressWearPerSec（1e-7），断言跟着常量走。
 	srv := &Server{}
-	if got := srv.reelStressRateFor(reelPartCatOil); math.Abs(got-0.0004) > 1e-12 {
-		t.Fatalf("轮油受力速率缺省应为 0.0004，实得 %v", got)
+	if got := srv.reelStressRateFor(reelPartCatOil); math.Abs(got-reelStressWearPerSec) > 1e-12 {
+		t.Fatalf("轮油受力速率缺省应为 %g，实得 %v", reelStressWearPerSec, got)
 	}
 	if got := srv.reelStressRateFor(reelPartCatWasher); got != 0 {
 		t.Fatalf("矩阵外品类速率应为 0，实得 %v", got)
