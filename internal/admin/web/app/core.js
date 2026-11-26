@@ -58,6 +58,8 @@ export const ICONS = {
   doc: '<path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7M9 19h4"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/>',
   rules: '<path d="M9 11 11 13 15 9"/><rect x="3" y="4" width="18" height="16" rx="2"/>',
+  // 天气：云 + 半露的太阳，与旧后台左栏同一个图形语言。
+  weather: '<circle cx="8" cy="8" r="2.6"/><path d="M8 2.6v1.4M8 12v1.4M2.6 8H4M12 8h1.4M3.9 3.9l1 1M11.1 11.1l1 1M3.9 12.1l1-1M11.1 4.9l1-1"/><path d="M9.5 19.5a3.5 3.5 0 0 1 .6-6.95 4.5 4.5 0 0 1 8.6 1.2 3 3 0 0 1-.7 5.75z"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>',
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
@@ -362,6 +364,8 @@ const HPOS = {
   // 鱼种档案复用了「钓场与鱼口」的横幅取景：两者都是看水面的页面。
   ecology: '52% 62%',
   bait: '44% 56%', mail: '58% 64%', tuning: '58% 46%', params: '58% 46%',
+  // 天气页看的是天空与水面：取景往左上抬，别把横幅落在纯水面上。
+  weather: '42% 34%',
   changelog: '62% 88%', release: '62% 88%', about: '50% 58%', audit: '54% 44%',
 };
 

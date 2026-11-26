@@ -13,6 +13,7 @@ const NAV = [
   ['waters', '水域与鱼种', '每个水域出哪些鱼', 'map'],
   ['hooks', '钩子手感', '真实型号 · 入口容量 · 咬口概率', 'hook'],
   ['bait', '鱼饵偏好', '每种鱼现在吃什么', 'bait'],
+  ['weather', '天气预览', '每图温度区间 · 逐时天气', 'weather'],
   ['mail', '邮件', '发消息和物品附件', 'mail'],
   ['tuning', '游戏参数', '手感 · 收益 · 活动', 'sliders'],
   ['release', '发布说明', '版本更新 · 修复内容', 'doc'],
@@ -27,6 +28,7 @@ const PAGES = {
   ecology: () => import('./pages/ecology.js'),
   waters: () => import('./pages/waters.js'),
   bait: () => import('./pages/bait.js'),
+  weather: () => import('./pages/weather.js'),
   hooks: () => import('./pages/hooks.js'),
   tuning: () => import('./pages/tuning.js'),
   shop: () => import('./pages/shop.js'),
@@ -374,6 +376,17 @@ function loginView() {
 
 async function boot() {
   const app = $('#app');
+  // 先把存下来的主题写到 <html data-theme> 上，再开始建框架。
+  //
+  // theme-aerial.css 里有几十条 `:root[data-theme=dark] …{…!important}`，
+  // 而 applyThemeState 原来只在总览页的 themeMenu() 里被调用一次。直接深链到
+  // 别的页（或刷新在别的页）时属性根本没写上：系统深色下 color-scheme 让
+  // 浏览器把人给了深色，但自定义变量拿到的却是 light-dark() 的浅色分支，
+  // 于是输入框是白底、文字是浅色，肉眼一片空白。这里补一次全局应用。
+  try {
+    const savedTheme = localStorage.getItem('rf4.theme') || 'system';
+    if (['light', 'dark'].includes(savedTheme)) document.documentElement.dataset.theme = savedTheme;
+  } catch (e) {}
   me = null;
   if (getToken()) {
     try { me = await api('/api/me'); }

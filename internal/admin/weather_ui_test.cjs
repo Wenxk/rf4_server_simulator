@@ -105,7 +105,7 @@ function mkPreview(mapKey,mapName){
 }
 
 test('weather preview page renders days chart bands and season compare',async()=>{
-  const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
+  const html=fs.readFileSync(path.join(__dirname,'web/spa.html'));
   const maps=[
     {key:'level_001_lake',map_name:'克马羚诺也湖',has_data:true},
     {key:'level_009_ahtuba',map_name:'阿赫图巴河',has_data:true},
@@ -134,6 +134,16 @@ test('weather preview page renders days chart bands and season compare',async()=
       return json({map_name:(maps.find(x=>x.key===m)||{}).map_name||m,game_now:0,active:mkActive(m)});
     }
     if(key.startsWith('/api/'))return json({});
+    // SPA 入口会按相对路径去拉 app/*.js 与 *.css：这些必须真的从 web/ 目录读出来，
+    // 不能像旧后台那样一律回 index.html，否则模块加载拿到的是 HTML，整页白屏。
+    const rel=decodeURIComponent(key.replace(/^\/+/,''));
+    const file=path.join(__dirname,'web',rel);
+    if(rel && fs.existsSync(file) && fs.statSync(file).isFile()){
+      const ext=path.extname(file).toLowerCase();
+      const mime={'.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.jpg':'image/jpeg',
+        '.webp':'image/webp','.png':'image/png','.json':'application/json','.html':'text/html; charset=utf-8'}[ext]||'application/octet-stream';
+      res.writeHead(200,{'Content-Type':mime});res.end(fs.readFileSync(file));return;
+    }
     res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html);
   });
   await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -144,7 +154,7 @@ test('weather preview page renders days chart bands and season compare',async()=
     await context.addInitScript(()=>{localStorage.setItem('rf4_admin_token','fixture')});
     const page=await context.newPage(),errors=[];
     page.on('pageerror',e=>errors.push(e.message));
-    await page.goto(`http://127.0.0.1:${server.address().port}/admin/#weather`,{waitUntil:'networkidle'});
+    await page.goto(`http://127.0.0.1:${server.address().port}/admin/spa.html#/weather`,{waitUntil:'networkidle'});
 
     // 1) 默认选中阿赫图巴河，状态行给出图名/天数/季节。
     await page.locator('#wxDayCards .wx-day').first().waitFor();

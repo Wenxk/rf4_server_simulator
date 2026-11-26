@@ -4395,3 +4395,193 @@ body{--side-page-width:clamp(26rem,40vw,44rem);
 .rarity-hint .tier-2{color:#c9963c;border-color:#c9963c}
 :root[data-theme=dark] .rarity-hint .tier-2{color:#f0c46a;border-color:#f0c46a}
 .rarity-hint .mono{font-size:11.2px;color:var(--muted)}
+
+/* ===== 天气预览（批次 5） ===== */
+/* 旧后台这一页是硬编码深色（#0e1b29 / #0c1826 / #0a1725 一堆字面量），
+   搬到明暗双主题的 SPA 里必须换成变量 + currentColor，否则浅色主题下
+   卡片是黑砖、温度刻度是灰字看不见。以下数值只调「密度与层级」，
+   颜色一律走 var()。 */
+
+.wx-toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 4px}
+.wx-toolbar select{min-width:150px}
+.wx-toolbar select#wxMap{flex:1 1 220px;max-width:300px;min-width:180px}
+.wx-toolbar .btn{margin-left:0}
+.wx-toolbar .btn:last-child{margin-left:auto}
+
+/* 概要 chip 行：当前天气 / 气温区间 / 水温区间 / 季节 + 右侧大时钟 */
+.wx-sum{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:12px 0 14px}
+.wx-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:6px;
+  border:1px solid var(--line);background:var(--sunk);font-size:12.5px;color:var(--ink)}
+.wx-chip b{font-family:var(--mono);font-size:13.5px;font-weight:700;color:var(--ink)}
+.wx-chip .k{color:var(--muted);font-size:11px}
+.wx-clock{margin-left:auto;display:inline-flex;align-items:center;gap:9px;padding:6px 12px;
+  border:1px solid var(--line);border-radius:6px;background:var(--sunk)}
+.wx-clock .k{color:var(--muted);font-size:11px}
+.wx-clock b{font-family:var(--mono);font-size:19px;font-weight:700;color:var(--accent);
+  font-variant-numeric:tabular-nums;letter-spacing:.02em}
+
+/* 7 天卡片 */
+.wx-day-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;margin-bottom:16px}
+.wx-day{position:relative;border:1px solid var(--line);border-radius:8px;padding:10px 8px 9px;
+  background:var(--raise);cursor:pointer;transition:border-color .16s,transform .16s;
+  overflow:hidden;text-align:center;min-width:0;font:inherit;color:inherit;user-select:none}
+.wx-day:hover{border-color:var(--accent);transform:translateY(-2px)}
+.wx-day:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wx-day.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.wx-day .dl{font-size:11px;color:var(--muted);letter-spacing:.04em}
+.wx-day .dl b{color:var(--ink);font-size:12px;font-weight:600;letter-spacing:0}
+.wx-day .ic{height:44px;display:grid;place-items:center;margin:4px 0 2px}
+.wx-day .kn{font-size:12.5px;font-weight:650}
+.wx-day .tt{font-family:var(--mono);font-size:13px;margin-top:3px;font-variant-numeric:tabular-nums}
+.wx-day .tt .hi{color:var(--accent)}
+.wx-day .tt .lo{color:var(--g2)}
+.wx-day .wt{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px}
+.wx-day .rn{font-size:10.5px;color:var(--muted);margin-top:2px;min-height:14px}
+.wx-day.now::after{content:"现在";position:absolute;right:6px;top:6px;font-size:9.5px;
+  padding:1px 5px;border-radius:4px;background:var(--accent);color:var(--accent-ink);font-weight:700}
+
+/* 天气图标与天气名的配色：每种天气一个色相，两套主题各给一组亮度。
+   图标本身用 currentColor，所以只要设 color。 */
+.wx-k-clear,.wx-t-clear{color:#d8961f}
+.wx-k-few,.wx-t-few{color:#c9963c}
+.wx-k-cloudy,.wx-t-cloudy{color:#7d8b92}
+.wx-k-rain,.wx-t-rain{color:#3f8ed0}
+.wx-k-heavy,.wx-t-heavy{color:#2f6fb0}
+.wx-k-thunder,.wx-t-thunder{color:#7c5a96}
+:root[data-theme=dark] .wx-k-clear,:root[data-theme=dark] .wx-t-clear{color:#ffd479}
+:root[data-theme=dark] .wx-k-few,:root[data-theme=dark] .wx-t-few{color:#f0c46a}
+:root[data-theme=dark] .wx-k-cloudy,:root[data-theme=dark] .wx-t-cloudy{color:#9fb4c8}
+:root[data-theme=dark] .wx-k-rain,:root[data-theme=dark] .wx-t-rain{color:#8fc6ff}
+:root[data-theme=dark] .wx-k-heavy,:root[data-theme=dark] .wx-t-heavy{color:#6aa9ff}
+:root[data-theme=dark] .wx-k-thunder,:root[data-theme=dark] .wx-t-thunder{color:#b48bff}
+
+/* 小标题（「温度曲线（选中日）」这类页面内二级块） */
+.wx-sub-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  flex-wrap:wrap;margin:16px 0 8px;padding-top:12px;border-top:1px solid var(--line-soft)}
+.wx-sub-head h3{margin:0;font-size:14.5px;font-weight:650;letter-spacing:0;text-transform:none;color:var(--ink)}
+.wx-sub-head p{margin:2px 0 0;color:var(--muted);font-size:12px}
+
+/* 温度曲线 */
+.wx-chart{margin-top:2px}
+.wx-chart-in{border:1px solid var(--line-soft);border-radius:6px;background:var(--sunk);padding:4px 2px}
+.wx-chart-in svg{display:block;width:100%;height:auto}
+.wx-chart-in .wx-grid{stroke:var(--line-soft);stroke-width:1}
+.wx-chart-in .wx-axis-t{fill:var(--muted);font-size:10px;font-family:var(--mono)}
+.wx-chart-in .wx-tick{stroke:var(--line);stroke-width:1}
+.wx-chart-in .wx-rain{fill:#d8a13a;opacity:.62}
+.wx-chart-in .wx-thunder{fill:#c2566d;opacity:.82}
+.wx-chart-in .wx-line{stroke-width:2}
+.wx-chart-in .wx-line.air{stroke:#e08a3c}
+.wx-chart-in .wx-line.surface{stroke:#3ea8d4}
+.wx-chart-in .wx-line.mid{stroke:#2c9f86}
+.wx-chart-in .wx-line.deep{stroke:#7c5a96}
+:root[data-theme=dark] .wx-chart-in .wx-line.air{stroke:#ffb27a}
+:root[data-theme=dark] .wx-chart-in .wx-line.surface{stroke:#8fe6ff}
+:root[data-theme=dark] .wx-chart-in .wx-line.mid{stroke:#37e2b0}
+:root[data-theme=dark] .wx-chart-in .wx-line.deep{stroke:#9d8bff}
+/* 昼夜分段底色：只压一层很淡的色。深色主题下原来给到 .55 时，
+   晨/昼/昏三块把曲线、网格和刻度全糊住了（2026-11-26 截图核对），
+   所以两套主题都压到只够分辨「这段时间是哪一段」的程度。 */
+.wx-chart-in .wx-seg{opacity:.10}
+.wx-chart-in .wx-seg.night{fill:#1b2b45}
+.wx-chart-in .wx-seg.dawn{fill:#2f6f8c}
+.wx-chart-in .wx-seg.day{fill:#c8a24a}
+.wx-chart-in .wx-seg.dusk{fill:#6b4a7a}
+:root[data-theme=dark] .wx-chart-in .wx-seg{opacity:.20}
+.wx-chart-in .wx-seg-t{fill:var(--muted);font-size:10px;opacity:.85}
+:root[data-theme=dark] .wx-chart-in .wx-seg-t{fill:#a9b8ae}
+
+.wx-legend{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 0;font-size:11.6px;color:var(--muted)}
+.wx-legend span{display:inline-flex;align-items:center;gap:6px}
+.wx-legend .wx-sw{width:14px;height:3px;border-radius:2px;display:inline-block}
+.wx-legend .wx-sw.air{background:#e08a3c}
+.wx-legend .wx-sw.surface{background:#3ea8d4}
+.wx-legend .wx-sw.mid{background:#2c9f86}
+.wx-legend .wx-sw.deep{background:#7c5a96}
+.wx-legend .wx-sw.rain{background:#d8a13a;height:8px;width:8px;border-radius:1px}
+.wx-legend .wx-sw.thunder{background:#c2566d;height:8px;width:8px;border-radius:1px}
+:root[data-theme=dark] .wx-legend .wx-sw.air{background:#ffb27a}
+:root[data-theme=dark] .wx-legend .wx-sw.surface{background:#8fe6ff}
+:root[data-theme=dark] .wx-legend .wx-sw.mid{background:#37e2b0}
+:root[data-theme=dark] .wx-legend .wx-sw.deep{background:#9d8bff}
+
+/* 温度分档条 */
+.wx-band{display:flex;height:26px;border-radius:5px;overflow:hidden;border:1px solid var(--line);background:var(--sunk)}
+.wx-band i{position:relative;transition:filter .16s;display:block}
+.wx-band i:hover{filter:brightness(1.2)}
+.wx-band-row{display:flex;justify-content:space-between;gap:8px;font:11px/1.5 var(--mono);color:var(--muted);margin-top:6px}
+.wx-band-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;margin-top:10px;max-height:230px;overflow:auto}
+.wx-band-list .wx-band-row{margin-top:0;padding:3px 0;border-bottom:1px solid var(--line-soft)}
+.wx-band-list .wx-band-row span:first-child{color:var(--ink)}
+.wx-note{margin:11px 0 0;font-size:11.5px;line-height:1.65}
+.wx-note b{color:var(--ink);font-weight:600}
+.wx-note code{font-family:var(--mono);font-size:11.2px;padding:1px 4px;border-radius:3px;
+  background:var(--sunk);border:1px solid var(--line-soft)}
+
+/* 四季对比 */
+.wx-season{display:flex;flex-direction:column;gap:7px;margin-top:2px}
+.wx-season .sr{display:grid;grid-template-columns:46px minmax(0,1fr) 104px;gap:9px;align-items:center;font-size:12px}
+.wx-season .sn{color:var(--muted);white-space:nowrap}
+.wx-season .sb{position:relative;height:18px;border-radius:4px;background:var(--sunk);
+  border:1px solid var(--line-soft);overflow:hidden}
+.wx-season .sb i{position:absolute;top:0;bottom:0;background:var(--g2);border-radius:3px;opacity:.55}
+.wx-season .sr.now .sn{color:var(--accent);font-weight:700}
+.wx-season .sr.now .sb{border-color:var(--accent)}
+.wx-season .sr.now .sb i{opacity:1;background:var(--accent)}
+.wx-season .sv{font-family:var(--mono);text-align:right;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.wx-axis{display:grid;grid-template-columns:46px minmax(0,1fr) 104px;gap:9px;margin-top:2px}
+.wx-axis .wx-axis-mid{display:flex;justify-content:space-between;font:10.5px/1.4 var(--mono);color:var(--muted)}
+
+/* 全部水域对比表 */
+.wx-cmp{width:100%;border-collapse:collapse;font-size:12.5px}
+.wx-cmp th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.03em;
+  padding:8px 10px;border-bottom:1px solid var(--line)}
+.wx-cmp td{padding:7px 10px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+.wx-cmp tbody tr{cursor:pointer}
+.wx-cmp tbody tr:hover{background:var(--sunk)}
+.wx-cmp tr.on{background:var(--sunk);box-shadow:inset 2px 0 0 var(--accent)}
+.wx-cmp td .mono{font-size:11px;color:var(--muted)}
+.wx-cmp .wx-water{color:var(--g2);font-weight:600}
+.wx-cmp .wx-rng{position:relative;display:block;height:8px;border-radius:4px;
+  background:var(--sunk);border:1px solid var(--line-soft);min-width:130px}
+.wx-cmp .wx-rng i{position:absolute;top:0;bottom:0;border-radius:3px;background:var(--g2);opacity:.85}
+
+/* 当前活跃鱼种表 */
+.wx-ftable{border:1px solid var(--line-soft);border-radius:6px;overflow:hidden}
+.wx-frow{display:grid;grid-template-columns:minmax(130px,1.5fr) 60px minmax(110px,1.1fr) 50px 50px 54px minmax(80px,1fr);
+  gap:9px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line-soft);font-size:12.5px}
+.wx-frow:last-child{border-bottom:none}
+.wx-frow.wx-fhead{font-size:11px;color:var(--muted);letter-spacing:.03em;background:var(--sunk)}
+.wx-frow .nm{display:flex;flex-direction:column;gap:1px;min-width:0}
+.wx-frow .nm b{font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wx-frow .nm i{font-style:normal;font-size:10.5px;color:var(--muted);font-family:var(--mono);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wx-frow .num{font-family:var(--mono);text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+.wx-frow .num.sc{color:var(--accent);font-weight:700}
+.wx-frow.idle{opacity:.62}
+.wx-fbar{display:block;height:7px;border-radius:4px;background:var(--sunk);overflow:hidden}
+.wx-fbar i{display:block;height:100%}
+.wx-fbar i.ok{background:var(--g2)}
+.wx-fbar i.no{background:var(--muted);opacity:.5}
+.wx-rt{display:inline-block;padding:0 5px;border-radius:3px;font-size:10.5px;font-weight:700;
+  border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.wx-rt.r1{color:var(--accent);border-color:var(--accent)}
+.wx-rt.r2{color:#c9963c;border-color:#c9963c}
+:root[data-theme=dark] .wx-rt.r2{color:#f0c46a;border-color:#f0c46a}
+.wx-fidle{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}
+.wx-fidle summary{cursor:pointer;font-size:12px;color:var(--muted);padding:3px 0}
+.wx-fidle summary:hover{color:var(--ink)}
+.wx-fidle .wx-frow{border-bottom:1px solid var(--line-soft);padding-left:0;padding-right:0}
+
+/* 温度区间 / 四季对比 两栏并排 */
+.wx-duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin-top:14px}
+#wxCmpCard{margin-top:14px}
+
+@media(max-width:1100px){.wx-day-row{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .wx-frow{grid-template-columns:minmax(110px,1.4fr) 54px minmax(90px,1fr) 44px 44px 48px minmax(70px,.8fr)}}
+@media(max-width:820px){.wx-day-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wx-band-list{grid-template-columns:1fr}
+  .wx-frow{grid-template-columns:minmax(100px,1.3fr) 50px minmax(80px,1fr) 44px 44px;
+    row-gap:3px}
+  .wx-frow>span:nth-child(6),.wx-frow>span:nth-child(7){display:none}
+  .wx-clock{margin-left:0;width:100%;justify-content:space-between}}
