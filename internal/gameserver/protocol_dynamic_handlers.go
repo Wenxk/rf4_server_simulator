@@ -3,6 +3,7 @@ package gameserver
 import (
 	"context"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"strings"
@@ -271,6 +272,54 @@ func hDynamicRigSnapshot(ctx *Ctx) ([]byte, bool) {
 
 // hDynamicRodBreak 17/9 rod/break：按断件 GUID 持久化断线/断竿并回 11028。
 // 请求参数顺序为 [竿 GUID, 断件 GUID, 物理模型]；没有断件时回退到当前竿。
+
+// logBreakBodyProbe 把 17/9 原始 body 落一条诊断日志，供核对客户端上报内容。
+//
+// 只做原样转储：反编译文档里的 +0x10~+0x30 是 dboabijkbif 结构体内部偏移，
+// 不是 body 里的字节位置，两者之间还隔着序列化布局，不能按结构体偏移直接读。
+// 已实测对齐的 body 偏移见 docs/analysis-client-line-break-detection-2026-11-12.md
+// §2.1（`+0x2f` 鱼拉力、`+0x33` 断件上限、`+0x3f` 出线米数），共 6 帧验证。
+func logBreakBodyProbe(ctx *Ctx, rodGUID, brokenGUID string, lineOutM float64) {
+	if ctx.Log == nil || len(ctx.Body) == 0 {
+		return
+	}
+	hex := hex.EncodeToString(ctx.Body)
+	if len(hex) > 512 {
+		hex = hex[:512]
+	}
+	F, limit := rodBreakForces(ctx.Body)
+	ctx.Log.Info("17/9 body 探针", "rod", shortGUID(rodGUID),
+		"reported", shortGUID(brokenGUID), "len", len(ctx.Body),
+		"fish_pull_kg", F, "broken_limit_kg", limit,
+		"line_out_m", lineOutM, "hex", hex)
+}
+
+// rodBreakForces 从 17/9 报文体读鱼拉力与断件承力上限，两个 f32，单位 kg。
+//
+// 偏移来自实测帧对齐（6 帧，2026-11-25），不是 dboabijkbif 的结构体偏移：
+//
+//	+0x2f 鱼拉力 F       +0x33 断件上限       +0x3f 出线米数
+//
+// 校验依据：`+0x33` 与断件 item_def 的 kngaaefkpka（最大拉力）在 6 帧里全部
+// 精确相等，且 6 帧均满足 F > limit，与 FishingSet.cs:6017 的判定一致。
+//
+// 仅供诊断与日志：断件仍以客户端上报的 GUID 为准，服务端不重算最弱环
+// （客户端每次都重新遍历整条链取最小值，服务端缺自由出线状态与多钩视野，
+// 重算只会引入分歧）。读到不合规范的值一律回 0，调用方需按 0 处理。
+func rodBreakForces(body []byte) (fishPullKg, brokenLimitKg float64) {
+	read := func(off int) float64 {
+		if len(body) < off+4 {
+			return 0
+		}
+		v := math.Float32frombits(binary.LittleEndian.Uint32(body[off : off+4]))
+		if v < 0 || v > 5000 || math.IsNaN(float64(v)) || math.IsInf(float64(v), 0) {
+			return 0
+		}
+		return float64(v)
+	}
+	return read(0x2f), read(0x33)
+}
+
 // rodBreakLineOutM 从 17/9 断件上报里读实际放出的主线米数（f32，body 偏移 0x3f）。
 // 断线只该丢这段线，而不是把杯里的整卷线一起判死。
 func rodBreakLineOutM(body []byte) float64 {
@@ -329,6 +378,7 @@ func hDynamicRodBreak(ctx *Ctx) ([]byte, bool) {
 
 	if srv.DB != nil && rodGUID != zeroGUID && ctx.DecodeOK {
 		lineOutM := rodBreakLineOutM(ctx.Body)
+		logBreakBodyProbe(ctx, rodGUID, brokenGUID, lineOutM)
 		outcome, err := srv.breakLineOrRodWithLineOut(ctx.Sess.pushCtx(), ctx.Sess.Userid, rodGUID, brokenGUID, lineOutM)
 		if err == nil {
 			if outcome.OverloadProtected {

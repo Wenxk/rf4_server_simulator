@@ -3,6 +3,7 @@ package gameserver
 import (
 	"context"
 	"encoding/binary"
+	"encoding/hex"
 	"math"
 	"testing"
 
@@ -71,6 +72,119 @@ func TestRodBreakLineOutM(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			if got := rodBreakLineOutM(c.body); got != c.want {
 				t.Fatalf("got %v want %v", got, c.want)
+			}
+		})
+	}
+}
+
+// rodBreakForces 读 17/9 报文体 +0x2f（鱼拉力）与 +0x33（断件上限）两个 f32。
+//
+// 这里钉的是**实测帧对齐**出来的偏移，不是 dboabijkbif 的结构体偏移。
+// 下面 6 帧是 2026-11-25 玩家连续实测的原始 hex（原样抄自服务器日志），
+// 断件 item_id 与其 kngaaefkpka 一并记在注释里，方便日后复核。
+// 若有人再动偏移，这个用例必须一起改，并回到真实帧重新对齐。
+func TestRodBreakForcesMatchesMeasuredFrames(t *testing.T) {
+	t.Parallel()
+	// 帧里 +0x33 必须等于断件的 item_def.kngaaefkpka（静态库最大拉力）。
+	cases := []struct {
+		name   string
+		itemID string
+		limit  float64
+		hex    string
+	}{
+		{
+			name:   "引线 leader_crafted_10（事件1 00:27:50）",
+			itemID: "leader_crafted_10",
+			limit:  0.70,
+			hex:    "030335323403000cdd2a46570039cf63751b0f11891c42950c46bbe260c360ff81c7d875927097d2d90117000000013a67593f3333333f0000000000000000abc5a040000000803f00000000",
+		},
+		{
+			name:   "主线 mono_15390（事件2 00:31:02）",
+			itemID: "mono_15390",
+			limit:  2.20,
+			hex:    "030335323403000ce70db843aa5f4a231c33c83e334349b50c30fec660f97039d86590768ae02f65fb011700000001498b9640cdcc0c400000000000000000fcfa6e40000000803f00000000",
+		},
+		{
+			name:   "鱼竿 tele_10012_tl13（事件3 00:35:50）",
+			itemID: "tele_10012_tl13",
+			limit:  4.0881,
+			hex:    "030335323403000ce70db843aa5f4a231c33c83e334349b50ce70db843aa5f4a231c33c83e334349b501170000000152feeb40fcd182400000000000000000fcfa6e40000000803f00000000",
+		},
+		{
+			name:   "鱼钩 clas_20043（事件4 00:38:43）",
+			itemID: "clas_20043",
+			limit:  6.30,
+			hex:    "030335323403000c91e9ce7b1267ea7abbbc41b936bd6a280c707bdb04a9bff26b2bddf51a370bcb24011700000001fea9d9409999c9400000000000000000455ffa40000000803f00000000",
+		},
+		{
+			name:   "主线 mono_15061（事件5 00:49:35）",
+			itemID: "mono_15061",
+			limit:  0.70,
+			hex:    "030335323403000c91e9ce7b1267ea7abbbc41b936bd6a280ccf7a6784061ee6a16e499b397bfc8942011700000001b9e558403333333f00000000000000007892fd40000000803f00000000",
+		},
+		{
+			name:   "主线 mono_15390（事件6 01:00:58）",
+			itemID: "mono_15390",
+			limit:  2.20,
+			hex:    "030335323403000cdd2a46570039cf63751b0f11891c42950c30fec660f97039d86590768ae02f65fb011700000001529c3e40cdcc0c40000000000000000078929d40000000803f00000000",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			body, err := hex.DecodeString(c.hex)
+			if err != nil {
+				t.Fatalf("解码实测帧: %v", err)
+			}
+			if len(body) != 76 {
+				t.Fatalf("实测帧长度应是 76，实得 %d", len(body))
+			}
+			F, limit := rodBreakForces(body)
+			if math.Abs(limit-c.limit) > 1e-3 {
+				t.Fatalf("断件 %s 上限应 %.4f，实得 %.4f", c.itemID, c.limit, limit)
+			}
+			// 客户端只在 F 超过上限时才上报断件（FishingSet.cs:6017）。
+			if F <= limit {
+				t.Fatalf("F=%.4f 未超过上限 %.4f，与客户端判定矛盾", F, limit)
+			}
+			// 出线米数同帧必须可读，三者在同一帧里互相印证。
+			if got := rodBreakLineOutM(body); got <= 0 {
+				t.Fatalf("同帧出线米数应大于 0，实得 %v", got)
+			}
+		})
+	}
+}
+
+// rodBreakForces 的边界：过短、负值、超上限、NaN 一律回 0。
+func TestRodBreakForcesBounds(t *testing.T) {
+	t.Parallel()
+	put := func(fishPull, limit float32) []byte {
+		body := make([]byte, 0x37)
+		binary.LittleEndian.PutUint32(body[0x2f:], math.Float32bits(fishPull))
+		binary.LittleEndian.PutUint32(body[0x33:], math.Float32bits(limit))
+		return body
+	}
+	cases := []struct {
+		name         string
+		body         []byte
+		wantF, wantL float64
+	}{
+		{"nil body", nil, 0, 0},
+		{"shorter than 0x2f+4", make([]byte, 0x32), 0, 0},
+		{"only fish pull readable", func() []byte {
+			b := make([]byte, 0x33)
+			binary.LittleEndian.PutUint32(b[0x2f:], math.Float32bits(3.5))
+			return b
+		}(), 3.5, 0},
+		{"negative fish pull", put(-1, 2), 0, 2},
+		{"over cap limit", put(3, 6000), 3, 0},
+		{"NaN both", put(float32(math.NaN()), float32(math.NaN())), 0, 0},
+		{"normal", put(3.389, 0.7), 3.389000057220459, 0.7},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			F, limit := rodBreakForces(c.body)
+			if math.Abs(F-c.wantF) > 1e-6 || math.Abs(limit-c.wantL) > 1e-6 {
+				t.Fatalf("got (F=%v limit=%v) want (F=%v limit=%v)", F, limit, c.wantF, c.wantL)
 			}
 		})
 	}
