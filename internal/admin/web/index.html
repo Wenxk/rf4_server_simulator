@@ -1933,6 +1933,9 @@ async function loadWeather(){
     renderWeatherChart();
     renderWeatherBands();
     renderWeatherSeasons();
+    // 活跃鱼种随地图联动：它按 map 单独取一次（还要读鱼种生态表），
+    // 失败不该拖垮整页，所以单独 catch。
+    loadWeatherFish().catch(()=>{});
     // 对比表首次进页就拉一次，省得非要先点按钮；之后切图只重画高亮行，不重发请求。
     if(!WX_CMP)loadWeatherOverview().catch(()=>{});
     else markWeatherCompare();
@@ -2109,6 +2112,91 @@ function renderWeatherSeasons(){
       与判鱼的水层口径一致。<b>水温的季节项是全局硬编码</b>，地图差异经热响应衰减后传导，
       所以各图四季跨度相近、绝对温度不同。
     </p>`;
+}
+
+// ── 当前活跃鱼种 ───────────────────────────────────────────────
+//
+// 后端给的是「昼夜系数 × 水温系数」两个分项再加它们的乘积，这里只负责画。
+// 口径解释必须写在页面上：不含饵料与钓组，所以它是「这个时段这张图哪些鱼
+// 有活性」，不是「你现在挂这套一定能钓到」。
+async function loadWeatherFish(){
+  const mapKey=$('#wxMap').value;
+  if(!mapKey){return}
+  $('#wxFishStatus').textContent='读取中…';
+  $('#wxFishBox').innerHTML='<div class="empty">读取中…</div>';
+  try{
+    const d=await api('/api/weather/active-fish?map='+encodeURIComponent(mapKey));
+    const a=d.active;
+    if(!a){$('#wxFishBox').innerHTML='<div class="empty">没有数据</div>';return}
+    $('#wxFishStatus').textContent=`${a.game_hour}点 · ${a.segment} · 水温 ${wxF(a.water_c)}℃`;
+    renderWeatherFish(a);
+  }catch(e){
+    $('#wxFishStatus').textContent='读取失败';
+    $('#wxFishBox').innerHTML='<div class="empty">读取失败：'+esc(e.message)+'</div>';
+    $('#wxFishSum').innerHTML='';
+  }
+}
+
+function renderWeatherFish(a){
+  const top=a.fish||[];
+  const idle=a.idle||[];
+  // 头部三块：活跃比、当前水温与时段、以及这张图的名册规模。
+  $('#wxFishSum').innerHTML=[
+    ['此刻活跃',`<b>${a.active_num}</b> / ${a.total}`,`共 ${a.total} 种在册`],
+    ['时段',`<b>${esc(a.segment)}</b>`,`${a.game_hour} 点 · ${esc(a.season)}季`],
+    ['中层水温',`<b>${wxF(a.water_c)}℃</b>`,'与上方温度曲线同源'],
+  ].map(([k,v,s])=>`<span class="wx-chip"><span class="k">${esc(k)}</span>${v}<span class="k">${esc(s)}</span></span>`).join('');
+
+  if(!top.length&&!idle.length){
+    $('#wxFishBox').innerHTML='<div class="empty">该图还没有配置鱼种生态档案</div>';
+    return;
+  }
+  // 活跃鱼按综合系数画一根条，条长按当前名单里的最大值归一到 100%，
+  // 这样即使整个时段都很低迷，也能看出彼此的高下。
+  const maxScore=top.length?Math.max(...top.map(f=>f.score)):1;
+  const bar=(v,max,cls)=>{
+    const w=Math.max(2,Math.min(100,(v/Math.max(max,0.0001))*100));
+    return `<span class="wx-fbar"><i class="${cls}" style="width:${w.toFixed(1)}%"></i></span>`;
+  };
+  const tag=f=>`<span class="wx-rt r${f.rarity}">${esc(f.rarity_tag)}</span>`;
+
+  const head=`<div class="wx-frow wx-fhead">
+      <span>鱼种</span><span>稀有度</span><span>活跃时段</span>
+      <span title="昼夜四段曲线在当前时段取到的系数，峰值 1.0、最低 0.08">昼夜</span>
+      <span title="按适温区间的高斯响应算出的水温系数，最适温度时为 1.0">水温</span>
+      <span>综合</span><span style="min-width:90px">相对强度</span>
+    </div>`;
+
+  const rows=top.map(f=>`<div class="wx-frow">
+      <span class="nm"><b>${esc(f.name_zh)}</b><i>${esc(f.fish_key)}</i></span>
+      <span>${tag(f)}</span>
+      <span class="muted">${esc(f.diel_label)} · ${wxF(f.temp_min_c,0)}~${wxF(f.temp_max_c,0)}℃</span>
+      <span class="num">${f.diel_factor.toFixed(2)}</span>
+      <span class="num">${f.thermal_fact.toFixed(2)}</span>
+      <span class="num sc">${f.score.toFixed(2)}</span>
+      <span>${bar(f.score,maxScore,'ok')}</span>
+    </div>`).join('');
+
+  // 不活跃的单独一段，写明原因——否则管理员会怀疑「我的鱼去哪了」。
+  const idleHtml=idle.length?`
+    <details class="wx-fidle">
+      <summary>此刻不开口的 ${idle.length} 种（点击展开原因）</summary>
+      ${idle.map(f=>`<div class="wx-frow idle">
+        <span class="nm"><b>${esc(f.name_zh)}</b><i>${esc(f.fish_key)}</i></span>
+        <span>${tag(f)}</span>
+        <span class="muted" style="grid-column:span 3">${esc(f.reason)}</span>
+        <span class="num">${f.score.toFixed(2)}</span>
+        <span>${bar(f.score,maxScore,'no')}</span>
+      </div>`).join('')}
+    </details>`:'';
+
+  $('#wxFishBox').innerHTML=head+rows+idleHtml+`<p class="muted" style="margin:14px 0 0;font-size:11.5px;line-height:1.6">
+    综合 = 昼夜 × 水温。昼夜取四段曲线在当前时段的值（峰值 1.0、最低 0.08），
+    曲线低于 0.5 的鱼整段禁口（<b>非活跃时段（昼夜禁口）</b>）；
+    水温按高斯响应 <code>0.35+0.65·exp(−0.5z²)</code> 算，
+    <code>z=(水温−最适)/max(2.2,(上限−下限)/2)</code>。
+    <b>不含饵料、水层、钓组与技能</b>——那些要挂上具体装备才有意义，见「鱼种档案 → 鱼口」。
+  </p>`;
 }
 
 async function loadWeatherOverview(){

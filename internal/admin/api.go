@@ -149,6 +149,7 @@ func NewServer(cfg config.Admin, db *store.DB, log logger, webFS fs.FS) *Server 
 	// 天气预览：每张图的温度区间与逐小时天气（与客户端预报同源）。
 	mux.HandleFunc("GET /api/weather/maps", auth(s.handleWeatherMaps))
 	mux.HandleFunc("GET /api/weather/preview", auth(s.handleWeatherPreview))
+	mux.HandleFunc("GET /api/weather/active-fish", auth(s.handleWeatherActiveFish))
 	mux.HandleFunc("POST /api/mail/send", auth(s.handleMailSend))
 	mux.HandleFunc("GET /api/audit", auth(s.handleAudit))
 	mux.HandleFunc("GET /api/about", auth(s.handleAbout))

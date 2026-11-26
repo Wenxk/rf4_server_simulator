@@ -137,3 +137,50 @@ func (s *Server) handleWeatherPreview(w http.ResponseWriter, r *http.Request) {
 func gameNowDayHour(nowUnix int64) (int64, int64) {
 	return gameserver.ExportGameDayAndHour(nowUnix)
 }
+
+// handleWeatherActiveFish GET /api/weather/active-fish?map=level_xxx
+//
+// 返回某张图此刻「哪些鱼能钓」：昼夜曲线 × 水温响应两个分项系数、综合排序、
+// 以及不活跃鱼的原因。判断口径全部复用判鱼侧（gameserver.WeatherActiveFishFor），
+// 后台只负责从库里把鱼种生态读出来。
+func (s *Server) handleWeatherActiveFish(w http.ResponseWriter, r *http.Request) {
+	mapKey := strings.TrimSpace(r.URL.Query().Get("map"))
+	if mapKey == "" {
+		httpError(w, 400, "缺少 map 参数")
+		return
+	}
+	// 只允许有天气模板的图：活跃鱼种的水温来自天气计划，
+	// 没模板的图算不出水温，给个假活跃名单比不给更糟。
+	known := false
+	for _, k := range gameserver.ExportMapWeatherKeys() {
+		if k == mapKey {
+			known = true
+			break
+		}
+	}
+	if !known {
+		httpError(w, 404, "该地图没有天气模板: "+mapKey)
+		return
+	}
+
+	now := gameNowUnix()
+	roster, err := s.db.WeatherRosterFor(r.Context(), mapKey)
+	if err != nil {
+		httpError(w, 500, "读取鱼种名册失败: "+err.Error())
+		return
+	}
+	inputs := make([]gameserver.WeatherEcologyInput, 0, len(roster))
+	for _, r := range roster {
+		inputs = append(inputs, gameserver.WeatherEcologyInput{
+			FishKey: r.FishKey, NameZh: r.NameZh, Rarity: r.Rarity,
+			DielMask: r.DielMask, DielCurve: r.DielCurve,
+			TempMinC: r.TempMinC, TempPrefC: r.TempPrefC, TempMaxC: r.TempMaxC,
+		})
+	}
+	view := gameserver.WeatherActiveFishFor(mapKey, now, inputs)
+	writeJSON(w, map[string]any{
+		"map_name": s.weatherMapNames(r.Context(), []string{mapKey})[mapKey],
+		"active":   view,
+		"game_now": now,
+	})
+}

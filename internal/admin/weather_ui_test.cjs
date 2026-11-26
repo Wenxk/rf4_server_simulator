@@ -54,6 +54,31 @@ function mkDays(){
   });
 }
 
+// 活跃鱼种 fixture：三条活跃 + 两条不活跃（含原因）。
+// 分数刻意做成递减，好断言「按综合系数降序」这条排序契约。
+function mkActive(mapKey){
+  const f=(over)=>({
+    fish_key:'k',name_zh:'鱼',rarity:0,rarity_tag:'普通',diel_mask:2,diel_label:'昼',
+    temp_min_c:8,temp_pref_c:15,temp_max_c:22,
+    diel_factor:1,thermal_fact:1,score:1,active:true,reason:'',...over,
+  });
+  return {
+    map:mapKey,game_hour:2,segment:'夜',water_c:18.4,season:'秋',
+    total:5,active_num:3,
+    fish:[
+      f({fish_key:'perch',name_zh:'河鲈',rarity:2,rarity_tag:'超稀有',score:1.42,diel_factor:1,thermal_fact:0.95}),
+      f({fish_key:'pike',name_zh:'白斑狗鱼',rarity:1,rarity_tag:'稀有',score:0.88,diel_factor:0.95,thermal_fact:0.93}),
+      f({fish_key:'roach',name_zh:'拟鲤',score:0.41,diel_factor:0.62,thermal_fact:0.66}),
+    ],
+    idle:[
+      f({fish_key:'bream',name_zh:'欧鳊',score:0.12,diel_factor:0.08,thermal_fact:1,active:false,
+         reason:'非活跃时段（昼）'}),
+      f({fish_key:'hot',name_zh:'热水鱼',rarity:2,rarity_tag:'超稀有',score:0.35,diel_factor:1,thermal_fact:0.35,
+         active:false,reason:'水温偏离最适（最适 36.0℃）'}),
+    ],
+  };
+}
+
 function mkPreview(mapKey,mapName){
   const days=mkDays();
   let hours=[];
@@ -103,6 +128,10 @@ test('weather preview page renders days chart bands and season compare',async()=
       if(!m)return json({now_day:NOW_DAY,game_now:0,days:7,maps:overviewMaps});
       const name=(maps.find(x=>x.key===m)||{}).map_name||m;
       return json({preview:mkPreview(m,name),now_day:NOW_DAY,now_hour:2,game_now:0});
+    }
+    if(key==='/api/weather/active-fish'){
+      const m=url.searchParams.get('map');
+      return json({map_name:(maps.find(x=>x.key===m)||{}).map_name||m,game_now:0,active:mkActive(m)});
     }
     if(key.startsWith('/api/'))return json({});
     res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html);
@@ -182,6 +211,42 @@ test('weather preview page renders days chart bands and season compare',async()=
     await page.selectOption('#wxDays','14');
     await page.waitForFunction(()=>true);
     assert.ok(previewCalls.some(c=>c.days==='14'));
+
+    // 9) 当前活跃鱼种：活跃 3 条单独成行，不活跃 2 条折在 details 里且写明原因。
+    await page.locator('#wxFishBox .wx-frow:not(.wx-fhead)').first().waitFor();
+    const activeRows=page.locator('#wxFishBox .wx-frow:not(.wx-fhead):not(.idle)');
+    assert.equal(await activeRows.count(),3,'活跃鱼应正好 3 行');
+    // 排序契约：综合系数必须递减（后端已排好，前端不得再乱序）。
+    const scores=await page.locator('#wxFishBox .wx-frow:not(.wx-fhead):not(.idle) .num.sc')
+      .evaluateAll(ns=>ns.map(n=>parseFloat(n.textContent)));
+    assert.equal(scores.length,3);
+    for(let i=1;i<scores.length;i++){
+      assert.ok(scores[i-1]>=scores[i],`综合系数应降序：${scores.join(' > ')}`);
+    }
+    // 头部三个 chip：活跃比、时段、水温。
+    const fishSum=await page.locator('#wxFishSum').innerText();
+    assert.match(fishSum,/3/);
+    assert.match(fishSum,/5/);
+    assert.match(fishSum,/夜/);
+    assert.match(fishSum,/18\.4/);
+    // 稀有度标签要能区分档位（超稀有/稀有不能都渲染成普通）。
+    const boxText=await page.locator('#wxFishBox').innerText();
+    assert.match(boxText,/超稀有/);
+    assert.match(boxText,/稀有/);
+    assert.match(boxText,/河鲈/);
+    // 不活跃段默认折叠，展开后能看到原因。
+    await page.locator('#wxFishBox .wx-fidle summary').click();
+    const idleText=await page.locator('#wxFishBox .wx-fidle').innerText();
+    assert.match(idleText,/非活跃时段/);
+    assert.match(idleText,/水温偏离最适/);
+    // 口径解释必须写在页面上，否则管理员会以为这是「一定能钓到」。
+    assert.match(boxText,/不含饵料/);
+
+    // 10) 切图时活跃鱼种要跟着换（它按 map 单独请求）。
+    await page.selectOption('#wxMap','level_012_north_sea');
+    await page.waitForFunction(()=>document.querySelector('#wxStatus').textContent.includes('挪威海'));
+    await page.locator('#wxFishBox .wx-frow:not(.wx-fhead)').first().waitFor();
+    assert.equal(await page.locator('#wxFishBox .wx-frow:not(.wx-fhead):not(.idle)').count(),3);
 
     assert.deepEqual(errors,[]);
   }finally{
