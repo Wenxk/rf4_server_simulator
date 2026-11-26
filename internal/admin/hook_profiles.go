@@ -3,14 +3,18 @@ package admin
 import (
 	"math"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
+
+	"rf4server/internal/store"
 )
 
 type hookProfileRow struct {
 	ItemID                string  `json:"item_id"`
 	NumericID             int64   `json:"numeric_id"`
 	Size                  int64   `json:"size"`
+	DisplaySize           string  `json:"display_size"`
 	LengthMM              float64 `json:"length_mm"`
 	StrengthKg            float64 `json:"strength_kg"`
 	WireWeightG           float64 `json:"wire_weight_g"`
@@ -40,6 +44,7 @@ func (s *Server) handleHookProfiles(w http.ResponseWriter, r *http.Request) {
 			size = v
 		}
 	}
+	display := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("display")))
 	limit := 100
 	if v, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && v > 0 && v <= 500 {
 		limit = v
@@ -53,8 +58,13 @@ func (s *Server) handleHookProfiles(w http.ResponseWriter, r *http.Request) {
 		if size >= 0 && p.Size != size {
 			continue
 		}
+		if display != "" && strings.ToLower(p.DisplaySize) != display {
+			continue
+		}
 		if q != "" {
-			hay := strings.ToLower(p.ItemID + " " + p.Brand + " " + p.Family)
+			// 搜索同时吃 item_id、厂牌、钩型族和游戏钩号：玩家和攻略里用的是
+			// 「S16」这种号，不搜到号就只能靠记 item_id 找钩子。
+			hay := strings.ToLower(p.ItemID + " " + p.Brand + " " + p.Family + " " + p.DisplaySize)
 			if !strings.Contains(hay, q) {
 				continue
 			}
@@ -72,14 +82,41 @@ func (s *Server) handleHookProfiles(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, hookProfileRow{
 			ItemID: p.ItemID, NumericID: p.NumericID, Size: p.Size,
-			LengthMM: p.LengthMM, StrengthKg: p.StrengthKg, WireWeightG: p.WireWeightG,
+			DisplaySize: p.DisplaySize,
+			LengthMM:    p.LengthMM, StrengthKg: p.StrengthKg, WireWeightG: p.WireWeightG,
 			Quality: p.Quality, Family: p.Family, Brand: p.Brand,
 			EntryCapacityG: capG, SolidScale: p.SolidScale, HoldScale: p.HoldScale,
 			SmallFishFloor: p.SmallFishFloor, OverCapacityHoldFloor: p.OverCapacityHoldFloor,
 			UpdatedTS: p.UpdatedTS,
 		})
 	}
-	writeJSON(w, map[string]any{"profiles": out, "total": total})
+	writeJSON(w, map[string]any{"profiles": out, "total": total, "sizes": hookDisplaySizeOptions(rows)})
+}
+
+// hookDisplaySizeOptions 给筛选下拉用：按内部刻度升序返回展示钩号，附带该号
+// 有多少型号，便于看出哪些号是常用的。
+func hookDisplaySizeOptions(rows []store.HookBiteProfile) []map[string]any {
+	count := map[int64]int{}
+	for _, p := range rows {
+		count[p.Size]++
+	}
+	sizes := make([]int64, 0, len(count))
+	for size := range count {
+		sizes = append(sizes, size)
+	}
+	sort.Slice(sizes, func(i, j int) bool { return sizes[i] < sizes[j] })
+	out := make([]map[string]any, 0, len(sizes))
+	for _, size := range sizes {
+		display := ""
+		for _, p := range rows {
+			if p.Size == size && p.DisplaySize != "" {
+				display = p.DisplaySize
+				break
+			}
+		}
+		out = append(out, map[string]any{"size": size, "display_size": display, "count": count[size]})
+	}
+	return out
 }
 
 func (s *Server) handleHookProfileSave(w http.ResponseWriter, r *http.Request) {

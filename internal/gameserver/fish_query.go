@@ -83,6 +83,7 @@ type FishQueryResponse struct {
 	Flags            map[string]float64 `json:"flags"`
 	Plans            []FishQueryPlan    `json:"plans"`
 	Diel             *FishQueryDiel     `json:"diel,omitempty"`
+	Hook             *FishQueryHook     `json:"hook,omitempty"`
 	Evaluated        int                `json:"evaluated"`
 	Regions          int                `json:"regions"`
 	CandidateRegions int                `json:"candidate_regions"`
@@ -156,6 +157,9 @@ func (s *Server) QueryFish(ctx context.Context, req FishQueryRequest) (*FishQuer
 		response.Notes = []string{"当前地图的服务端鱼种名册没有目标鱼；可指定其他地图再查。"}
 		return response, nil
 	}
+	// 钩号推荐与地图、饵料、钓法都无关（钩只影响中钩后的保持率和发鱼软匹配），
+	// 所以查到鱼种名册后就算一次，两种回复路径都能带上。
+	response.Hook = s.recommendFishQueryHook(ctx, req.Fish)
 	capKg := 0.0
 	var allowedRigs []int64
 	if req.Gear != "" {

@@ -327,9 +327,14 @@ func TestHookControlsDefaultOff(t *testing.T) {
 }
 
 func TestHookNibbleSwitchKeepsProfileHoldMultiplier(t *testing.T) {
+	// 显式打开软匹配，让入口容量参与保钩：这条测的是「嘬饵开关不影响后台
+	// 保持率倍率」，不该被软匹配总闸的默认值牵连。
 	s := &Server{
-		tunCache: map[string]float64{tunableHookNibbleEnabled: 0},
-		tunAt:    time.Now(),
+		tunCache: map[string]float64{
+			tunableHookNibbleEnabled:      0,
+			tunableHookSpawnMatchStrength: 1,
+		},
+		tunAt: time.Now(),
 		hookProfiles: map[string]store.HookBiteProfile{
 			"small": {ItemID: "small", SolidScale: 1, HoldScale: .5},
 		},
@@ -342,6 +347,97 @@ func TestHookNibbleSwitchKeepsProfileHoldMultiplier(t *testing.T) {
 	}
 	if math.Abs(f.HookHoldP-.25) > 1e-9 {
 		t.Fatalf("后台保持率倍率仍应生效，HookHoldP=%.4f", f.HookHoldP)
+	}
+}
+
+// TestHookSpawnMatchZeroDisablesGapeInRetention：软匹配强度为 0 时钩入口容量
+// 不参与保钩判定——鱼重超过钩容量也不再掷骰脱钩。这正是「钩号不影响我这套
+// 鱼口」的操作口径，超载鱼不会再出现「发得出来、却有一半概率刺空」的半关状态。
+func TestHookSpawnMatchZeroDisablesGapeInRetention(t *testing.T) {
+	s := &Server{
+		tunCache: map[string]float64{tunableHookSpawnMatchStrength: 0},
+		tunAt:    time.Now(),
+	}
+	// 3.3mm 钩的有效入口约 388g，1737g 是 4.5 倍超载，几何期望保持率压在地板 0.50。
+	spec := gearPhysicsSpec{HookPresent: true, HookSize: 6, HookLengthMM: 3.3}
+	f := &RolledFish{Grade: 2, WeightG: 1737}
+	s.applyHookBiteQuality(f, spec)
+	if f.HookHoldP != 1 {
+		t.Fatalf("强度=0 时入口容量不得参与保钩，HookHoldP 应为 1，实得 %.4f", f.HookHoldP)
+	}
+	// 保持率为 1 时任何掷骰都不该判失败。
+	for i := 0; i < 200; i++ {
+		if hookRetentionFails(f) {
+			t.Fatal("保持率为 1 时不得再判脱钩")
+		}
+	}
+}
+
+// TestHookSpawnMatchOnKeepsGapeInRetention：强度非 0 时沿用几何保钩，超载鱼
+// 的保持率仍按超载程度下降。与上一条互为正反面，防止总闸写反。
+func TestHookSpawnMatchOnKeepsGapeInRetention(t *testing.T) {
+	s := &Server{
+		tunCache: map[string]float64{tunableHookSpawnMatchStrength: 1},
+		tunAt:    time.Now(),
+	}
+	spec := gearPhysicsSpec{HookPresent: true, HookSize: 6, HookLengthMM: 3.3}
+	f := &RolledFish{Grade: 2, WeightG: 1737}
+	s.applyHookBiteQuality(f, spec)
+	if math.Abs(f.HookHoldP-.50) > 1e-9 {
+		t.Fatalf("强度非 0 时应按几何压保持率到地板 0.50，实得 %.4f", f.HookHoldP)
+	}
+	// 未超载时几何本身就是 1，开关不应把它压低。
+	ok := &RolledFish{Grade: 2, WeightG: 100}
+	s.applyHookBiteQuality(ok, spec)
+	if ok.HookHoldP != 1 {
+		t.Fatalf("未超载鱼保持率应为 1，实得 %.4f", ok.HookHoldP)
+	}
+}
+
+// TestHookGeometrySwitchIgnoresGradeRatio：档位比例只管「派哪种档位」，
+// 不压制中钩后保持率（docs/gameplay.md 明示）。若这里复用
+// effectiveHookSpawnMatchStrength，开关一次档位比例就会把所有人变回
+// 「钩号无关」，那是另一套语义。
+func TestHookGeometrySwitchIgnoresGradeRatio(t *testing.T) {
+	spec := gearPhysicsSpec{HookPresent: true, HookSize: 6, HookLengthMM: 3.3}
+	ratioOn := func(strength float64) *Server {
+		return &Server{
+			tunCache: map[string]float64{
+				"grade_ratio_enabled":         1,
+				tunableHookSpawnMatchStrength: strength,
+			},
+			tunAt: time.Now(),
+		}
+	}
+	// 档位比例开 + 强度 1：几何仍要生效。
+	f := &RolledFish{Grade: 2, WeightG: 1737}
+	ratioOn(1).applyHookBiteQuality(f, spec)
+	if math.Abs(f.HookHoldP-.50) > 1e-9 {
+		t.Fatalf("档位比例不得压制保钩几何，实得 %.4f", f.HookHoldP)
+	}
+	// 档位比例开 + 强度 0：几何关掉，保持率给满。
+	f = &RolledFish{Grade: 2, WeightG: 1737}
+	ratioOn(0).applyHookBiteQuality(f, spec)
+	if f.HookHoldP != 1 {
+		t.Fatalf("强度=0 时档位比例开着也应关闭保钩几何，实得 %.4f", f.HookHoldP)
+	}
+}
+
+// TestHookGeometryOffStillAppliesProfileMultiplier：关掉几何不等于关掉
+// 后台「钩子手感」——型号级保持率倍率是独立调参，必须继续生效。
+func TestHookGeometryOffStillAppliesProfileMultiplier(t *testing.T) {
+	s := &Server{
+		tunCache: map[string]float64{tunableHookSpawnMatchStrength: 0},
+		tunAt:    time.Now(),
+		hookProfiles: map[string]store.HookBiteProfile{
+			"small": {ItemID: "small", SolidScale: 1, HoldScale: .5},
+		},
+	}
+	spec := gearPhysicsSpec{HookPresent: true, HookItemID: "small", HookSize: 6, HookLengthMM: 3.3}
+	f := &RolledFish{Grade: 2, WeightG: 1737}
+	s.applyHookBiteQuality(f, spec)
+	if math.Abs(f.HookHoldP-.5) > 1e-9 {
+		t.Fatalf("保持率倍率应在满值基础上继续生效，HookHoldP=%.4f", f.HookHoldP)
 	}
 }
 

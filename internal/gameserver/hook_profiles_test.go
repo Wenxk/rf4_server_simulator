@@ -102,6 +102,93 @@ func TestApplyHookBiteProfileDefaultsAndOverrides(t *testing.T) {
 	}
 }
 
+func TestHookDisplaySizeMappingIsCompleteAndOneToOne(t *testing.T) {
+	// 34 档刻度全都要有展示号，且展示号不能重复——重复意味着两档钩子会被显示成
+	// 同一个号，玩家按号选钩就会选错。
+	if len(hookDisplaySizes) != 34 {
+		t.Fatalf("刻度档位=%d，期望 34", len(hookDisplaySizes))
+	}
+	seen := map[string]int64{}
+	for size, display := range hookDisplaySizes {
+		if display == "" {
+			t.Fatalf("刻度 %d 缺少展示钩号", size)
+		}
+		if prev, ok := seen[display]; ok {
+			t.Fatalf("刻度 %d 与 %d 都映射到 %q", prev, size, display)
+		}
+		seen[display] = int64(size)
+	}
+	// 逆运算必须能换回去，后台按游戏钩号筛选依赖它。
+	for size, display := range hookDisplaySizes {
+		if got := hookSizeForDisplay(display); got != int64(size) {
+			t.Fatalf("hookSizeForDisplay(%q)=%d，期望 %d", display, got, size)
+		}
+	}
+	if hookDisplaySize(-1) != "" || hookDisplaySize(34) != "" {
+		t.Fatal("越界刻度必须返回空串，不能臆造钩号")
+	}
+	if hookSizeForDisplay("S99") != -1 || hookSizeForDisplay("") != -1 {
+		t.Fatal("未收录写法必须返回 -1")
+	}
+	// 相邻档位的钩长必须单调递增：展示号是给人看的，但如果它跟钩长不同向，
+	// 「大号钩钩大鱼」这条直觉就反了。
+	prevLen := -1.0
+	for size := int64(0); size < 34; size++ {
+		length := hookWeightCapG(0, size)
+		if length < prevLen {
+			t.Fatalf("刻度 %d 的容量回落，映射顺序有误", size)
+		}
+		prevLen = length
+	}
+}
+
+// 真实静态库回归：每个钩子都要落一个游戏钩号，且与物品名里的钩号一致。
+// 名字里能解析出钩号的样本必须 100% 吻合，解析不出来（如 Stinger Orig）的
+// 允许存在，但不能反过来——名字与映射冲突就是硬错。
+func TestHookDisplaySizeMatchesStaticItemNames(t *testing.T) {
+	s, _ := newStaticRigTestServer(t)
+	ctx := context.Background()
+	if _, err := s.SyncHookBiteProfiles(ctx); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := s.DB.ListHookBiteProfiles(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) < 1000 {
+		t.Fatalf("钩子档案只有 %d 条，静态数据没加载全", len(rows))
+	}
+	missing := 0
+	for _, p := range rows {
+		if p.DisplaySize == "" {
+			missing++
+		}
+	}
+	if missing != 0 {
+		t.Fatalf("%d 个钩子没有游戏钩号", missing)
+	}
+	// 抽查几个玩家实际在用的型号，钉住「库里刻度 → 界面 S 号」的对照。
+	checks := map[string]string{
+		"clas_20042":    "S20",
+		"clas_20043":    "S18",
+		"clas_20044":    "S16",
+		"clas_20045":    "S14",
+		"orig_20008_16": "S16",
+		"orig_20008_1":  "S1",
+		"triple_20686":  "S4/0",
+	}
+	for itemID, want := range checks {
+		p, ok := s.hookBiteProfileFor(itemID)
+		if !ok {
+			t.Fatalf("型号 %s 未进入缓存", itemID)
+		}
+		if p.DisplaySize != want {
+			t.Fatalf("%s 的展示钩号=%q，期望 %q（内部刻度 %d，钩长 %.2fmm）",
+				itemID, p.DisplaySize, want, p.Size, p.LengthMM)
+		}
+	}
+}
+
 func TestMountedHookCarriesItemIDIntoPhysicsSpec(t *testing.T) {
 	s, _ := newRigTestServer(t)
 	ctx := context.Background()

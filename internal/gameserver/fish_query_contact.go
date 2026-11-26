@@ -35,7 +35,8 @@ func hSocialMembers(ctx *Ctx) ([]byte, bool) {
 const fishQueryHelp = "发送：鱼名 [地图]\n例如：河鲈；河鲈 下通古斯卡河。\n鱼名支持拼音前缀，如“圆腹”或“yuanfu”；多种匹配直接取第一种。\n默认当前地图，最多推荐三组区域、鱼饵和钓法。仅支持已核对坐标的地图；按当前条件估算理论条/小时，不含客户端等待、非实际鱼获。\n查询一般很快；复杂地图请预留约3秒，结果通过个人消息返回。\n\n" +
 	"计算说明：单竿、单饵无窝料，先粗筛区域再配饵，不保证全图最优。区域估算不逐点计算水深、底质和水流。\n" +
 	"水陆说明：有本图数据时做中心与四角五点粗筛，任一点有水即保留；混合格可能含陆地，不保证可达。缺少本图数据时未排除陆地。\n" +
-	"理论速率不含客户端等待、占竿、搏鱼、收鱼、重抛及落水就位保护，不是实际鱼获或未来一小时预测。"
+	"理论速率不含客户端等待、占竿、搏鱼、收鱼、重抛及落水就位保护，不是实际鱼获或未来一小时预测。\n" +
+	"鱼钩说明：推荐号按「刚好盖住该鱼的最大个体」取最小钩——钩够大才不会中钩后脱鱼，取最小才不会把同种小鱼挡在门外。报的是客户端显示的号（S18 / S1/0 等），不是库里的内部刻度。"
 const fishQueryBudget = 3 * time.Second
 const fishQueryTimeoutReply = "查询超时（计算预算3秒），请稍后重试。"
 
@@ -97,15 +98,28 @@ func (s *Server) fishQueryReply(ctx context.Context, sess *Session, text string)
 
 func formatFishQueryReply(fishName string, result *FishQueryResponse) string {
 	fishName = fishQueryName(fishName)
+	hookLine := formatFishQueryHook(result.Hook)
 	if len(result.Plans) == 0 {
 		if d := result.Diel; d != nil {
 			minutes := (d.WaitSeconds + 59) / 60
-			return fmt.Sprintf("%s\n游戏时间 %02d:%02d，现在是「%s」，这条鱼在这个时段不开口（非活跃时段禁口）。\n约 %d 分钟后（游戏 %02d:00 进入「%s」）再查。",
+			body := fmt.Sprintf("%s\n游戏时间 %02d:%02d，现在是「%s」，这条鱼在这个时段不开口（非活跃时段禁口）。\n约 %d 分钟后（游戏 %02d:00 进入「%s」）再查。",
 				fishName, d.GameHour, d.GameMinute, d.Segment, minutes, d.NextGameHour, d.NextSegment)
+			// 禁口是时间问题，钩号照样能用，一起给出来省一次查询。
+			if hookLine != "" {
+				body += "\n" + hookLine
+			}
+			return body
 		}
-		return fishName + "\n当前地图、当前条件没有可行方案，可指定其他地图。"
+		body := fishName + "\n当前地图、当前条件没有可行方案，可指定其他地图。"
+		if hookLine != "" {
+			body += "\n" + hookLine
+		}
+		return body
 	}
 	lines := []string{result.Plans[0].MapName + " · " + fishName}
+	if hookLine != "" {
+		lines = append(lines, hookLine)
+	}
 	reference := ""
 	uniform := false
 	for i, plan := range result.Plans[:min(3, len(result.Plans))] {

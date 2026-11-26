@@ -63,6 +63,23 @@ func (s *Server) effectiveHookSpawnMatchStrength() float64 {
 	return s.tunableF(tunableHookSpawnMatchStrength, 0)
 }
 
+// hookGeometryInRetention 是「钩型发鱼软匹配强度」对中钩后保钩判定的总闸。
+// 强度为 0 时钩入口容量（hookGapeG）完全不参与保持率：鱼重超过钩容量也不再
+// 掷骰脱钩，hold 固定 1。这与发鱼侧的 applyHookSpawnMatch 是同一个参数的
+// 两副面孔——管理员把强度归零，意为「钩号不影响我这套鱼口」，若只在发鱼侧
+// 关闭而中钩侧继续按容量压保持率，超载鱼便会照常发、照常脱，等于半关。
+//
+// 刻意不复用 effectiveHookSpawnMatchStrength：那个函数在 grade_ratio_enabled=1
+// 时被强制归 0（档位比例独占派鱼权重），但档位比例只管辖「派哪种档位」，
+// 中钩后保持率不属于它的优先级范围（docs/gameplay.md 明示保持率不受此压制）。
+// 若在这里复用，开关一次档位比例就会把所有人变回「钩号无关」，那是另一个语义。
+func (s *Server) hookGeometryInRetention() bool {
+	if s == nil {
+		return false
+	}
+	return s.tunableF(tunableHookSpawnMatchStrength, 0) > 0
+}
+
 // gradeRatioGradeWeights 把可用档位及其配置权重展开为四档数组，供海图声呐等只读预览复用。
 func (s *Server) gradeRatioGradeWeights(lines cachedGradeLines, modeMult, scale, capG float64) ([4]float64, bool) {
 	model, handled := s.gradeRatioModel(lines, modeMult, scale, capG)
@@ -566,6 +583,14 @@ func (s *Server) applyHookBiteQuality(f *RolledFish, spec gearPhysicsSpec) {
 		return
 	}
 	solid, hold := hookSolidHold(f.WeightG, spec)
+	if !s.hookGeometryInRetention() {
+		// 钩入口容量不参与保钩判定：几何项直接给满，鱼重超过钩容量也不再掷骰
+		// 脱钩。必须先于档案倍率赋值，让下面的 applyHookBiteProfile 在满值基础
+		// 上继续乘后台「钩子手感」的保持率倍率——倍率与兜底下限是独立调参，
+		// 关掉软匹配不应连管理员手动配的手感一起失效。
+		// 只摘几何项，不动 solid：咬口稳定率管的是嘬饵阶段，属另一套机制。
+		hold = 1
+	}
 	if p, ok := s.hookBiteProfileFor(spec.HookItemID); ok {
 		solid, hold = applyHookBiteProfile(f.WeightG, spec, p, solid, hold)
 	}

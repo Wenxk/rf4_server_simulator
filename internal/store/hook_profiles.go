@@ -8,10 +8,15 @@ import (
 
 // HookBiteProfile 是具体鱼钩型号的咬口配置。物理尺寸、强度和品质从 item_def
 // 同步；四个 scale/floor 是服务端调参覆盖，默认值保持 1.0 / 0。
+//
+// DisplaySize 是游戏界面显示的钩号（S24 / S20 / S1/0 / S14/0 …），由 item_def
+// 的 gkfbafmbpam 刻度派生。Size 是内部刻度（0..33），两者不是同一套编号：玩家
+// 在客户端看到的、攻略里写的永远是 DisplaySize，回复和后台展示都必须用它。
 type HookBiteProfile struct {
 	ItemID                string
 	NumericID             int64
 	Size                  int64
+	DisplaySize           string
 	LengthMM              float64
 	StrengthKg            float64
 	WireWeightG           float64
@@ -28,12 +33,13 @@ type HookBiteProfile struct {
 func (d *DB) UpsertHookBiteProfile(ctx context.Context, p HookBiteProfile) error {
 	_, err := d.SQL.ExecContext(ctx, `
 		INSERT INTO hook_bite_profile(
-			item_id,numeric_id,size,length_mm,strength_kg,wire_weight_g,quality,family,brand,
-			updated_ts
-		) VALUES(?,?,?,?,?,?,?,?,?,?)
+			item_id,numeric_id,size,display_size,length_mm,strength_kg,wire_weight_g,
+			quality,family,brand,updated_ts
+		) VALUES(?,?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(item_id) DO UPDATE SET
 			numeric_id=excluded.numeric_id,
 			size=excluded.size,
+			display_size=excluded.display_size,
 			length_mm=excluded.length_mm,
 			strength_kg=excluded.strength_kg,
 			wire_weight_g=excluded.wire_weight_g,
@@ -41,15 +47,15 @@ func (d *DB) UpsertHookBiteProfile(ctx context.Context, p HookBiteProfile) error
 			family=excluded.family,
 			brand=excluded.brand,
 			updated_ts=excluded.updated_ts`,
-		p.ItemID, p.NumericID, p.Size, p.LengthMM, p.StrengthKg, p.WireWeightG,
-		p.Quality, p.Family, p.Brand, p.UpdatedTS)
+		p.ItemID, p.NumericID, p.Size, p.DisplaySize, p.LengthMM, p.StrengthKg,
+		p.WireWeightG, p.Quality, p.Family, p.Brand, p.UpdatedTS)
 	return err
 }
 
 func scanHookBiteProfile(row interface{ Scan(...any) error }) (*HookBiteProfile, error) {
 	var p HookBiteProfile
 	if err := row.Scan(
-		&p.ItemID, &p.NumericID, &p.Size, &p.LengthMM, &p.StrengthKg,
+		&p.ItemID, &p.NumericID, &p.Size, &p.DisplaySize, &p.LengthMM, &p.StrengthKg,
 		&p.WireWeightG, &p.Quality, &p.Family, &p.Brand,
 		&p.SolidScale, &p.HoldScale, &p.SmallFishFloor,
 		&p.OverCapacityHoldFloor, &p.UpdatedTS,
@@ -61,7 +67,8 @@ func scanHookBiteProfile(row interface{ Scan(...any) error }) (*HookBiteProfile,
 
 func (d *DB) GetHookBiteProfile(ctx context.Context, itemID string) (*HookBiteProfile, error) {
 	row := d.SQL.QueryRowContext(ctx, `
-		SELECT item_id,numeric_id,size,length_mm,strength_kg,wire_weight_g,quality,family,brand,
+		SELECT item_id,numeric_id,size,display_size,length_mm,strength_kg,wire_weight_g,
+		       quality,family,brand,
 		       solid_scale_bp/10000.0,hold_scale_bp/10000.0,
 		       small_fish_floor_bp/10000.0,over_capacity_hold_floor_bp/10000.0,updated_ts
 		FROM hook_bite_profile WHERE item_id=?`, itemID)
@@ -74,7 +81,8 @@ func (d *DB) GetHookBiteProfile(ctx context.Context, itemID string) (*HookBitePr
 
 func (d *DB) ListHookBiteProfiles(ctx context.Context) ([]HookBiteProfile, error) {
 	rows, err := d.SQL.QueryContext(ctx, `
-		SELECT item_id,numeric_id,size,length_mm,strength_kg,wire_weight_g,quality,family,brand,
+		SELECT item_id,numeric_id,size,display_size,length_mm,strength_kg,wire_weight_g,
+		       quality,family,brand,
 		       solid_scale_bp/10000.0,hold_scale_bp/10000.0,
 		       small_fish_floor_bp/10000.0,over_capacity_hold_floor_bp/10000.0,updated_ts
 		FROM hook_bite_profile ORDER BY size, family, item_id`)

@@ -10,6 +10,62 @@ import (
 
 const largeHookSmallFishRatio = 0.25
 
+// hookDisplaySizes 是 item_def 的 gkfbafmbpam 刻度（0..33）到游戏界面钩号的
+// 权威映射。下标就是刻度值，空串表示该刻度没有对应的 S 号。
+//
+// 这两套编号不能互相替代：玩家在客户端和攻略里看到的永远是 S 号（S20、S14、
+// S1/0…），而库里存的是内部刻度。刻度与 S 号是严格一对一的——每个刻度只对应
+// 一个 S 号，每个 S 号也只对应唯一一个钩长（例如 S16 恒为 3.30mm，与厂牌、型号
+// 无关），所以按刻度派生展示号是确定的，不需要解析物品名。
+//
+// 有序对照（刻度 → 钩长 → S 号）：
+//
+//	0 → 1.80 → S24     11 → 4.50 → S11      22 → 12.00 → S1/0
+//	1 → 1.90 → S22     12 → 5.00 → S10      23 → 14.00 → S2/0
+//	2 → 1.95 → S20     13 → 5.50 → S9       24 → 16.00 → S3/0
+//	3 → 2.00 → S19     14 → 6.00 → S8       25 → 18.00 → S4/0
+//	4 → 2.50 → S18     15 → 6.50 → S7       26 → 23.00 → S5/0
+//	5 → 3.00 → S17     16 → 7.00 → S6       27 → 24.00 → S6/0
+//	6 → 3.30 → S16     17 → 7.50 → S5       28 → 26.00 → S7/0
+//	7 → 3.50 → S15     18 → 8.00 → S4       29 → 28.00 → S8/0
+//	8 → 3.70 → S14     19 → 8.50 → S3       30 → 37.00 → S10/0
+//	9 → 4.00 → S13     20 → 9.00 → S2       31 → 48.00 → S12/0
+//	10 → 4.30 → S12    21 → 10.00 → S1      32 → 62.00 → S14/0
+//	                                        33 → 76.00 → S16/0
+//
+// 校验方式：1141 个钩子里，物品名内能解析出钩号的 807 个全部与本表一致，
+// 零冲突；剩余 334 个名字本就不含钩号（如 Stinger Orig、Reactive Original #8）。
+var hookDisplaySizes = [...]string{
+	"S24", "S22", "S20", "S19", "S18", "S17", "S16", "S15", "S14", "S13", "S12",
+	"S11", "S10", "S9", "S8", "S7", "S6", "S5", "S4", "S3", "S2", "S1",
+	"S1/0", "S2/0", "S3/0", "S4/0", "S5/0", "S6/0", "S7/0", "S8/0",
+	"S10/0", "S12/0", "S14/0", "S16/0",
+}
+
+// hookDisplaySize 把内部刻度换成游戏里显示的钩号。超出 0..33 的刻度返回空串，
+// 由调用方决定怎么兜底，不臆造号码。
+func hookDisplaySize(size int64) string {
+	if size < 0 || size >= int64(len(hookDisplaySizes)) {
+		return ""
+	}
+	return hookDisplaySizes[size]
+}
+
+// hookSizeForDisplay 是 hookDisplaySize 的逆运算，供按游戏钩号筛选/推荐使用。
+// 未收录的写法返回 -1。
+func hookSizeForDisplay(display string) int64 {
+	display = strings.TrimSpace(display)
+	if display == "" {
+		return -1
+	}
+	for i, v := range hookDisplaySizes {
+		if v == display {
+			return int64(i)
+		}
+	}
+	return -1
+}
+
 // hookFamilyFor 把 item_id 前缀归到稳定的钩型族，供管理台筛选。厂牌
 // 仍保留在 Brand 字段；钩型族和厂牌不是同一层数据。
 func hookFamilyFor(itemID string) string {
@@ -52,10 +108,12 @@ func (s *Server) syncHookBiteProfiles(ctx context.Context) (int, error) {
 		if def == nil || strings.TrimSpace(def.ItemID) == "" {
 			continue
 		}
+		size := itemDefInt(def, gearAttrHookSize)
 		p := store.HookBiteProfile{
 			ItemID:      def.ItemID,
 			NumericID:   def.NumericID,
-			Size:        itemDefInt(def, gearAttrHookSize),
+			Size:        size,
+			DisplaySize: hookDisplaySize(size),
 			LengthMM:    itemDefF32(def, gearAttrHookLen),
 			StrengthKg:  itemDefF32(def, gearAttrMaxLoad),
 			WireWeightG: itemDefF32(def, "ijbjficbhog"),
