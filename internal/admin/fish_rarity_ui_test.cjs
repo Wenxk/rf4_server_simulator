@@ -8,7 +8,7 @@ const {chromium}=require('playwright');
 //   2. 每个鱼种标固有档位（普通/稀有/超稀有）与该档预设权重，不再展示本图/全服渔获；
 //   3. 「按稀有度重设权重」只发三档（tier0~2），没有第四档。
 test('fish rarity bar shows intrinsic tiers and preset posts three tiers',async()=>{
- const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
+ const html=fs.readFileSync(path.join(__dirname,'web/spa.html'));
  let posted=null;
  const tiers=[
   {tier:0,label:'普通',weight:100,species:169,rows:200,avg_base:5.2},
@@ -44,6 +44,16 @@ test('fish rarity bar shows intrinsic tiers and preset posts three tiers',async(
    return json({weights:[100,30,5],tiers,rows:310,active:true});
   }
   if(key.startsWith('/api/'))return json({});
+  // SPA 入口会按相对路径去拉 app/*.js 与 *.css：这些必须真的从 web/ 目录读出来，
+  // 不能像旧后台那样一律回 index.html，否则模块加载拿到的是 HTML，整页白屏。
+  const rel=decodeURIComponent(key.replace(/^\/+/, ''));
+  const file=path.join(__dirname,'web',rel);
+  if(rel && fs.existsSync(file) && fs.statSync(file).isFile()){
+   const ext=path.extname(file).toLowerCase();
+   const mime={'.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.jpg':'image/jpeg',
+     '.webp':'image/webp','.png':'image/png','.json':'application/json','.html':'text/html; charset=utf-8'}[ext]||'application/octet-stream';
+   res.writeHead(200,{'Content-Type':mime});res.end(fs.readFileSync(file));return;
+  }
   res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html);
  });
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -54,7 +64,7 @@ test('fish rarity bar shows intrinsic tiers and preset posts three tiers',async(
   await context.addInitScript(()=>{localStorage.setItem('rf4_local_admin_token','fixture');localStorage.setItem('rf4_admin_token','fixture');});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#fish`,{waitUntil:'networkidle'});
+  await page.goto(`http://127.0.0.1:${server.address().port}/admin/spa.html#/waters`,{waitUntil:'networkidle'});
 
   // 说明条：只讲固有属性，不能出现按渔获量切出来的阈值或「重算稀有度」入口。
   const bar=page.locator('.params-bar', {hasText:'稀有度'});

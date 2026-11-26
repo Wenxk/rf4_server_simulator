@@ -159,8 +159,10 @@ export function relTime(ts) {
 
 // ---------- 提示 ----------
 export function toast(msg, type = 'ok') {
+  // 容器带 id="toast"：旧后台就是一个 #toast 元素，验收测试按它读提示文案。
+  // 这里保留同一个 id（容器级，不是每条一个），避免出现重复 id。
   let box = $('.toasts');
-  if (!box) { box = h('div', { class: 'toasts' }); document.body.append(box); }
+  if (!box) { box = h('div', { class: 'toasts', id: 'toast', role: 'status', 'aria-live': 'polite' }); document.body.append(box); }
   const t = h('div', { class: 'toast ' + type, role: type === 'bad' ? 'alert' : 'status', text: msg });
   box.append(t);
   setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 220); }, type === 'bad' ? 5000 : 2800);
@@ -357,6 +359,8 @@ export function setCrumbTail(text) {
 const HPOS = {
   dashboard: '52% 62%', players: '46% 40%', shop: '62% 58%', stores: '62% 58%',
   rules: '52% 62%', fish: '52% 62%', waters: '50% 58%', hooks: '60% 50%',
+  // 鱼种档案复用了「钓场与鱼口」的横幅取景：两者都是看水面的页面。
+  ecology: '52% 62%',
   bait: '44% 56%', mail: '58% 64%', tuning: '58% 46%', params: '58% 46%',
   changelog: '62% 88%', release: '62% 88%', about: '50% 58%', audit: '54% 44%',
 };

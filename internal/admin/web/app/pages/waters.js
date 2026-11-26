@@ -77,6 +77,38 @@ export default async function waters(params, scope) {
 }
 
 // ---------- 鱼种名册 ----------
+// 稀有度 = 鱼种固有属性（静态表 species_rarity：0 普通 / 1 稀有 / 2 超稀有），
+// 与钓获量、与本服测试进度都无关——剑鱼登记数再多也是超稀有，锦鲤变种没人登记
+// 也不会因此变成「极罕见」。这里只标档位与该档当前预设权重；本图/全服渔获数
+// 不再参与判定，也不再展示（那套按渔获量分档的口径已整体移除）。
+const TIER_NAMES = ['普通', '稀有', '超稀有'];
+function rarityHint(f) {
+  const tier = Math.max(0, Math.min(2, Number(f.rarity_tier) || 0));
+  const label = f.rarity_label || TIER_NAMES[tier];
+  const tw = Number(f.tier_weight) || 0;
+  return h('div', { class: 'rarity-hint' },
+    h('i', { class: 'tier tier-' + tier, text: label }),
+    tw > 0 ? h('span', { class: 'muted mono', text: '档位权重 ' + tw }) : null);
+}
+
+// 说明条：只讲「固有属性」，不出现任何按渔获量切的阈值，也不给「重算稀有度」入口。
+// 「按稀有度重设权重」影响全部水域，不属于某张图，所以这里是跳转而不是就地改。
+function rarityBar() {
+  return h('div', { class: 'params-bar' },
+    h('span', { class: 'tag', text: '稀有度' }),
+    h('span', { class: 'vals' },
+      '档位是', h('b', { text: '鱼种固有属性' }),
+      '（静态表 species_rarity，253 种：普通 169 / 稀有 45 / 超稀有 39），与钓获量、与本地测试进度无关。',
+      '基础权重按档位取预设，逐条不满意就填「覆盖权重」压过它。'),
+    h('button', {
+      type: 'button', class: 'btn alt sm', text: '按稀有度重设权重',
+      title: '按固有稀有度（普通/稀有/超稀有）重写所有水域的基础权重，可回滚；影响全部水域，所以放在鱼种档案里',
+      // 直接落到「权重档位」页签：留在这张纸上再让用户自己找页签，
+      // 等于把「影响全部水域」这件事又藏回了一层。
+      onclick: () => navigate('ecology', 'weight'),
+    }));
+}
+
 // 爱吃的饵：静态规则来自鱼饵偏好；轮换只认名册行里后端给的 bait_groups / bait_rotate_sec
 function baitLine(row, pref) {
   const allow = (pref && pref.allow) || [];
@@ -145,6 +177,7 @@ function fishView(cfg, baitByKey, scope) {
         h('td', {}, on),
         h('td', {}, h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } }, fishIcon(f.fish_key, 42),
           h('div', { style: { minWidth: 0 } }, h('b', { text: f.name_zh }), h('div', { class: 'mono', style: { fontSize: '11.6px', color: 'var(--muted)' }, text: f.fish_key }),
+            rarityHint(f),
             baitLine(f, baitByKey[f.fish_key])))),
         h('td', {}, w, h('span', { class: 'sub', text: '默认 ' + f.base_weight })),
         h('td', { style: { width: '148px' } }, h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'nowrap' } },
@@ -163,6 +196,10 @@ function fishView(cfg, baitByKey, scope) {
     form.row({ key: 'bite_delay_fixed', label: '固定咬钩时间', help: '0 表示随机；填了数字后每次都在这个时间咬钩。', kind: 'float', min: 0, unit: '秒', def: '0' }, s.bite_delay_fixed));
 
   const editor = h('div', { class: 'stack' }, bar,
+    // 稀有度与昼夜两条说明条贴在表格上方：它们解释「权重是怎么来的」，
+    // 离开表格上下文就变成没人读的横幅。
+    rarityBar(),
+    dielBar(cfg),
     h('details', { class: 'advanced', style: { borderTop: 0, marginTop: '-6px' } }, h('summary', {}, '这个水域的咬钩快慢 ', h('small', { text: `（现在：${Number(s.bite_delay_fixed) > 0 ? '固定 ' + s.bite_delay_fixed + ' 秒' : '最长 ' + s.bite_delay_max + ' 秒'}）` })), params),
     h('div', { style: { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', margin: '0 0 10px' } },
       h('div', { style: { flex: '1 1 200px', minWidth: '150px', maxWidth: '320px' } }, searchBox('筛选鱼名', (v) => { q = v.toLowerCase(); draw(); })),
@@ -173,9 +210,30 @@ function fishView(cfg, baitByKey, scope) {
       }, 'ghost sm'),
       btn('添加鱼种', () => addFish(fish, () => { touch(); draw(); }), 'sm', { icon: 'plus' })),
     h('p', { class: 'muted small', text: '「权重」决定这种鱼出现的多少：权重越大越常见，右边的百分比是换算后的占比。关闭或权重填 0 表示这里不出这种鱼。' }),
-    h('div', { class: 'tbl', style: { maxHeight: 'calc(100vh - 360px)', overflow: 'auto' } }, h('table', {},
+    h('div', { class: 'tbl', id: 'fishRows', style: { maxHeight: 'calc(100vh - 360px)', overflow: 'auto' } }, h('table', {},
       h('thead', {}, h('tr', {}, h('th', { text: '出现' }), h('th', { text: '鱼' }), h('th', { class: 'num', text: '权重' }), h('th', { class: 'num', text: '占比' }), h('th', { text: '已保存来源' }))), tbody)));
   return editor;
+}
+
+// 昼夜说明条：当前游戏时刻 + 四段曲线口径。
+// 「当前权重 = 覆盖权重 × 当前时段系数」这句必须写出来，否则「权重填了 100
+// 怎么显示 42」永远要解释一遍。
+function dielBar(c) {
+  if (!c) return null;
+  if (!c.diel_weight_enabled) {
+    return h('div', { class: 'params-bar' },
+      h('span', { class: 'tag', text: '昼夜' }),
+      h('span', { class: 'vals', text: '昼夜权重已关闭：所有鱼种全天同权重，「当前权重」等于覆盖权重本身' }));
+  }
+  const lo = Number(c.diel_curve_min) || 0.08;
+  const hh = String(Number(c.game_hour) || 0).padStart(2, '0');
+  return h('div', { class: 'params-bar' },
+    h('span', { class: 'tag blue', text: '昼夜' }),
+    h('span', { class: 'vals diel-legend' },
+      '现在是 ', h('b', { text: c.diel_now_name || '' }),
+      `（游戏第 `, h('b', { text: String(Number(c.game_day) || 0) }), ` 天 ${hh}:00）· 四段曲线 `,
+      h('b', { text: '[夜,晨,昼,昏]' }), '，峰值 ', h('b', { text: '×1' }), '（只压不抬）· 最低 ',
+      h('b', { text: '×' + lo }), ' · 「当前权重」= 覆盖权重 × 当前时段系数'));
 }
 
 function addFish(fish, done) {

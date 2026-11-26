@@ -4344,3 +4344,54 @@ body{--side-page-width:clamp(26rem,40vw,44rem);
 .fishcard-body>div>em{display:block;font-style:normal;font-size:11.5px;font-weight:700;letter-spacing:.03em;
   color:var(--muted);margin-bottom:5px}
 @media(max-width:900px){.fishcard-body{grid-template-columns:1fr;gap:10px}}
+
+/* ===== 鱼种档案（生态基线 / 经济四档 / 权重档位） ===== */
+/* 覆盖值金色：与旧后台同色（#ffd479），一眼分出「这是我改过的」。
+   基线与覆盖是两份独立对象，颜色反了整页就读不出哪条鱼被动过。 */
+.overridden{color:#c9963c;font-weight:600}
+:root[data-theme=dark] .overridden{color:#f0c46a}
+.ok-text{color:var(--ok)}
+.warn-text{color:var(--warn)}
+.bad-text{color:var(--bad)}
+
+/* 生态卡片：四组数据横排。比 253 行宽表好在窄屏不用横滚，
+   而真正要横向对照的（窗宽、水层）已经放大成条形图了。 */
+.fishcard-body.eco-grid{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.fishcard-body.eco-grid>div>em{display:block;font-style:normal;font-size:11.5px;font-weight:700;
+  letter-spacing:.03em;color:var(--muted);margin-bottom:5px}
+
+/* 经济四档：一行四格，按档位并排看阶梯走偏没走偏。 */
+.ecogradeline{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.ecograde{display:flex;flex-direction:column;gap:1px;padding:6px 8px;border:1px solid var(--line-soft);
+  border-radius:4px;background:var(--sunk);min-width:0}
+.ecograde em{font-style:normal;font-size:10.8px;color:var(--muted);letter-spacing:.02em}
+.ecograde .mono{font-size:12.6px;color:var(--ink);overflow-wrap:anywhere}
+.ecograde b{font-weight:600}
+@media(max-width:620px){.ecogradeline{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ===== 鱼口表上方说明条（稀有度 / 昼夜） ===== */
+/* 说明条是「解释数字从哪来」的，不是告警：左侧细线 + 低对比文字，
+   不抢表格的注意力，但离开它就没人看得懂「当前权重 42」是怎么算的。 */
+.params-bar{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;margin:0 0 8px;
+  padding:8px 0 8px 11px;border-left:2px solid var(--line-strong);
+  font-size:12.5px;line-height:1.7;color:var(--muted)}
+.params-bar .tag{flex:none;display:inline-flex;align-items:center;padding:1px 7px;border-radius:3px;
+  font-size:11.5px;font-weight:700;letter-spacing:.02em;color:var(--muted);
+  border:1px solid var(--line);background:var(--sunk)}
+.params-bar .tag.blue{color:var(--accent);border-color:var(--accent)}
+.params-bar .tag.gold{color:#c9963c;border-color:#c9963c}
+.params-bar .vals{flex:1 1 320px;min-width:0;overflow-wrap:anywhere}
+.params-bar .vals b{color:var(--ink);font-family:var(--mono);font-weight:600}
+.params-bar .vals.b{font-weight:600}
+.params-bar button{margin-left:auto;flex:none}
+
+/* 鱼种行里的稀有度标记：档位颜色与「档位权重 N」并排。
+   tier-0 灰、tier-1 青、tier-2 金——金色只留给超稀有，避免满屏金。 */
+.rarity-hint{display:flex;align-items:center;gap:7px;margin-top:2px;flex-wrap:wrap}
+.rarity-hint .tier{font-style:normal;display:inline-flex;align-items:center;padding:0 5px;border-radius:3px;
+  font-size:10.8px;font-weight:700;letter-spacing:.02em;border:1px solid var(--line);color:var(--muted)}
+.rarity-hint .tier-0{border-color:var(--line);color:var(--muted)}
+.rarity-hint .tier-1{color:var(--accent);border-color:var(--accent)}
+.rarity-hint .tier-2{color:#c9963c;border-color:#c9963c}
+:root[data-theme=dark] .rarity-hint .tier-2{color:#f0c46a;border-color:#f0c46a}
+.rarity-hint .mono{font-size:11.2px;color:var(--muted)}

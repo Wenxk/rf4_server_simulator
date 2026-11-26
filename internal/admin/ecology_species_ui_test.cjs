@@ -8,7 +8,7 @@ const {chromium}=require('playwright');
 //   1) 列表里「基线灰、覆盖金」不能串位（override 与 base 是两份独立对象）；
 //   2) 留空字段必须发 null（= 继承基线），不能发 0。
 test('ecology species page edits full ecology profile',async()=>{
- const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
+ const html=fs.readFileSync(path.join(__dirname,'web/spa.html'));
  let posted=null;
 
  // 基线：江鳕的合成值（18.9℃）——正是要纠正的那类数据。
@@ -53,6 +53,16 @@ test('ecology species page edits full ecology profile',async()=>{
           rotation:{enabled:false,pool_size:0,quota:0,active_baits:[],next_switch:0},
           layer:[0.3,0.75,1],qual_g:0,trophy_g:0}]});
   if(key.startsWith('/api/'))return json({});
+  // SPA 入口会按相对路径去拉 app/*.js 与 *.css：这些必须真的从 web/ 目录读出来，
+  // 不能像旧后台那样一律回 index.html，否则模块加载拿到的是 HTML，整页白屏。
+  const rel=decodeURIComponent(key.replace(/^\/+/, ''));
+  const file=path.join(__dirname,'web',rel);
+  if(rel && fs.existsSync(file) && fs.statSync(file).isFile()){
+   const ext=path.extname(file).toLowerCase();
+   const mime={'.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.jpg':'image/jpeg',
+     '.webp':'image/webp','.png':'image/png','.json':'application/json','.html':'text/html; charset=utf-8'}[ext]||'application/octet-stream';
+   res.writeHead(200,{'Content-Type':mime});res.end(fs.readFileSync(file));return;
+  }
   res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html);
  });
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -63,9 +73,11 @@ test('ecology species page edits full ecology profile',async()=>{
   await context.addInitScript(()=>{localStorage.setItem('rf4_admin_token','fixture')});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#ecology`,{waitUntil:'networkidle'});
+  await page.goto(`http://127.0.0.1:${server.address().port}/admin/spa.html#/ecology`,{waitUntil:'networkidle'});
 
-  // 列表：两行、状态分别是「基线」和「已覆盖」，窗宽 = 上限-下限。
+  // 列表：两张卡片、状态分别是「基线」和「已覆盖」，窗宽 = 上限-下限。
+  // 2026-11-26 起本页是卡片式（与鱼饵页一致），不再是宽表：
+  // 一张卡 = 一个鱼种，卡片数就是行数。
   const table=page.locator('#ecoTable');
   await table.locator('text=江鳕').waitFor();
   const text=await table.innerText();
@@ -75,38 +87,39 @@ test('ecology species page edits full ecology profile',async()=>{
   assert.match(text,/已覆盖/);
   assert.match(text,/春\/冬/);            // pike 覆盖后的季节掩码 = 1|8
   assert.equal(await page.locator('#ecoStatus').innerText(),'2 / 2 个鱼种 · 1 个已覆盖');
-  // 稀有度列读的是 rarity_tier 而不是 rarity：写错会渲染成 undefined。
+  // 稀有度标记读的是 rarity_tier 而不是 rarity：写错会渲染成 undefined。
   assert.doesNotMatch(text,/undefined/);
   assert.match(text,/稀有/);
 
   // 水层与水域原本在「饵料规则」页，2026-11-25 搬到本页（都是鱼种属性，不是饵料属性）。
-  // 表头必须在，否则等于悄悄丢了这两列信息。
-  const heads=await table.locator('thead th').allInnerTexts();
-  assert.ok(heads.includes('水层'),`缺少水层列 → ${heads.join('|')}`);
-  assert.ok(heads.includes('水域'),`缺少水域列 → ${heads.join('|')}`);
+  // 卡片没有 <thead>，改为逐卡断言这两块内容真的在，否则等于悄悄丢了信息。
+  const cards=table.locator('.fishcard');
+  assert.equal(await cards.count(),2,'两个鱼种应渲染成两张卡片');
+  const burbotCard=cards.filter({hasText:'江鳕'});
+  assert.match(await burbotCard.innerText(),/栖息水层/,'卡片缺少水层块');
+  assert.match(await burbotCard.innerText(),/出现的水域/,'卡片缺少水域块');
   // 水层要显示活动区间（min~max）而不只是偏好单值。
   assert.match(text,/0\.30~1\.00/,'水层未显示活动区间');
   // 水域要按鱼分别显示，不能两条都渲染成同一串。
   assert.match(text,/旧奥斯特罗格湖/);
   assert.match(text,/琥珀湖/);
   assert.match(text,/铜湖/);
-  // 鱼饵页不再重复这两列。
+  // 鱼饵页不再重复这两列（那边同样是卡片，按卡片正文判断）。
   await page.locator('#ecoTabs button[data-etab="bait"]').click();
-  await page.locator('#baitTable thead th').first().waitFor();
-  const baitHeads=await page.locator('#baitTable thead th').allInnerTexts();
-  assert.ok(!baitHeads.includes('水层'),`饵料页仍在展示水层 → ${baitHeads.join('|')}`);
-  assert.ok(!baitHeads.includes('水域'),`饵料页仍在展示水域 → ${baitHeads.join('|')}`);
+  await page.locator('#baitTable .fishcard').first().waitFor();
+  const baitText=await page.locator('#baitTable').innerText();
+  assert.doesNotMatch(baitText,/活动水层|出现的水域/,`饵料页仍在展示水层/水域 → ${baitText.slice(0,300)}`);
   await page.locator('#ecoTabs button[data-etab="eco"]').click();
   await table.locator('text=江鳕').waitFor();
 
   // 筛选：只看已覆盖，只剩狗鱼。
   await page.locator('#ecoFilter').selectOption('overlaid');
-  assert.equal(await table.locator('tbody tr').count(),1);
+  assert.equal(await cards.count(),1);
   assert.match(await table.innerText(),/狗鱼/);
   await page.locator('#ecoFilter').selectOption('');
 
   // 编辑江鳕：温度输入框应为空（未覆盖过），继承提示写清基线的 18.9。
-  await table.locator('tr:has-text("江鳕") button:has-text("编辑")').click();
+  await cards.filter({hasText:'江鳕'}).locator('button:has-text("展开修改")').click();
   await page.locator('#eco_s_tpref').waitFor();
   assert.equal(await page.locator('#eco_s_tpref').inputValue(),'');
   assert.match(await page.locator('#eco_s_tpref').getAttribute('placeholder'),/继承 18\.9/);
@@ -148,7 +161,7 @@ test('ecology species page edits full ecology profile',async()=>{
 
   // 编辑已覆盖的狗鱼：季节掩码应回显为「自定义」且只有春、冬两个勾。
   await page.locator('#ecoFilter').selectOption('overlaid');
-  await table.locator('tr:has-text("狗鱼") button:has-text("编辑")').click();
+  await cards.filter({hasText:'狗鱼'}).locator('button:has-text("展开修改")').click();
   await page.locator('#eco_s_season_mode').waitFor();
   assert.equal(await page.locator('#eco_s_season_mode').inputValue(),'1');
   assert.equal(await page.locator('#eco_s_season_b0').isChecked(),true);   // 春 1
@@ -172,7 +185,7 @@ test('ecology species page edits full ecology profile',async()=>{
 
 // 昼夜曲线用逗号输入、JSON 数组下发；非法值必须在前端就被拦住，不发请求。
 test('ecology curve input converts to json and rejects bad values',async()=>{
- const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
+ const html=fs.readFileSync(path.join(__dirname,'web/spa.html'));
  let calls=0;
  const base={fish_key:'pike',layer_min:0,layer_pref:0.5,layer_max:1,
   temp_min_c:4,temp_pref_c:12,temp_max_c:20,diel_mask:15,diel_curve:'',season_mask:15,
@@ -187,6 +200,16 @@ test('ecology curve input converts to json and rejects bad values',async()=>{
    return json({items:[{fish_key:'pike',name_zh:'狗鱼',rarity_tier:0,origin:'',overlaid:false,base,override:null}],count:1,total:1});
   if(key==='/api/fish/ecology-species'&&req.method==='POST'){calls++;return json({ok:true})}
   if(key.startsWith('/api/'))return json({});
+  // SPA 入口会按相对路径去拉 app/*.js 与 *.css：这些必须真的从 web/ 目录读出来，
+  // 不能像旧后台那样一律回 index.html，否则模块加载拿到的是 HTML，整页白屏。
+  const rel=decodeURIComponent(key.replace(/^\/+/, ''));
+  const file=path.join(__dirname,'web',rel);
+  if(rel && fs.existsSync(file) && fs.statSync(file).isFile()){
+   const ext=path.extname(file).toLowerCase();
+   const mime={'.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.jpg':'image/jpeg',
+     '.webp':'image/webp','.png':'image/png','.json':'application/json','.html':'text/html; charset=utf-8'}[ext]||'application/octet-stream';
+   res.writeHead(200,{'Content-Type':mime});res.end(fs.readFileSync(file));return;
+  }
   res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html);
  });
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -197,9 +220,9 @@ test('ecology curve input converts to json and rejects bad values',async()=>{
   await context.addInitScript(()=>{localStorage.setItem('rf4_admin_token','fixture')});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#ecology`,{waitUntil:'networkidle'});
+  await page.goto(`http://127.0.0.1:${server.address().port}/admin/spa.html#/ecology`,{waitUntil:'networkidle'});
   await page.locator('#ecoTable').locator('text=狗鱼').waitFor();
-  await page.locator('button:has-text("编辑")').click();
+  await page.locator('#ecoTable button:has-text("展开修改")').first().click();
   await page.locator('#eco_s_curve').waitFor();
 
   // 三个数：拦下，不发请求。
@@ -231,7 +254,7 @@ test('ecology curve input converts to json and rejects bad values',async()=>{
 // 勾选与曲线打架时必须拦下：判鱼侧只认曲线，界面却按勾选写「已覆盖」，
 // 结果是「改了勾选、咬口没变」——这是最难排查的一类问题（2026-11-26 实际踩过）。
 test('saving mismatched diel mask and curve is blocked',async()=>{
- const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
+ const html=fs.readFileSync(path.join(__dirname,'web/spa.html'));
  let calls=0;
  const base={fish_key:'burbot',layer_min:0.3,layer_pref:0.75,layer_max:1,
   temp_min_c:4,temp_pref_c:8,temp_max_c:14,
@@ -248,6 +271,16 @@ test('saving mismatched diel mask and curve is blocked',async()=>{
    return json({items:[{fish_key:'burbot',name_zh:'江鳕',rarity_tier:0,origin:'',overlaid:false,base,override:null}],count:1,total:1});
   if(key==='/api/fish/ecology-species'&&req.method==='POST'){calls++;return json({ok:true})}
   if(key.startsWith('/api/'))return json({});
+  // SPA 入口会按相对路径去拉 app/*.js 与 *.css：这些必须真的从 web/ 目录读出来，
+  // 不能像旧后台那样一律回 index.html，否则模块加载拿到的是 HTML，整页白屏。
+  const rel=decodeURIComponent(key.replace(/^\/+/, ''));
+  const file=path.join(__dirname,'web',rel);
+  if(rel && fs.existsSync(file) && fs.statSync(file).isFile()){
+   const ext=path.extname(file).toLowerCase();
+   const mime={'.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.jpg':'image/jpeg',
+     '.webp':'image/webp','.png':'image/png','.json':'application/json','.html':'text/html; charset=utf-8'}[ext]||'application/octet-stream';
+   res.writeHead(200,{'Content-Type':mime});res.end(fs.readFileSync(file));return;
+  }
   res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html);
  });
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -258,9 +291,9 @@ test('saving mismatched diel mask and curve is blocked',async()=>{
   await context.addInitScript(()=>{localStorage.setItem('rf4_admin_token','fixture')});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#ecology`,{waitUntil:'networkidle'});
+  await page.goto(`http://127.0.0.1:${server.address().port}/admin/spa.html#/ecology`,{waitUntil:'networkidle'});
   await page.locator('#ecoTable').locator('text=江鳕').waitFor();
-  await page.locator('button:has-text("编辑")').click();
+  await page.locator('#ecoTable button:has-text("展开修改")').first().click();
   await page.locator('#eco_s_curve').waitFor();
 
   // 一进来就该看到「曲线 → 实际开口」的实时提示，且与勾选一致。
@@ -294,7 +327,7 @@ test('saving mismatched diel mask and curve is blocked',async()=>{
 // 冷暖筛选的阈值必须跟着现有数据走。历史 bug：阈值写死 22℃，
 // 而全库偏好温度最高只有 21.2℃，导致「暖水鱼」永远 0 行——看起来像坏掉了。
 test('cold and warm filters stay non-empty when data is cool-shifted',async()=>{
- const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
+ const html=fs.readFileSync(path.join(__dirname,'web/spa.html'));
  // 造 4 条偏好温度都挤在 16~18℃ 的鱼，模拟现有合成基线整体偏冷的情况。
  const mk=(key,name,pref)=>({
   fish_key:key,name_zh:name,rarity_tier:0,origin:'',overlaid:false,
@@ -313,6 +346,16 @@ test('cold and warm filters stay non-empty when data is cool-shifted',async()=>{
   if(key==='/api/me')return json({username:'admin',item_categories:{}});
   if(key==='/api/fish/ecology-species')return json({items,count:4,total:4});
   if(key.startsWith('/api/'))return json({});
+  // SPA 入口会按相对路径去拉 app/*.js 与 *.css：这些必须真的从 web/ 目录读出来，
+  // 不能像旧后台那样一律回 index.html，否则模块加载拿到的是 HTML，整页白屏。
+  const rel=decodeURIComponent(key.replace(/^\/+/, ''));
+  const file=path.join(__dirname,'web',rel);
+  if(rel && fs.existsSync(file) && fs.statSync(file).isFile()){
+   const ext=path.extname(file).toLowerCase();
+   const mime={'.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.jpg':'image/jpeg',
+     '.webp':'image/webp','.png':'image/png','.json':'application/json','.html':'text/html; charset=utf-8'}[ext]||'application/octet-stream';
+   res.writeHead(200,{'Content-Type':mime});res.end(fs.readFileSync(file));return;
+  }
   res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html);
  });
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -323,19 +366,19 @@ test('cold and warm filters stay non-empty when data is cool-shifted',async()=>{
   await context.addInitScript(()=>{localStorage.setItem('rf4_admin_token','fixture')});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#ecology`,{waitUntil:'networkidle'});
+  await page.goto(`http://127.0.0.1:${server.address().port}/admin/spa.html#/ecology`,{waitUntil:'networkidle'});
   await page.locator('#ecoTable').locator('text=冷鱼').waitFor();
   const table=page.locator('#ecoTable');
 
   await page.locator('#ecoFilter').selectOption('cold');
-  const cold=await table.locator('tbody tr').count();
-  assert.ok(cold>0,`冷水鱼筛出 ${cold} 行，阈值写死会让整档空掉`);
-  assert.ok(cold<4,`冷水鱼筛出全部 ${cold} 行，说明没有真的在筛`);
+  const cold=await table.locator('.fishcard').count();
+  assert.ok(cold>0,`冷水鱼筛出 ${cold} 张卡，阈值写死会让整档空掉`);
+  assert.ok(cold<4,`冷水鱼筛出全部 ${cold} 张卡，说明没有真的在筛`);
 
   await page.locator('#ecoFilter').selectOption('warm');
-  const warm=await table.locator('tbody tr').count();
-  assert.ok(warm>0,`暖水鱼筛出 ${warm} 行`);
-  assert.ok(warm<4,`暖水鱼筛出全部 ${warm} 行`);
+  const warm=await table.locator('.fishcard').count();
+  assert.ok(warm>0,`暖水鱼筛出 ${warm} 张卡`);
+  assert.ok(warm<4,`暖水鱼筛出全部 ${warm} 张卡`);
 
   assert.deepEqual(errors,[]);
   await context.close();

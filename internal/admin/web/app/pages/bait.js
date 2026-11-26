@@ -112,7 +112,9 @@ function ruleCell(r) {
 export default async function bait() {
   const areas = await api('/api/fish/areas').catch(() => []);
   loadCats();   // 预取分类树：编辑器里「整类」标签要染色，等打开再拉会闪一下
-  const listWrap = h('div', { class: 'fishlist' });
+  // id 沿用旧后台的 #baitTable：验收测试按它定位列表，换名等于把测试改瞎。
+  // 形态是卡片而非表格（2026-11-26 起与生态页统一），但锚点保持一致。
+  const listWrap = h('div', { class: 'fishlist', id: 'baitTable' });
   const count = h('span', { class: 'hint', style: { margin: '0 0 0 6px' } });
   const banner = h('div');
   let rows = [];
