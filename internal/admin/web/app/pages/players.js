@@ -5,7 +5,7 @@ import {
   searchBox, debounce, confirmDialog, sidePage, fmt, timeText, relTime, navigate, segmented, hideSavebar, replaceHash, render, setCrumbTail,
   getToken, loginDialog,
 } from '../core.js';
-import { itemIcon } from '../widgets.js';
+import { itemIcon, pickItem } from '../widgets.js';
 
 const TABS = [['profile', '档案'], ['items', '背包与装备'], ['keepnet', '鱼护'], ['records', '鱼种记录'], ['skills', '技能'], ['mail', '邮箱']];
 const GRADE = ['未钓到', '钓到过', '达标', '星级', '蓝冠'];
@@ -71,13 +71,18 @@ export default async function players(params, scope) {
   let refreshPresence = () => {};
   const search = searchBox('搜索昵称或 UID', debounce((v) => { QUERY = v; loadList().then(() => { drawWho(); refreshPresence(); }); }, 260), QUERY);
   search.querySelector('input').setAttribute('aria-label','搜索昵称或 UID');
-  const searchRow = h('div', { class: 'roster-toolbar' }, h('h3', {text:'切换玩家'}), search);
+  const searchRow = h('div', { class: 'roster-toolbar' }, h('h3', {text:'切换玩家'}), search,
+    btn('新建玩家', () => createPlayer(), 'good sm'));
 
   const tabsEl = pageTabs(TABS, tab, (k) => navigate('players', uid, k));
   setCrumbTail(tabLabel);
 
   let p = null;
-  if (uid) { try { p = await api('/api/players/detail?uid=' + encodeURIComponent(uid)); } catch (e) { p = null; } }
+  if (uid) {
+    try { p = await api('/api/players/detail?uid=' + encodeURIComponent(uid)); } catch (e) { p = null; }
+    // 只接受对象。空数组是 truthy，漏过去会让整个详情页渲染成一片 undefined。
+    if (!p || typeof p !== 'object' || Array.isArray(p) || p.uid === undefined) p = null;
+  }
   if (!isCurrent()) return [];
 
   if (!p) {
@@ -141,7 +146,8 @@ export default async function players(params, scope) {
       ['银币', cents(p.silver) + ' 银'],
       ['金币', cents(p.gold) + ' 金'],
       ['会员', p.membership === 1 ? (p.membership_active === false ? '限时会员已到期' : '限时会员') : p.membership === 2 ? '永久会员' : '普通'],
-      ['最近登录', p.last_login ? relTime(p.last_login) : '—'],
+      // 「最近登录」已去掉：profile 表没有这个字段，detail 也不返回，
+      // 留着只会永远显示「—」，看起来像坏了。
     ])),
     ib('背包与鱼护', null, kv([
       ['物品', String(p.item_count || 0) + ' 件'],
@@ -158,6 +164,91 @@ export default async function players(params, scope) {
     tabsEl,
     work([searchRow, whoRow, h('div', {class:'player-heading'}, h2s(`${p.name}（UID ${p.uid}）`), headerStatus), hint(meta), actRow, pane], aside),
   ];
+}
+
+// ---------- 新建玩家 ----------
+// 档案没有密码：客户端用同名登录就会绑定到这份档案（大小写不敏感）。
+// 没建过的名字仍落到本机固定号，不会自动建档；新手装备由主服首登按清单发放。
+function createPlayer() {
+  const form = new Form();
+  const body = h('div', { class: 'stack' },
+    // uid 初值必须是数字 0：kind:'int' 的空串过不了校验，而「留空自动分配」的
+    // 语义由 0 表达（后端也是 uid<=0 才取最大号+1）。
+    form.row({ key: 'uid', label: 'UID', kind: 'int', min: 0, def: '0', help: '填 0 = 现有最大 UID + 1，自动分配' }, 0),
+    form.row({ key: 'name', label: '昵称', kind: 'string', help: '玩家用这个名字登录就会绑到这份档案。留空按 player 建档。' }, ''),
+    form.row({ key: 'level', label: '等级', kind: 'int', min: 1, max: 58, def: '1', unit: '级' }, 1),
+    form.row({ key: 'silver', label: '银币（分）', kind: 'int', min: 0, def: '5000' }, 5000),
+    form.row({ key: 'gold', label: '金币（分）', kind: 'int', min: 0, def: '0' }, 0),
+    hint('新手装备由主服首次登录时按清单发放，这里只管档案本身。'));
+  const error = h('p', { role: 'alert', hidden: true });
+  body.append(error);
+  sidePage({
+    title: '新建玩家',
+    desc: '没有密码：客户端用同名登录即进入这个档案，等于登记账号。',
+    body,
+    actions: [
+      { label: '取消', kind: 'ghost' },
+      { label: '创建玩家', kind: 'primary', onClick: async () => {
+        error.hidden = true;
+        const keys = ['uid', 'name', 'level', 'silver', 'gold'];
+        if (!form.validate(keys)) { body.querySelector('[aria-invalid="true"]')?.focus(); return true; }
+        const v = form.values(keys);
+        const payload = {
+          uid: Math.max(0, Math.floor(+v.uid || 0)),
+          name: String(v.name || '').trim(),
+          level: Math.max(1, Math.floor(+v.level || 1)),
+          silver: Math.max(0, Math.floor(+v.silver || 0)),
+          gold: Math.max(0, Math.floor(+v.gold || 0)),
+        };
+        try {
+          const r = await post('/api/players/create', payload);
+          toast(`已创建 ${r.name} #${r.uid}`);
+          // 建完直接跳到这个人，省一次搜索；整页重渲染会带上新名单。
+          replaceHash(`players/${r.uid}`);
+          render();
+        } catch (e) { error.textContent = errText(e); error.hidden = false; return true; }
+      } },
+    ],
+  });
+}
+
+// ---------- 发放物品 ----------
+// 走 /api/players/grant：服务端按 item_id 造实例塞进背包，玩家在线时约 2 秒收到刷新。
+function grantItem(p, reload) {
+  let picked = null;
+  const pickedBox = h('div', { class: 'muted small', text: '还没有选物品' });
+  const qty = h('input', { class: 'input num', type: 'number', min: 1, step: 1, value: '1', style: { width: '110px' } });
+  const error = h('p', { role: 'alert', hidden: true });
+  const choose = () => pickItem({
+    title: '选择要发放的物品',
+    onPick: (x) => {
+      picked = x;
+      pickedBox.replaceChildren(h('div', { class: 'row' }, itemIcon(x.item_id, 28), h('div', {}, h('b', { text: x.name }), h('div', { class: 'sub mono', text: x.item_id }))));
+      pickedBox.classList.remove('muted');
+    },
+  });
+  const body = h('div', { class: 'stack' },
+    hint(`发给 ${p.name}（UID ${p.uid}）。`),
+    h('div', {}, h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', marginBottom: '8px' } }, btn('选择物品', choose, 'sm'), pickedBox)),
+    h('label', { class: 'row', style: { gap: '8px', alignItems: 'center' } }, h('span', { class: 'muted small', text: '数量' }), qty),
+    error);
+  sidePage({
+    title: '发放物品',
+    desc: '下发后约 2 秒到达，在线玩家会立即看到。',
+    body,
+    actions: [
+      { label: '取消', kind: 'ghost' },
+      { label: '发放', kind: 'primary', onClick: async () => {
+        error.hidden = true;
+        if (!picked) { error.textContent = '请先选择物品'; error.hidden = false; return true; }
+        const n = Math.max(1, Math.floor(+qty.value || 1));
+        try { await post('/api/players/grant', { uid: p.uid, item_id: picked.item_id, qty: n }); }
+        catch (e) { error.textContent = errText(e); error.hidden = false; return true; }
+        toast('已下发，约 2 秒内到达');
+        setTimeout(reload, 2300);
+      } },
+    ],
+  });
 }
 
 // ---------- 概况 ----------
@@ -237,6 +328,9 @@ function items(p, reload) {
   };
   draw();
   return h('div', { class: 'stack' },
+    h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', alignItems: 'center' } },
+      btn('发放物品', () => grantItem(p, reload), 'good sm'),
+      h('span', { class: 'muted small', text: '下发后约 2 秒到达，在线玩家会立即看到。' })),
     searchBox('筛选物品名称或 ID', (v) => { q = v.toLowerCase(); draw(); }),
     h('div', { class: 'tbl', style: { maxHeight: '62vh', overflow: 'auto' } }, h('table', {},
       h('thead', {}, h('tr', {}, h('th', { text: '物品' }), h('th', { text: '位置' }), h('th', { class: 'num', text: '数量' }), h('th', { class: 'num', text: '耐久' }), h('th', {}))), body)));

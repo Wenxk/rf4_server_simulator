@@ -699,16 +699,20 @@ func (s *Server) handleSpawnModeSet(w http.ResponseWriter, r *http.Request) {
 // ---- 玩家管理 ----
 
 type playerRow struct {
-	UID     int64   `json:"uid"`
-	Name    string  `json:"name"`
-	Level   int64   `json:"level"`
-	XP      int64   `json:"xp"`
-	Silver  int64   `json:"silver"`
-	Gold    int64   `json:"gold"`
-	Bank    int64   `json:"bank"`
-	Banned  bool    `json:"banned"`
-	Online  bool    `json:"online"`
-	Updated float64 `json:"updated_ts"`
+	UID     int64  `json:"uid"`
+	Name    string `json:"name"`
+	Level   int64  `json:"level"`
+	XP      int64  `json:"xp"`
+	Silver  int64  `json:"silver"`
+	Gold    int64  `json:"gold"`
+	Bank    int64  `json:"bank"`
+	Banned  bool   `json:"banned"`
+	Online  bool   `json:"online"`
+	// OnlineKnown 区分「确实离线」和「不知道」。onlineUIDs 在快照缺失或超过
+	// onlineUIDsMaxAge 时返回 nil，此时 Online 会一律算成 false；前端只看
+	// Online 就会把全员误报成离线，所以必须把这个「未知」状态单独报出去。
+	OnlineKnown bool    `json:"online_known"`
+	Updated     float64 `json:"updated_ts"`
 }
 
 func (s *Server) handlePlayers(w http.ResponseWriter, r *http.Request) {
@@ -731,6 +735,7 @@ func (s *Server) handlePlayers(w http.ResponseWriter, r *http.Request) {
 	online := s.onlineUIDs(ctx)
 	for i := range rows {
 		rows[i].Online = online[rows[i].UID]
+		rows[i].OnlineKnown = online != nil
 	}
 	writeJSON(w, rows)
 }

@@ -46,14 +46,17 @@ export default async function bait() {
       ? h('div', { style: { display: 'flex', justifyContent: 'center', padding: '14px 0 4px' } },
         btn(`再显示 ${Math.min(PAGE, list.length - page.length)} 种（还有 ${list.length - page.length} 种）`, () => { SHOWN += PAGE; draw(); }, 'ghost'))
       : null;
-    listWrap.replaceChildren(...(page.length ? page.map((r) => {
+    // 注意：replaceChildren 是原生 DOM API，传 null 会渲染出字面量 "null"。
+    // 只有 h() 内部才会跳过 null，所以这里必须自己过滤，不能直接把 more 递进去。
+    const cards = page.length ? page.map((r) => {
       const locs = (r.locs || []).slice(0, 2).join(' · ');
       return h('section', { class: 'fishcard' },
         h('div', { class: 'fishcard-head' },
           h('span', { class: 'fi' }, h('b', { class: 'fname', text: r.name_zh }), locs ? h('span', { class: 'fkey', text: locs }) : null),
           h('span', { class: 'now' }, h('em', { text: '现在' }), h('span', { text: nowLine(r) })),
           h('button', { type: 'button', class: 'edit', text: '展开修改', onclick: () => editFish(r, load) })));
-    }) : [empty('没有符合条件的鱼', '换个筛选，或者把搜索词清空。')]), more);
+    }) : [empty('没有符合条件的鱼', '换个筛选，或者把搜索词清空。')];
+    listWrap.replaceChildren(...(more ? [...cards, more] : cards));
   }
   load();
   const locSel = h('select', { class: 'select', style: { width: '112px', flex: '0 0 auto' }, onchange: (e) => { LOC = e.target.value; SHOWN = PAGE; load(); } },
