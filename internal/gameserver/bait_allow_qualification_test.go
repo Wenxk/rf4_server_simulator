@@ -65,12 +65,17 @@ func TestBaitScoreIgnoresLocalCatchesAndOfficialShare(t *testing.T) {
 
 // 食谱里的低值（0.2 ≈ 偶尔吃一口）不影响 allow 准入：命中 allow 就进候选，
 // 具体权重由 allow 与 companion 决定，不再走食性强度。
+//
+// 测试数据必须与真实库同口径：data/rf4server.db 的「玉米粥」（item_id=porridge_corn）
+// 是 `fopbhlmkcpe`=13（粥和面团）。早前这里写 10（人造玉米），规则表改成分类型写法
+// `粥和面团@玉米粥` 之后类别对不上，被测鱼会被判死——那是测试数据与真实库不符，
+// 不是规则写错。
 func TestBaitLowDietValueStillAllowed(t *testing.T) {
 	s, db := seedBaitRuleTest(t)
 	for _, q := range []string{
 		`INSERT INTO loc_alias(alias,loc) VALUES('level_906_diet','diet-low')`,
 		`INSERT INTO loc_fish(loc,fish_key,name_zh,catches) VALUES('diet-low','c.roach','常见拟鲤',100)`,
-		`INSERT INTO item_def(numeric_id,item_id,category,attrs_json) VALUES(999862,'test_corn2',27,'{"fopbhlmkcpe":10}')`,
+		`INSERT INTO item_def(numeric_id,item_id,category,attrs_json) VALUES(999862,'test_corn2',27,'{"fopbhlmkcpe":13}')`,
 		`INSERT OR REPLACE INTO item_catalog(item_id,name_zh) VALUES('test_corn2','玉米粥')`,
 	} {
 		if _, err := db.SQL.Exec(q); err != nil {

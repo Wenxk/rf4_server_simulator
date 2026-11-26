@@ -23,14 +23,20 @@ test('bait rule editor supports cascade, whole-category terms and unsaved close 
     fish_key:'c.perch',name_zh:'河鲈',has_rule:true,source:'override',enabled:true,
     allow:['测试蚯蚓'],deny:[],bottom_only:[],condition:'海图120号区域'
    }]})});
+   // 夹具按 2026-11-25 后的真实形状：大类 label 与 term 一致（都是「鱼饵」），
+   // 二级类型带 term（写进规则的就是这个整类词），且 brands/lines 供型号层使用。
    if(url.pathname==='/api/bait/categories')return route.fulfill({contentType:'application/json',body:JSON.stringify({categories:[
-    {key:27,label:'饵料',count:1,term:'饵料',children:[{sub:6,label:'测试饵',count:1,term:'虫类'}]},
+    {key:27,label:'鱼饵',count:1,term:'鱼饵',children:[
+      {sub:6,label:'测试饵',count:1,term:'虫类',brands:[
+        {kind:'',label:'',count:1,lines:[{base:'测试蚯蚓',count:1,term:'测试蚯蚓'}]}
+      ]}
+    ]},
     {key:17,label:'拟饵',count:0,term:'拟饵',children:[]}
    ],terms:[
-    {term:'各类饵',label:'全部（饵料 + 拟饵）',cat:0,sub:0,count:1},
-    {term:'饵料',label:'饵料（全部天然饵）',cat:27,sub:0,count:1},
-    {term:'虫类',label:'虫类（幼虫 / 红虫）',cat:27,sub:6,count:1},
-    {term:'拟饵',label:'拟饵（全部路亚）',cat:17,sub:0,count:0}
+    {term:'各类饵',label:'全部（鱼饵 + 拟饵）',cat:0,sub:0,count:1,alias:false,shape:''},
+    {term:'鱼饵',label:'鱼饵（全部天然饵）',cat:27,sub:0,count:1,alias:false,shape:''},
+    {term:'虫类',label:'虫类（幼虫 / 红虫）',cat:27,sub:6,count:1,alias:false,shape:''},
+    {term:'拟饵',label:'拟饵（全部路亚）',cat:17,sub:0,count:0,alias:false,shape:''}
    ]})});
    if(url.pathname==='/api/bait/items')return route.fulfill({contentType:'application/json',body:JSON.stringify({rows:[
     {item_id:'test_worm',name_zh:'测试蚯蚓',category:27,sub:6,sub_label:'测试饵'}
@@ -80,35 +86,29 @@ test('bait rule editor supports cascade, whole-category terms and unsaved close 
   assert.equal(await page.locator('#brMode').count(),0,'手工轮换模式已删除');
   assert.equal(await page.getByText('定时轮换（手工编组）',{exact:true}).count(),0,'手工轮换组已删除');
 
-  // 不吃：选分类 → 选具体饵。
+  // 不吃：走层级选择器，收到具体饵再加。
+  // 2026-11-25 选择器从「两级下拉 + 平铺列表」重构成「类型 → 品牌 → 型号 → 规格」级联，
+  // 旧断言用的 #brPickCat / #brPickList 已不存在。这里只保留本文件该管的语义：
+  // 能从入口进去、能把选中的词加进当前 bucket。级联本身由
+  // bait_picker_cascade_ui_test.cjs 专测，不在这里重复。
   await page.getByRole('button',{name:'＋ 添加饵'}).nth(1).click();
-  await page.locator('#brPickCat').waitFor();
-  await page.locator('#brPickCat').selectOption('27');
-  await page.locator('#brPickList .result').filter({hasText:'测试蚯蚓'}).click();
+  await page.locator('.br-layer').first().waitFor();
+  await page.locator('.br-layer').first().locator('button.br-opt').filter({hasText:'鱼饵'}).click();
+  await page.locator('.br-layer button.br-opt').filter({hasText:'测试饵'}).click();
+  await page.locator('button.br-opt.add').filter({hasText:'加入整类'}).click();
+  // 多选后弹窗不再自动关闭（用户 2026-11-25 要求多选），要点「一次性加入」才落进 bucket。
+  await page.locator('.br-pickbar .acts button.btn.good').click();
   await page.locator('#brCondType').waitFor();
-  assert.ok(await page.locator('#modal .tag').filter({hasText:'测试蚯蚓'}).count()>=1);
+  assert.ok(await page.locator('#modal .tag').filter({hasText:'虫类'}).count()>=1,
+    '整类词应能加进「不吃」bucket');
 
-  // 整类：选择器顶部列出大类词，点一下就把整类写进当前 bucket。
-  await page.getByRole('button',{name:'＋ 添加饵'}).nth(2).click();
-  await page.locator('#brPickCat').waitFor();
-  const termBtns=page.locator('.br-term-grid button');
-  assert.ok(await termBtns.count()>=3,`整类按钮太少：${await termBtns.count()}`);
-  await termBtns.filter({hasText:'虫类'}).click();
-  await page.locator('#brCondType').waitFor();
-  assert.equal(await page.locator('#modal .tag.br-term-chip').filter({hasText:'虫类'}).count(),1,
-    '整类标签应带 br-term-chip 样式');
-  // 已经加过的整类按钮要变成不可重复添加（disabled + on）。
-  await page.getByRole('button',{name:'＋ 添加饵'}).nth(2).click();
-  await page.locator('#brPickCat').waitFor();
-  assert.equal(await page.locator('.br-term-grid button.on[disabled]').filter({hasText:'虫类'}).count(),1);
-  // 切到「全部分类」：只留三个顶层词，二级类型不铺开。
-  await page.locator('#brPickCat').selectOption('0');
-  await page.waitForTimeout(150);
-  const topNames=await page.locator('.br-term-grid button').allInnerTexts();
-  assert.equal(topNames.length,3,`全部分类时的整类按钮：${topNames.join('|')}`);
-  assert.ok(topNames.some(x=>x.includes('全部')),'缺「全部」');
-  assert.ok(topNames.some(x=>x.includes('饵料')),'缺「饵料」');
-  assert.ok(!topNames.some(x=>x.includes('虫类')),'二级类型不该出现在全部分类下');
+  // 已经加过的整类，再打开选择器时按钮应 disabled，防止重复加入。
+  await page.getByRole('button',{name:'＋ 添加饵'}).nth(1).click();
+  await page.locator('.br-layer').first().waitFor();
+  await page.locator('.br-layer').first().locator('button.br-opt').filter({hasText:'鱼饵'}).click();
+  await page.locator('.br-layer button.br-opt').filter({hasText:'测试饵'}).click();
+  assert.equal(await page.locator('button.br-opt.add[disabled]').count(),1,
+    '已加入的整类词应禁用，不可重复添加');
   await page.getByRole('button',{name:'返回编辑'}).click();
   await page.locator('#brCondType').waitFor();
 

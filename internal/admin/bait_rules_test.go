@@ -214,12 +214,30 @@ func TestBaitCategoriesCarryTypeTerms(t *testing.T) {
 	var body struct {
 		Categories []struct {
 			Key      int64  `json:"key"`
+			Label    string `json:"label"`
 			Term     string `json:"term"`
 			Children []struct {
 				Sub   int64  `json:"sub"`
 				Label string `json:"label"`
 				Term  string `json:"term"`
 				Count int    `json:"count"`
+				// 形态词（只有 baitType=8 有）与品牌/型号层，前端层级选择器要用。
+				Shapes []struct {
+					Shape string `json:"shape"`
+					Label string `json:"label"`
+					Term  string `json:"term"`
+					Count int    `json:"count"`
+				} `json:"shapes"`
+				Brands []struct {
+					Kind  string `json:"kind"`
+					Label string `json:"label"`
+					Count int    `json:"count"`
+					Lines []struct {
+						Base  string `json:"base"`
+						Count int    `json:"count"`
+						Term  string `json:"term"`
+					} `json:"lines"`
+				} `json:"brands"`
 			} `json:"children"`
 		} `json:"categories"`
 		Terms []struct {
@@ -237,8 +255,17 @@ func TestBaitCategoriesCarryTypeTerms(t *testing.T) {
 	for _, c := range body.Categories {
 		byCat[c.Key] = c.Term
 	}
-	if byCat[27] != "饵料" || byCat[17] != "拟饵" {
-		t.Fatalf("大类规则词=%v，期望 27→饵料 / 17→拟饵", byCat)
+	// 大类级规则词用游戏菜单原文：鱼饵侧是「鱼饵」不是「饵料」。
+	// 「饵料」仍是可用别名（旧后台覆盖数据里写过），但不再作为正式名返回。
+	if byCat[27] != "鱼饵" || byCat[17] != "拟饵" {
+		t.Fatalf("大类规则词=%v，期望 27→鱼饵 / 17→拟饵", byCat)
+	}
+	// 展示名必须与规则词一致。曾经这里硬编码「饵料」而按钮写「鱼饵」，
+	// 同一屏两套叫法，用户会以为范围不同。
+	for _, c := range body.Categories {
+		if c.Label != c.Term {
+			t.Fatalf("大类 cat=%d 的 label=%q 与 term=%q 不一致", c.Key, c.Label, c.Term)
+		}
 	}
 	subTerm := map[int64]string{}
 	subLabel := map[int64]string{}
@@ -254,11 +281,24 @@ func TestBaitCategoriesCarryTypeTerms(t *testing.T) {
 	if subLabel[9] != "颗粒" {
 		t.Fatalf("baitType 9 的标签=%q，期望 颗粒（旧的「鱼子 / 虾类」是错标）", subLabel[9])
 	}
-	if subTerm[8] != "浮水饵" || subLabel[8] != "Pop-up 浮水饵" {
+	if subTerm[8] != "香煮成饵" || subLabel[8] != "香煮成饵（下沉 + Pop-up）" {
 		t.Fatalf("baitType 8 → term=%q label=%q", subTerm[8], subLabel[8])
 	}
-	if subTerm[6] != "Pilker铁板" {
-		t.Fatalf("lureType 6 的规则词=%q，期望 Pilker铁板", subTerm[6])
+	// 形态词必须是独立的两项：游戏把同一口味的「下沉」与「Pop-up」并列成两个菜单项，
+	// 库里却只有一个 baitType=8，只能靠 brand 的 _pp_ 标记区分。
+	var shapes []string
+	for _, c := range body.Categories {
+		for _, ch := range c.Children {
+			for _, sh := range ch.Shapes {
+				shapes = append(shapes, sh.Term)
+			}
+		}
+	}
+	if len(shapes) != 2 {
+		t.Fatalf("形态词=%v，期望 2 项（下沉 / Pop-up）", shapes)
+	}
+	if subTerm[6] != "柳叶亮片" {
+		t.Fatalf("lureType 6 的规则词=%q，期望 柳叶亮片", subTerm[6])
 	}
 	termCount := map[string]int{}
 	for _, term := range body.Terms {
@@ -267,7 +307,7 @@ func TestBaitCategoriesCarryTypeTerms(t *testing.T) {
 			t.Fatalf("颗粒数量=%d，期望 1", term.Count)
 		}
 	}
-	for _, want := range []string{"各类饵", "饵料", "拟饵", "颗粒", "浮水饵"} {
+	for _, want := range []string{"各类饵", "鱼饵", "拟饵", "颗粒", "香煮成饵", "下沉香煮成饵", "Pop-up 香煮成饵"} {
 		if _, ok := termCount[want]; !ok {
 			t.Fatalf("大类清单里缺 %q：%v", want, termCount)
 		}

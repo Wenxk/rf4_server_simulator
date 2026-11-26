@@ -34,12 +34,19 @@ var groundbaitFamilies = []string{"plant", "worm", "crustacean", "boilie", "fish
 
 // groundbaitFamilyKeywords 攻略吃饵词 → 食性族。关键词口径与
 // fishing_bait_rules.txt 里的中文吃饵词条同源（离线探针 gb_probe2.KW）。
+// groundbaitFamilyKeywords 把规则词映射到食性族。
+//
+// 2026-11-25 规则词改用游戏菜单原文：`沉底饵`→`自然的`、`浮水饵`→`Pop-up 香煮成饵`。
+// 旧词都含「煮饵/煮成饵」，新词「自然的」一个关键词都不沾，会让
+// 「只吃 自然的 + Pop-up + 颗粒 + 人造玉米」这类鲤鱼在打窝侧静默丢掉 boilie 族。
+// 因此在 boilie 族补上这两个新词；其余族只补客户端原名，不动已有词。
 var groundbaitFamilyKeywords = map[string][]string{
 	"worm":       {"蠕虫", "蚯蚓", "红虫", "苍蝇", "蛆虫", "毛翅", "树皮甲虫", "昆虫", "地龙", "土蚕", "水蛭", "蜉蝣", "襀翅", "牛虻", "草蜢", "蟋蟀", "蜣螂", "金龟", "龙虱", "蝼蛄", "浮游幼虫"},
 	"plant":      {"面包", "面团", "粥", "玉米", "豌豆", "坚果", "奶酪", "水果", "蜂蜜", "奶油", "椰子", "中立", "自然风味", "菜叶", "马铃薯", "藻类", "奶渣", "大麦"},
-	"boilie":     {"煮饵", "煮成饵", "boilie", "popup", "pop up"},
-	"crustacean": {"螯虾", "磷虾", "虾", "蟹", "贻贝", "钩虾", "水蚤"},
-	"fish":       {"饵鱼", "活饵", "鱼肉", "鱼块", "鱼片", "鲑", "吞拿", "鱿鱼", "鱼子", "虾仁"},
+	// `自然的` = 沉底香煮成饵、`下沉香煮成饵` = 显式写下沉形态，都归 boilie 族。
+	"boilie":     {"煮饵", "煮成饵", "boilie", "popup", "pop up", "自然的", "下沉香煮成饵"},
+	"crustacean": {"螯虾", "磷虾", "虾", "蟹", "贻贝", "钩虾", "水蚤", "小型甲壳类"},
+	"fish":       {"饵鱼", "活饵", "鱼肉", "鱼块", "鱼片", "鲑", "吞拿", "鱿鱼", "鱼子", "虾仁", "活的", "死鱼"},
 }
 
 const (
@@ -274,6 +281,15 @@ func groundbaitFishName(fishKey string) string {
 
 // groundbaitAcceptedFamilies 攻略吃饵表里这条鱼接受的食性族。
 // allow 是攻略原文按 / 切开的吃饵词，逐个比对关键词即可，不做模糊匹配。
+//
+// 【2026-11-25 统一格式】规则词改写成 `类别@名字`（如 `香煮成饵@红虫`）后，
+// 族归属必须按 **`@` 后面的名字** 判，不能拿整条词去匹配：
+// 类别词是「游戏菜单分类」，不代表材质——`香煮成饵@红虫` 是红虫味型的煮饵，
+// 不是鲜红虫。整条词匹配会让它同时命中类别词「香煮成饵」（boilie）和
+// 名字「红虫」（worm），于是只吃虫的鱼凭空多出一个 boilie 认可，
+// 该族在契合度加权里从 0.85/0.50 抬到 1.00，把只吃虫的鱼的窝料契合度稀释掉
+// （2026-11-25 实测：犬首鮈 / 三刺鱼 被挤出预烘亲和表）。
+// 按名字判与改格式前的口径逐条等价，预烘亲和表无需重烘。
 func groundbaitAcceptedFamilies(r fishBaitRule) map[string]bool {
 	out := map[string]bool{}
 	for _, term := range r.allow {
@@ -281,9 +297,15 @@ func groundbaitAcceptedFamilies(r fishBaitRule) map[string]bool {
 		if term == "" {
 			continue
 		}
+		probe := term
+		if _, name, ok := SplitBaitScope(term); ok {
+			if name = strings.TrimSpace(name); name != "" {
+				probe = name
+			}
+		}
 		for fam, keywords := range groundbaitFamilyKeywords {
 			for _, kw := range keywords {
-				if strings.Contains(term, kw) {
+				if strings.Contains(probe, kw) {
 					out[fam] = true
 					break
 				}

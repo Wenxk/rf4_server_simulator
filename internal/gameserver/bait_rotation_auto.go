@@ -52,7 +52,12 @@ const (
 // 必须显式带上 NBSP（U+00A0）与全角空格：客户端大量名称用 NBSP 分隔规格
 // （「甜奶油 PopUp\xa016」），而 Go 的 \s 只含 [\t\n\f\r ]，漏掉就会把尺寸留在
 // 型号名里，同一系列的 12/16/20 被拆成三个组、只开中签的那个尺寸。
-var baitSpecTail = regexp.MustCompile(`(?:[-_\s\x{00a0}\x{3000}]*\d+)$`)
+//
+// 必须带上 `#`：一批海钓饵把规格写成「型号 #序号」（`Stor Fisk L33-450 #1`），
+// 不把 `#` 归进分隔符就会剥成 `Stor Fisk L33-450 #`，留下一个孤立的井号
+// 当型号名（实测 162 款）。而 `Spiker #2 001` 里的 `#2` 是型号号、不在尾部，
+// 正则只锚定 `$`，因此不受影响。
+var baitSpecTail = regexp.MustCompile(`(?:[-_\s\x{00a0}\x{3000}#]*\d+)$`)
 
 // baitNormName 把客户端名称里的不换行空格/全角空格归一成普通空格。
 // 分组、排序、折叠显示都按归一后的写法比较，否则同款饵会因空格码位不同被拆组。
@@ -70,6 +75,11 @@ func baitBaseName(name string) string {
 	}
 	return s
 }
+
+// ExportedBaitBaseName 供后台层级选择器复用同一把「去规格号」规则：
+// 后台折叠出的型号名必须与判鱼自动轮换的型号组完全一致，
+// 否则界面上点了「Aikkila 4g」，抽签那边却按另一个名字分组。
+func ExportedBaitBaseName(name string) string { return baitBaseName(name) }
 
 // baitShapeWord 是「饵型」的可读简写，只在同一基础名有多个形态时用于区分显示。
 // 取值来自 item_def.fopbhlmkcpe（天然饵的饵型字段）。

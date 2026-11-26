@@ -21,8 +21,29 @@ func TestFishBaitRuleParsingAndTypes(t *testing.T) {
 		t.Fatal("fish alias mismatch")
 	}
 	roach := fishBaitRules[ruleName("常见拟鲤")]
-	if len(roach.deny) != 2 || roach.deny[0] != "拟饵" {
-		t.Fatalf("exclusions=%v", roach.deny)
+	// 【2026-11-25 统一格式】原文是 `不吃拟饵/饵鱼类`，现按用户要求
+	// 「同一名称涉及多个类别就把涉及的类别都列出来」拆成两个正式类别词：
+	// `饵鱼类`（历史合并写法，Cat27/Sub4 活的 + Sub15 死鱼）→ `活的/死鱼`。
+	// `饵鱼类` 仍保留为 bait_type_terms.go 的别名，只为兼容后台可能存过的旧写法；
+	// 规则表不再使用它，解析层也就不会再产出这个词。
+	if len(roach.deny) != 3 || roach.deny[0] != "拟饵" ||
+		roach.deny[1] != "活的" || roach.deny[2] != "死鱼" {
+		t.Fatalf("exclusions=%v，期望 [拟饵 活的 死鱼]", roach.deny)
+	}
+	// 别名仍然可用：老后台数据里存 `饵鱼类` 时必须照样命中活鱼与死鱼。
+	for _, c := range []struct {
+		name     string
+		baitType int64
+		want     bool
+	}{
+		{"欧鲌（活鱼）", 4, true},
+		{"死鲭鱼（死鱼）", 15, true},
+		{"蚯蚓（蠕虫）", 6, false},
+	} {
+		b := ruleBait{name: c.name, category: 27, baitType: c.baitType}
+		if got := b.matches("饵鱼类"); got != c.want {
+			t.Fatalf("饵鱼类 × %s（baitType=%d）=%v，期望 %v", c.name, c.baitType, got, c.want)
+		}
 	}
 	for _, tt := range []struct {
 		name string
@@ -37,7 +58,10 @@ func TestFishBaitRuleParsingAndTypes(t *testing.T) {
 		{"lure exclusion", ruleBait{name: "Hunter 1-001", category: 17, lureType: 4}, "拟饵", true},
 		{"model", ruleBait{name: "Hunter 1-001", category: 17, lureType: 4}, "Hunter 1系列", true},
 		{"different model", ruleBait{name: "Hunter 1000-001", category: 17, lureType: 4}, "Hunter 1系列", false},
-		{"excluded family", ruleBait{name: "Gummi Makk 10-001", category: 17, lureType: 3}, "Gummi Makk", true},
+		// `Gummi Makk` 现在是整类词（拟饵 lureType=13，见 bait_type_terms.go），
+		// 按枚举匹配，不再按名字前缀走 matchOne。这条饵必须真是 lureType=13 才命中。
+		{"excluded family", ruleBait{name: "Gummi Makk 10-001", category: 17, lureType: 13}, "Gummi Makk", true},
+		{"gummi term rejects other lure type", ruleBait{name: "Gummi Makk 10-001", category: 17, lureType: 3}, "Gummi Makk", false},
 		// 粪便蠕虫是三个地区粪蚯蚓变种，不是红蚯蚓（muckworm 的说明是红蚯蚓）。
 		{"red compost worm is not muckworm", ruleBait{name: "红蚯蚓", id: "muckworm", category: 27, baitType: 6}, "粪便蠕虫", false},
 		{"sura brandling", ruleBait{name: "苏尔斯基粪蚯蚓", id: "worm_sur", category: 27, baitType: 6}, "粪便蠕虫", true},
@@ -60,6 +84,37 @@ func seedBaitRuleTest(t *testing.T) (*Server, *store.DB) {
 		`INSERT INTO item_catalog(item_id,name_zh) VALUES('rule_worm','蚯蚓'),('rule_lure','Hunter 1-001'),('rule_other','补充饵')`,
 	} {
 		if _, err := db.SQL.Exec(q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// 夹具鱼的适温显式钉成宽区间，原因：
+	//
+	// 这些用例检验的是「饵料规则 / 天气开关 / 吃口流程」，不是某条鱼的真实适温。
+	// 但判鱼会读生态档案的适温做热响应（fishEcology 查不到行时回退
+	// defaultFishEcology → assets/fish_ecology_defs.json），所以调一次温度基线，
+	// 这里就会莫名其妙地红：2026-11-25 c.roach 的文献值被工具搬到 1~13℃，
+	// 而 weatherSeasonTimeAt(12) 是夏季、22℃ 气温折合水温 20.2℃，直接超出上限，
+	// 雷暴咬口数从区间内飙到 96（上限 90）。
+	//
+	// 用 fish_ecology 覆盖行而不是改资产：资产是全局基线，不该为了测试让步。
+	// 注意测试库里 fish_ecology 通常是空表（判鱼走 defaultFishEcology 资产回退），
+	// 所以这里必须显式 INSERT，不能 UPDATE。
+	//
+	// weather_json 必须给真实形态的值（雷暴明显低于晴）：这个用例要验证
+	// 「天气开关打开后雷暴确实压低咬口」。给 '{}' 会让天气因子恒为 1，
+	// 雷暴与晴天的咬口数一样，测试反而失去意义（2026-11-25 踩过：写 '{}'
+	// 后咬口从 96 涨到 115，因为热响应满值 + 天气无衰减）。
+	// diet/action/substrate/color 留空是安全的：它们不参与这条断言。
+	for _, fishKey := range []string{"c.roach", "frog"} {
+		if _, err := db.SQL.Exec(`INSERT INTO fish_ecology(fish_key, layer_min, layer_pref, layer_max,
+			temp_min_c, temp_pref_c, temp_max_c, diel_mask, diel_curve, season_mask,
+			diet_json, weather_json, action_json, substrate_json, color_json,
+			current_pref, activity, light_pref, clarity_pref, aggression,
+			rarity_tier, enabled, profile_version, source)
+			VALUES(?, 0.1, 0.5, 0.95, 4, 17, 30, 15, '[1,1,1,1]', 15,
+			'{}',
+			'{"clear":1.05,"cloudy":1.0,"few_clouds":1.02,"fog":0.85,"heavy_rain":0.9,"rain":1.0,"thunderstorm":0.6,"wind":0.9}',
+			'{}', '{}', '{}', 0.5, 1, 0.5, 0.5, 1, 0, 1, 999, 'test')`, fishKey); err != nil {
 			t.Fatal(err)
 		}
 	}

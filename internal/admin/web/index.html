@@ -31,7 +31,7 @@ button,input,select,textarea{font:inherit;color:var(--text)}button{cursor:pointe
 .rarity-hint .tier-2{color:#ffd479;border-color:#8a6a1f;background:rgba(138,106,31,.26)}
 .rarity-hint .tier-3{color:#ff9f9f;border-color:#8a3a3a;background:rgba(138,58,58,.26)}
 .diel-legend b{font-family:Consolas,monospace}.switch{appearance:none;width:38px;height:21px;border-radius:20px;background:#26394d;position:relative;cursor:pointer;border:1px solid #38506a;padding:0}.switch:after{content:"";position:absolute;width:15px;height:15px;border-radius:50%;background:#91a6ba;top:2px;left:2px;transition:.18s}.switch:checked{background:#1b725a}.switch:checked:after{left:19px;background:#b9ffe9}
-.modal-bg{position:fixed;inset:0;background:#02070dcc;backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.modal-bg.on{display:flex}.modal{background:#101d2b;border:1px solid #2a465f;border-radius:18px;box-shadow:0 28px 90px #000c;width:min(760px,96vw);max-height:90vh;overflow:auto;padding:20px}.modal h3{margin:0 0 4px}.modal .sub{color:var(--muted);font-size:12px;margin-bottom:16px}.eco-glob{margin:-6px 0 14px;padding:9px 11px;border-radius:10px;background:#0d1e2e;border:1px solid var(--line);color:#bcd1e4;font-size:11.5px;line-height:1.65}.results{margin-top:9px;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px}.result{padding:9px 11px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;cursor:pointer}.result:hover{background:#172b40}.result:last-child{border:0}.attach-row{display:grid;grid-template-columns:1fr 90px 38px;gap:8px;margin-bottom:8px}.mail-box{display:grid;grid-template-columns:1fr 340px;gap:16px}.log{max-height:250px;overflow:auto;font:12px/1.6 Consolas,monospace;background:#08121d;border-radius:10px;padding:12px;color:#a9bed3}
+.modal-bg{position:fixed;inset:0;background:#02070dcc;backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.modal-bg.on{display:flex}.modal{background:#101d2b;border:1px solid #2a465f;border-radius:18px;box-shadow:0 28px 90px #000c;width:min(760px,96vw);max-height:90vh;overflow:auto;padding:20px}/* 饵料选择器专用加宽：四级层级 + 形态 + 规格列表挤在 760px 里读不清（用户 2026-11-25 反馈「全部缩在一起看太挤」）。1180px 让型号层能一屏铺开、规格列表也不必横向滚动。 */.modal.wide{width:min(1180px,97vw);max-height:94vh}.modal.wide .br-layer>.v{max-height:190px}.modal.wide h3{font-size:19px}.modal h3{margin:0 0 4px}.modal .sub{color:var(--muted);font-size:12px;margin-bottom:16px}.eco-glob{margin:-6px 0 14px;padding:9px 11px;border-radius:10px;background:#0d1e2e;border:1px solid var(--line);color:#bcd1e4;font-size:11.5px;line-height:1.65}.results{margin-top:9px;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px}.result{padding:9px 11px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;cursor:pointer}.result:hover{background:#172b40}.result:last-child{border:0}.attach-row{display:grid;grid-template-columns:1fr 90px 38px;gap:8px;margin-bottom:8px}.mail-box{display:grid;grid-template-columns:1fr 340px;gap:16px}.log{max-height:250px;overflow:auto;font:12px/1.6 Consolas,monospace;background:#08121d;border-radius:10px;padding:12px;color:#a9bed3}
 .toast{position:fixed;right:22px;bottom:22px;display:flex;flex-direction:column;gap:8px;z-index:80}.toast div{padding:11px 14px;border-radius:11px;background:#17364b;border:1px solid #2d6680;box-shadow:var(--shadow);animation:in .2s ease}@keyframes in{from{opacity:0;transform:translateX(15px)}to{opacity:1;transform:none}}.toast .bad{background:#481f2a;border-color:#7a3443}.toast .ok{background:#143b31;border-color:#286a58}
 #login{min-height:100vh;display:grid;place-items:center;padding:20px}.login-card{width:min(390px,95vw);padding:28px;background:linear-gradient(160deg,#132539,#0b1521);border:1px solid #2a455f;border-radius:22px;box-shadow:0 30px 90px #000b}.login-card .logo{width:58px;height:58px;margin-bottom:18px}.login-card h1{font-size:23px;margin:0 0 4px}.login-card p{color:var(--muted);margin:0 0 20px}.login-card .field{margin-bottom:12px}
 .notice{position:fixed;left:0;right:0;top:0;z-index:95;display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 54px 12px 20px;background:linear-gradient(90deg,#ff9f1c,#ff4d6d 45%,#c026d3);color:#fff;font-weight:800;font-size:15px;letter-spacing:.02em;text-shadow:0 1px 2px #0006;box-shadow:0 10px 30px #0007;animation:noticeIn .35s ease}.notice[hidden]{display:none}.notice .pulse{width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#fff;box-shadow:0 0 0 0 #ffffff99;animation:pulse 1.6s infinite}.notice .msg{max-width:min(1100px,84vw);text-align:center;line-height:1.5}.notice .msg b{color:#fff45c;font-size:16px}.notice .close{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;border:1px solid #ffffff66;background:#00000026;color:#fff;font-size:15px;line-height:1;display:grid;place-items:center;padding:0}.notice .close:hover{background:#00000055}@keyframes noticeIn{from{transform:translateY(-100%)}to{transform:none}}@keyframes pulse{0%{box-shadow:0 0 0 0 #ffffff99}70%{box-shadow:0 0 0 12px #ffffff00}100%{box-shadow:0 0 0 0 #ffffff00}}body.notice-on{padding-top:56px}
@@ -232,6 +232,75 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
 .br-term-grid .btn{font-size:12px;padding:4px 9px}
 .br-term-grid .btn.on{background:#43356b;color:#d9c8ff;border-color:#6a55a3;opacity:.8}
 .br-term-chip{background:#43356b !important;color:#d9c8ff}
+/* 类别限定标签（`颗粒@鱼子`）：蓝色并与整类词区分开。
+   拆成「限定词 › 名字」显示，因为同一个名字可能存在于 3 个类别，
+   只显示名字会让人以为重复添加了同一个东西。 */
+.br-scope-chip{background:#1d3b52 !important;color:#a8dcff}
+.br-scope-chip .sc{opacity:.85}
+.br-scope-chip .sep{margin:0 4px;opacity:.55}
+
+/* 鱼饵层级选择器：类型 → 品牌 → 型号 → 规格，一行一层，越往下收束越窄。
+   每一层都显示「已选/总数」，让人随时知道还剩下多少、点下去会加进多少款。 */
+.br-layer{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+.br-layer:last-of-type{border-bottom:0}
+.br-layer>.k{flex:none;width:52px;color:var(--muted);font-size:11.5px;padding-top:5px;letter-spacing:.04em}
+.br-layer>.v{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:6px;max-height:150px;overflow:auto}
+.br-layer>.v.br-layer-empty{max-height:none}
+.br-opt{padding:5px 10px;border:1px solid var(--line);border-radius:9px;background:#0e1b29;
+  color:var(--text);font-size:12px;line-height:1.45;cursor:pointer;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:6px;transition:.12s}
+.br-opt:hover{border-color:var(--accent);background:#14283c}
+.br-opt.on{border-color:#6a55a3;background:#2c2547;color:#d9c8ff}
+.br-opt .n{color:var(--muted);font-size:11px;font-family:Consolas,monospace}
+.br-opt.on .n{color:#b6a3e8}
+.br-opt.dim{opacity:.5}
+/* 「整层加入」是快捷动作，与上面的筛选选项视觉上要分开，避免误点。 */
+.br-opt.add{border-color:#2c5c48;background:#102a22;color:#8ff0c4}
+.br-opt.add:hover{border-color:#37e2b0;background:#143428}
+.br-opt.add:disabled{border-color:var(--line);background:#0e1b29;color:var(--muted);cursor:not-allowed;opacity:.5}
+.br-preview{margin-top:10px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;
+  background:#0b1623;font-size:12px;line-height:1.7;color:#bcd1e4}
+.br-preview b{color:#fff}
+.br-preview code{font-family:Consolas,monospace;color:#8ff0c4;background:#0d2a22;padding:1px 5px;border-radius:4px}
+.br-spec-list{margin-top:8px;border:1px solid var(--line);border-radius:10px;max-height:230px;overflow:auto}
+.br-spec{display:flex;justify-content:space-between;gap:10px;padding:7px 11px;
+  border-bottom:1px solid var(--line);font-size:12px;cursor:pointer}
+.br-spec:last-child{border-bottom:0}
+.br-spec:hover{background:#172b40}
+.br-spec.picked{background:#132a3b}
+/* 勾选中但未提交：与「已在列表」必须能一眼分开，否则用户不知道关掉弹窗会不会丢。 */
+.br-spec.sel{background:#1a3350;box-shadow:inset 3px 0 0 #4aa8e0}
+.br-spec .id{font-family:Consolas,monospace;color:var(--muted);font-size:11px}
+.br-spec .st{flex:none;color:#8ff0c4;font-size:11px}
+.br-spec.sel .st{color:#8ecbff}
+.br-spec-head{display:flex;justify-content:space-between;gap:10px;align-items:center;
+  font-size:11.5px;color:var(--muted);margin:8px 0 4px}
+.br-spec-head b{color:var(--text);font-family:Consolas,monospace}
+.br-spec-head .lnk{color:#8ecbff;text-decoration:none;border-bottom:1px dashed #8ecbff66}
+/* 勾选圆点：与「收窄范围」的主按钮点击区分开——点圆点＝勾选，点其它处＝收窄。
+   没有这个区分就只能二选一，而用户既要能往下钻、又要能一次勾多项。 */
+.br-opt{position:relative}
+.br-opt .tick{display:inline-flex;align-items:center;justify-content:center;
+  width:17px;height:17px;flex:0 0 17px;border-radius:5px;border:1px solid #38506a;
+  background:#0a1420;color:#7f93a8;font-size:11px;line-height:1;cursor:pointer}
+.br-opt .tick:hover{border-color:#4aa8e0;color:#8ecbff;background:#122436}
+.br-opt.sel{border-color:#4aa8e0;background:#16314a;color:#cfe9ff}
+.br-opt.sel .tick{background:#1d5183;border-color:#4aa8e0;color:#dff0ff}
+.br-opt.in{opacity:.72}
+.br-opt.in .tick{background:#1b725a;border-color:#37e2b0;color:#b9ffe9;cursor:default}
+/* 同名型号徽标：型号名跨类别重名时，让人知道「这个名字还有别的类别」。 */
+.br-opt .badge{font-size:10px;padding:1px 5px;border-radius:4px;
+  background:#4a3418;color:#ffd479;border:1px solid #7a5a24;font-family:inherit}
+/* 多选工具条：常驻弹窗底部，把「已勾选什么、点哪个按钮提交」说清楚。 */
+.br-pickbar{position:sticky;bottom:-20px;margin:14px -20px -20px;padding:11px 20px;
+  background:linear-gradient(180deg,#0e1b29e0,#0b1521f5);border-top:1px solid #2a465f;
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap;backdrop-filter:blur(4px)}
+.br-pickbar .info{flex:1;min-width:200px;font-size:12px;color:var(--muted);line-height:1.8}
+.br-pickbar .info b{color:var(--text);font-family:Consolas,monospace;font-size:13px}
+.br-pickbar .chips{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:4px;vertical-align:middle}
+.br-pickbar .chips .tag{background:#1d3b52;color:#a8dcff}
+.br-pickbar .acts{display:flex;gap:8px;flex:none}
+.warn-text{color:#ffd479}
 /* 天气预览：照着游戏内天气预报的手感做——7 天卡片 + 24 小时温曲线 + 温度区间统计。
    天空色只作氛围底色（低透明度），信息一律靠前景色，保证任何色弱都能读。 */
 .wx-sum{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0 14px}
@@ -287,6 +356,30 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
 .wx-cmp .rng i{position:absolute;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#2b7fd4,#37e2b0);opacity:.85}
 .wx-cmp tr.on{background:#15263a}
 .wx-cmp tr{cursor:pointer}
+/* 活跃鱼种：一行一条鱼，用网格对齐七列。条形只表示「相对当前最强那条」，
+   不是绝对概率——判鱼还乘了饵料/水层/技能，得不出绝对数就别假装有。 */
+.wx-frow{display:grid;grid-template-columns:minmax(140px,1.5fr) 62px minmax(120px,1.2fr) 54px 54px 58px minmax(90px,1fr);gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid #172a3d;font-size:12.5px}
+.wx-frow:last-child{border-bottom:none}
+.wx-frow.wx-fhead{font-size:11px;color:var(--muted);letter-spacing:.04em;border-bottom:1px solid #24384f;padding-bottom:6px}
+.wx-frow .nm{display:flex;flex-direction:column;gap:1px;min-width:0}
+.wx-frow .nm b{font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wx-frow .nm i{font-style:normal;font-size:10.5px;color:#5b7690;font-family:Consolas,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wx-frow .num{font-family:Consolas,monospace;text-align:right;color:#bcd1e4}
+.wx-frow .num.sc{color:#8fe6ff;font-weight:700}
+.wx-frow.idle{opacity:.62}
+.wx-rt{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10.5px;border:1px solid transparent}
+.wx-rt.r0{background:#1b2c3f;color:#a8c6e0;border-color:#24384f}
+.wx-rt.r1{background:#123a3a;color:#6ff0e0;border-color:#1d5450}
+.wx-rt.r2{background:#3d2a12;color:#ffca7a;border-color:#5e421c}
+.wx-fbar{position:relative;display:block;height:8px;border-radius:4px;background:#0a1725;border:1px solid #1b2e42;overflow:hidden}
+.wx-fbar i{position:absolute;top:0;bottom:0;left:0;border-radius:3px}
+.wx-fbar i.ok{background:linear-gradient(90deg,#2b7fd4,#37e2b0)}
+.wx-fbar i.no{background:#3a4a5c}
+.wx-fidle{margin-top:10px;border-top:1px solid #24384f;padding-top:8px}
+.wx-fidle>summary{cursor:pointer;color:var(--muted);font-size:11.5px;padding:4px 0;list-style:none}
+.wx-fidle>summary::-webkit-details-marker{display:none}
+.wx-fidle>summary:before{content:"▸ ";color:#5b7690}
+.wx-fidle[open]>summary:before{content:"▾ "}
 @media(max-width:1100px){.wx-day-row{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:720px){.wx-day-row{grid-template-columns:repeat(2,minmax(0,1fr))}.wx-clock{margin-left:0;width:100%;justify-content:center}}
 </style>
@@ -372,6 +465,11 @@ body.notice-on #view-fish.on{height:max(600px,calc(100vh - 204px))}
           <span><i style="background:#ff8fa3"></i>雷暴（柱）</span>
         </div>
       </div>
+      <div class="card" style="margin-top:14px">
+        <div class="section-head"><div><h2 style="font-size:14px">当前活跃鱼种</h2><small>昼夜曲线 × 水温响应两个分项系数相乘；口径与游戏内判鱼<b>同一套</b>（不含饵料与钓组）</small></div><span class="muted" id="wxFishStatus"></span></div>
+        <div class="wx-sum" id="wxFishSum"></div>
+        <div id="wxFishBox"><div class="empty">读取中…</div></div>
+      </div>
       <div class="grid duo">
         <div class="card">
           <div class="section-head"><div><h2>温度区间</h2><small>全水层覆盖（表层 0 → 底钓 0.93），这是「这图能出什么温度」</small></div></div>
@@ -425,6 +523,15 @@ let VIEW='dashboard',PLAYER=null,PLAYER_TAB='profile',FISH_AREA='',FISH_CFG=null
 const $=s=>document.querySelector(s);
 for(let i=0;i<=33;i++)$('#hookSize').insertAdjacentHTML('beforeend',`<option value="${i}">${i}</option>`);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// jsArg 把值变成可安全内联进「单引号 JS 字符串 + 双引号 HTML 属性」的一串字符。
+//
+// 为什么不能直接用 esc：esc 把 ' 转成 &#39;，浏览器解码 HTML 属性后又还原成 '，
+// 于是 onclick="fn(''foo'')" 变成语法错、整屏按钮静默失效。
+// 实测 4123 款饵名里 ' " ` \ & < > 全部 0 例，但后台允许人工输入规则词，
+// 这里多一道保险，代价只是一次 replace。
+function jsArg(v){
+  return esc(String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
+}
 const fmt=n=>Number(n||0).toLocaleString('zh-CN');
 const timeText=ts=>ts?new Date(Number(ts)*1000).toLocaleString('zh-CN'):'-';
 // Go 的 time.Time 序列化成 RFC3339Nano（小数位 7~9 位），Date 只吃到 3 位；多出来的位会让 Date 变 NaN。
@@ -442,14 +549,18 @@ function toast(msg,type='ok'){
   setTimeout(()=>{d.style.opacity='0';d.style.transform='translateX(20px)';setTimeout(()=>d.remove(),220)},2600);
 }
 let MODAL_KIND='';
-function showModal(title,sub,body,kind=''){
+// wide=true 时使用 .modal.wide（1180px）：四级层级选择器内容多，
+// 用默认 760px 会全部挤在一起（用户 2026-11-25 反馈「编辑框太小」）。
+function showModal(title,sub,body,kind='',wide=false){
   MODAL_KIND=kind;
-  $('#modal').innerHTML=`<div class="section-head"><div><h3>${esc(title)}</h3><div class="sub">${esc(sub||'')}</div></div><button class="btn alt sm" onclick="closeModal()">关闭</button></div>${body}`;
+  const m=$('#modal');
+  m.className='modal'+(wide?' wide':'');
+  m.innerHTML=`<div class="section-head"><div><h3>${esc(title)}</h3><div class="sub">${esc(sub||'')}</div></div><button class="btn alt sm" onclick="closeModal()">关闭</button></div>${body}`;
   $('#modalBg').classList.add('on');
 }
 function closeModal(force=false){
   if(!force&&MODAL_KIND==='bait'&&BR&&BR_INIT!==brSnapshot()&&!window.confirm('有未保存的修改，确定关闭吗？'))return;
-  $('#modalBg').classList.remove('on');$('#modal').innerHTML='';MODAL_KIND='';
+  $('#modalBg').classList.remove('on');$('#modal').innerHTML='';$('#modal').className='modal';MODAL_KIND='';
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 // ---- 物品品类名（服务端 /api/me 下发 item_categories，避免前端另抄一份表）----
@@ -1544,11 +1655,12 @@ function toggleBaitRow(k){BAIT_OPEN.has(k)?BAIT_OPEN.delete(k):BAIT_OPEN.add(k);
 let BR=null;            // 当前编辑中的规则
 let BR_INIT='';         // 打开编辑器时的快照，用于未保存确认
 let BR_VIEW='edit';     // edit | pick
-let BR_PICK=null;       // {bucket,cat,sub,q}
+let BR_PICK=null;       // {bucket,cat,sub,shape,kind,brand,base,q,picked[]}
 let BR_CATS=null;       // 分类树缓存
 let BR_TERMS=null;      // 大类词清单（含展示名与数量），与判鱼匹配同一份数据
 let BR_TERM_MAP=null;   // term -> label，用于把标签染成「整类」色
 let BR_SEQ=0;           // 搜索结果防抖
+let BR_SPEC_PAGE=[];    // 规格层当前列出的一页（「全选本页」用，不内联进 HTML 属性）
 
 // 前置条件预设。v 必须与 fishing_bait_rules.txt 里的原文逐字一致：
 // 服务端 deriveConditionFlags 是按关键词解析的（「海图…号区域」「顺水漂流」
@@ -1664,9 +1776,30 @@ function brChips(bucket){
   if(!list)return '';
   if(!list.length)return '<span class="muted" style="font-size:12px">（空）</span>';
   // 大类词染成紫色并带说明：一眼看出「这条规则是整类」，不是漏写了具体饵名。
+  //
+  // 三类标签要能区分开，否则用户看不出自己加的是哪一个：
+  //   1) 整类词（`颗粒`）——紫色，title 说明含该类全部饵；
+  //   2) 类别限定（`颗粒@鱼子`）——蓝色，拆成「限定词 › 名字」两段显示，
+  //      因为 `鱼子` 同时存在于 3 个类别，只显示名字会让人以为重复添加了；
+  //   3) 普通饵名/型号名——默认色。
   return list.map((v,i)=>{
     const cat=(BR_TERM_MAP||{})[v];
-    return `<span class="tag${cat?' br-term-chip':''}" style="margin:2px 6px 2px 0;display:inline-block"${cat?` title="整类：${esc(cat)}（含该类全部饵）"`:''}>${esc(v)}`+
+    let cls='', title='', body=esc(v);
+    if(cat){
+      cls=' br-term-chip';
+      title=`整类：${cat}（含该类全部饵）`;
+    }else{
+      const sp=String(v).indexOf('@');
+      if(sp>0&&sp<v.length-1){
+        const scope=v.slice(0,sp), name=v.slice(sp+1);
+        cls=' br-scope-chip';
+        title=`只限「${scope}」这一类里的「${name}」（不影响其它类别下的同名饵）`;
+        body=`<span class="sc">${esc(scope)}</span><span class="sep">›</span>${esc(name)}`;
+      }else{
+        title='';
+      }
+    }
+    return `<span class="tag${cls}" style="margin:2px 6px 2px 0;display:inline-block"${title?` title="${esc(title)}"`:''}>${body}`+
       `<a href="javascript:void(0)" onclick="brRemove('${bucket}',${i})" style="margin-left:6px;color:#ff9aac;text-decoration:none">×</a></span>`;
   }).join('');
 }
@@ -1706,11 +1839,15 @@ function renderBrEditor(){
     `<div class="actions"><button class="btn good" onclick="saveBaitRule()">保存</button>`+
       `<button class="btn alt" onclick="closeModal()">取消</button>`+
       `<button class="btn bad" onclick="resetBaitRule('${esc(BR.key)}')">恢复默认</button></div>`;
-  showModal('编辑鱼饵规则 · '+BR.name,'可以整类加入（如「颗粒」「浮水饵」），也可以挑具体饵料；不需要记名字',html,'bait');
+  showModal('编辑鱼饵规则 · '+BR.name,
+    '可以整类加入（如「颗粒」「浮水饵」），也可以逐级挑到型号/规格；不需要记名字',
+    html,'bait',true);   // 宽弹窗：三组标签 + 前置条件 + 启用开关，760px 里挤成一团
 }
 function brOpenPick(bucket){
   brReadOptions();
-  BR_PICK={bucket,cat:27,sub:0,q:''};
+  // picked 是多选暂存区：勾选的词先攒着，点「一次性加入」才写进规则。
+  // 以前每点一项就关弹窗回编辑视图，加 5 个饵要开关弹窗 5 次（用户 2026-11-25 要求多选）。
+  BR_PICK={bucket,cat:27,sub:0,shape:'',kind:'',brand:'',base:'',q:'',picked:[]};
   BR_VIEW='pick';
   if(BR_CATS)renderBrPicker();
   else{
@@ -1718,66 +1855,386 @@ function brOpenPick(bucket){
     ensureBrTerms(renderBrPicker);
   }
 }
-// 当前分类下应该露出哪些「整类」按钮：
-// 全部分类时只给三类（全部 / 饵料 / 拟饵），选了具体大类再列出它的二级类型，
-// 免得一屏 40 个按钮。数量为 0 的类型不显示（选了也匹配不到任何饵）。
-function brPickTerms(cat){
-  const all=(BR_TERMS||[]).filter(t=>!t.alias);
-  // 全部分类只给三个顶层词（全部 / 饵料 / 拟饵）；选了具体大类再列它的二级类型。
-  if(!cat)return all.filter(t=>!t.sub);
-  return all.filter(t=>!t.cat||(t.cat===cat&&(!t.sub||t.count>0)));
+// ===== 吃饵规则 · 鱼饵层级选择器 =====
+//
+// 按游戏里的选择方式逐级收束（用户 2026-11-25 的要求）：
+//   类型（旋转亮片路亚）→ 品牌（Zeiman）→ 型号（Spiker #2）→ 规格（001/002…）
+// 层级越深越窄，每一层都能单独「加入」，收束范围就是写入规则的词代表的饵。
+//
+// 三层数据的来源必须分开说清楚，否则很容易写成「后台能选、判鱼不认」：
+//   1) 类型层写的是**整类词**（走 baitTypeTerms，服务端按枚举匹配）——稳。
+//   2) 品牌层**不能单独写进规则**：品牌名（zeiman/syberia）不出现在任何饵的商品名里，
+//      判鱼是按名称匹配的，写了也匹配不到。所以它只作导航，不提供「加入」按钮。
+//   3) 型号层写的是**去掉规格号的型号名**（`Spiker #2`）。判鱼侧 matchOne 会先比
+//      `baitBaseName(饵名)==规则词`，因此该型号的全部规格一起命中。
+//      这条判据是 2026-11-25 补上的：此前型号名以数字结尾时（`Baby Craw 3.5`、
+//      `Salmon T1 Crank 10`）零命中，873 组里有 37 组受影响。
+//   4) 规格层写的是**单个完整商品名**，只命中那一款。
+const BR_PICK_LAYERS=['类型','品牌','型号','规格'];
+
+// BR_PICK 结构：
+//   bucket  目标列表（allow/deny/bottom）
+//   cat     27 鱼饵 / 17 拟饵 / 0 全部
+//   sub     二级枚举（baitType 或 lureType），0=不限
+//   shape   '' | 'sink' | 'popup'（只有香煮成饵有）
+//   kind    品牌名，''=不限
+//   brand   产品系列键，''=不限
+//   base    型号名，''=不限
+//   q       关键字
+// 品牌/型号都按「选了上一级才出现」的方式渲染，未选时整行隐藏。
+function brPickInit(bucket){
+  return {bucket,cat:0,sub:0,shape:'',kind:'',brand:'',base:'',q:''};
 }
-function renderBrPicker(){
+
+// ===== 多选暂存区 =====
+//
+// 用户 2026-11-25 要求「编辑的时候，需要能够支持多选选择不同的类型/饵」。
+// 旧实现 brPickAdd 点一下就 push 进 bucket 并立刻关弹窗回编辑视图，
+// 加 5 个饵要开关弹窗 5 次。现在改成：点击只切换 picked 里的勾选状态，
+// 底部「一次性加入」再统一写进 bucket，弹窗不关，可以继续选。
+function brPickedList(){return (BR_PICK&&BR_PICK.picked)||[]}
+function brIsPicked(term){return brPickedList().includes(term)}
+function brPickToggle(term){
   const p=BR_PICK;
-  const cats=[{key:0,label:'全部饵料 / 拟饵'},{key:27,label:'饵料'},{key:17,label:'拟饵'}];
-  const catOpts=cats.map(c=>`<option value="${c.key}"${p.cat===c.key?' selected':''}>${esc(c.label)}</option>`).join('');
-  let subOpts='<option value="0">全部分类</option>';
-  if(p.cat>0){
-    const node=(BR_CATS||[]).find(c=>c.key===p.cat);
-    const kids=(node&&node.children)||[];
-    subOpts='<option value="0">全部分类</option>'+kids.map(s=>
-      `<option value="${s.sub}"${p.sub===s.sub?' selected':''}>${esc(s.label)} · ${s.count}</option>`).join('');
-  }
-  const used=(brBucket(p.bucket)||[]);
-  const terms=brPickTerms(p.cat);
-  const termHTML=terms.length?`<div class="field"><label>按大类加入（整类）</label>
-      <div class="br-term-grid">${terms.map(t=>{
-        const on=used.includes(t.term);
-        return `<button class="btn alt sm${on?' on':''}"${on?' disabled':''} onclick="brPickAdd('${esc(t.term)}')"
-          title="把「${esc(t.label)}」整类写进「${esc(brBucketLabel(p.bucket))}」${t.count?'，共 '+t.count+' 款':''}">${esc(t.label)}${t.count?` <span class="muted">${t.count}</span>`:''}</button>`;
-      }).join('')}</div>
-      <div class="muted" style="font-size:11px;margin-top:5px;line-height:1.6">点整类就把这一类的全部饵一次性写进规则；开了自动抽取的鱼，本期开口饵会从这一类里抽。</div>
-    </div>`:'';
-  const html=`<div class="form-grid" style="grid-template-columns:1fr 1fr">
-      <div class="field"><label>分类</label><select id="brPickCat" onchange="brPickCatChange(this.value)">${catOpts}</select></div>
-      <div class="field"><label>二级分类</label><select id="brPickSub" onchange="brPickSubChange(this.value)"${p.cat>0?'':' disabled'}>${subOpts}</select></div>
-    </div>`+termHTML+
-    `<div class="field"><input id="brPickQ" placeholder="搜索名称 / ID" value="${esc(p.q)}" oninput="brPickSearch(this.value)" style="width:100%"></div>`+
-    `<div class="results" id="brPickList"><div class="empty">读取中…</div></div>
-     <div class="actions"><button class="btn alt" onclick="brPickBack()">返回编辑</button></div>`;
-  showModal('选择鱼饵 · 加入「'+brBucketLabel(p.bucket)+'」','可以点整类一次加完，也可以只挑具体饵料',html,'bait');
-  brPickReload();
+  if(!p||!term)return;
+  if(!p.picked)p.picked=[];
+  const i=p.picked.indexOf(term);
+  if(i>=0)p.picked.splice(i,1); else p.picked.push(term);
+  renderBrPicker();   // 重绘整屏以更新所有层的勾选态与底部计数
 }
-function brPickBack(){BR_VIEW='edit';renderBrEditor()}
-function brPickCatChange(v){BR_PICK.cat=Number(v);BR_PICK.sub=0;renderBrPicker()}
-function brPickSubChange(v){BR_PICK.sub=Number(v);brPickReload()}
-function brPickSearch(v){BR_PICK.q=v;const seq=++BR_SEQ;setTimeout(()=>{if(seq===BR_SEQ)brPickReload()},250)}
+// 兼容旧调用：单个直接加入（不进暂存），行为等同「立即加入并关窗」。
 function brPickAdd(name){
   const list=brBucket(BR_PICK.bucket);
   if(list&&!list.includes(name))list.push(name);
   BR_VIEW='edit';renderBrEditor();
   toast('已添加：'+name);
 }
+
+// 批量加入：把 picked 一次性写进 bucket，然后关弹窗回编辑视图。
+function brPickCommit(){
+  const p=BR_PICK;
+  const list=brBucket(p?p.bucket:'');
+  if(!list)return;
+  const names=(p.picked||[]).filter(Boolean);
+  if(!names.length){toast('还没有勾选任何项','bad');return}
+  let n=0,dup=0;
+  names.forEach(v=>{
+    if(list.includes(v)){dup++}else{list.push(v);n++}
+  });
+  BR_VIEW='edit';renderBrEditor();
+  if(n&&dup)toast('已加入 '+n+' 项，'+dup+' 项已在列表里');
+  else if(n)toast('已加入 '+n+' 项');
+  else toast('这些都已经在列表里了','bad');
+}
+
+// 批量加入（给定名字，不进暂存）：型号下的多个规格、或整类词一次点完。
+function brPickAddMany(names){
+  const list=brBucket(BR_PICK.bucket);
+  if(!list)return;
+  let n=0;
+  names.forEach(v=>{if(v&&!list.includes(v)){list.push(v);n++}});
+  BR_VIEW='edit';renderBrEditor();
+  toast(n?('已添加 '+n+' 项'):'这些都已经在列表里了',n?'':'bad');
+}
+
+// 取当前分类节点（BR_CATS 由 /api/bait/categories 返回，含品牌+型号+数量）
+function brPickNode(){
+  const p=BR_PICK;
+  if(!p.cat)return null;
+  return (BR_CATS||[]).find(c=>c.key===p.cat)||null;
+}
+function brPickChild(){
+  const p=BR_PICK,node=brPickNode();
+  if(!node||!p.sub)return null;
+  return (node.children||[]).find(c=>c.sub===p.sub)||null;
+}
+
+// 「加入本层」写什么词：类型层=整类词，型号层=型号名，规格层=完整商品名。
+function brPickTypeOptions(){
+  // 类型层：只列当前大类的二级类型（含形态子项），以及「整个大类」本身。
+  const p=BR_PICK;
+  const out=[];
+  if(!p.cat){
+    // 未选大类：给出两个大类各自的整类词，点了就等于「加整个鱼饵 / 整个拟饵」
+    (BR_CATS||[]).forEach(c=>out.push({term:c.term,label:c.label,count:c.count,kind:'cat'}));
+    return out;
+  }
+  const node=brPickNode();
+  (node.children||[]).forEach(ch=>{
+    if(!ch.count)return;
+    out.push({term:ch.term,label:ch.label,count:ch.count,kind:'sub',sub:ch.sub});
+  });
+  return out;
+}
+
+function renderBrPicker(){
+  const p=BR_PICK;
+  const used=brBucket(p.bucket)||[];
+  const node=brPickNode();
+  const child=brPickChild();
+  // 已加入的显示为「已在列表」，勾选中的显示为「已选」——两者视觉必须分开：
+  // 「已在列表」是保存后生效的，「已选」只是暂存，关掉弹窗就没了。
+  const selCls=t=>brIsPicked(t)?' sel':'';
+  const stateOf=t=>used.includes(t)?'in':(brIsPicked(t)?'sel':'');
+  const markOf=t=>{
+    const s=stateOf(t);
+    if(s==='in')return '<span class="n ok">已在列表</span>';
+    if(s==='sel')return '<span class="n on">✓ 已选</span>';
+    return '';
+  };
+
+  // --- 第 1 层：类型 ---
+  const catBtns=[{key:0,label:'全部'},{key:27,label:'鱼饵'},{key:17,label:'拟饵'}].map(c=>{
+    const on=p.cat===c.key;
+    const node0=(BR_CATS||[]).find(x=>x.key===c.key);
+    const n=c.key===0?(BR_CATS||[]).reduce((s,x)=>s+x.count,0):((node0&&node0.count)||0);
+    return `<button class="br-opt${on?' on':''}" onclick="brPickSet({cat:${c.key},sub:0,shape:'',kind:'',brand:'',base:''})">${esc(c.label)}<span class="n">${n}</span></button>`;
+  }).join('');
+
+  // --- 第 1.5 层：该大类下的二级类型（游戏菜单里的「旋转亮片路亚」这一档）---
+  let typeHTML='';
+  if(p.cat&&node){
+    typeHTML=(node.children||[]).filter(c=>c.count>0).map(c=>{
+      const on=p.sub===c.sub&&!p.shape;
+      // 整类词也能勾选：勾了以后和型号名一起批量加入，省得来回进出。
+      const term=c.term||'';
+      const st=stateOf(term);
+      return `<button class="br-opt${on?' on':''}${st==='sel'?' sel':''}${st==='in'?' in':''}"`+
+        ` onclick="brPickSet({sub:${c.sub},shape:'',kind:'',brand:'',base:''})"`+
+        ` title="点这里＝把范围收到这一类型；勾选框可把它整类加入规则">`+
+        `<span class="tick" onclick="event.stopPropagation();brPickToggle('${jsArg(term)}')" title="整类加入：写进规则的是「${esc(term)}」">${st==='in'?'✓':(st==='sel'?'✓':'＋')}</span>`+
+        `${esc(c.label)}<span class="n">${c.count}</span></button>`;
+    }).join('');
+  }
+
+  // --- 形态层（只有香煮成饵有：下沉 / Pop-up）---
+  let shapeHTML='';
+  if(child&&(child.shapes||[]).length){
+    shapeHTML=`<div class="br-layer"><div class="k">形态</div><div class="v">`+
+      `<button class="br-opt${p.shape===''?' on':''}" onclick="brPickSet({shape:'',kind:'',brand:'',base:''})">两种都要<span class="n">${child.count}</span></button>`+
+      (child.shapes||[]).map(s=>{
+        const on=p.shape===s.shape;
+        const st=stateOf(s.term);
+        return `<button class="br-opt${on?' on':''}${st==='sel'?' sel':''}${st==='in'?' in':''}"`+
+          ` onclick="brPickSet({shape:'${s.shape}',kind:'',brand:'',base:''})"`+
+          ` title="点这里＝只看${esc(s.label)}；勾选框＝把「${esc(s.term)}」整类加入">`+
+          `<span class="tick" onclick="event.stopPropagation();brPickToggle('${jsArg(s.term)}')">${st==='in'?'✓':(st==='sel'?'✓':'＋')}</span>`+
+          `${esc(s.label)}<span class="n">${s.count||0}</span></button>`;
+      }).join('')+`</div></div>`;
+  }
+
+  // --- 第 2 层：品牌（只作导航，不能单独入规则）---
+  let brandHTML='';
+  if(child&&(child.brands||[]).length>1){
+    brandHTML=`<div class="br-layer"><div class="k">品牌</div><div class="v">`+
+      `<button class="br-opt${p.kind===''?' on':''}" onclick="brPickSet({kind:'',brand:'',base:''})">全部<span class="n">${child.count}</span></button>`+
+      (child.brands||[]).map(b=>{
+        const on=p.kind===b.kind;
+        return `<button class="br-opt${on?' on':''}" onclick="brPickSet({kind:'${esc(b.kind)}',brand:'',base:''})">${esc(b.label||b.kind||'无品牌')}<span class="n">${b.count}</span></button>`;
+      }).join('')+`</div></div>`;
+  }
+
+  // --- 第 3 层：型号（写型号名，覆盖该型号全部规格）---
+  let modelHTML='';
+  const brandList=child?(child.brands||[]).filter(b=>!p.kind||b.kind===p.kind):[];
+  // 型号名跨类别重名时，写进规则的词必须带类别限定（`颗粒@鱼子`），
+  // 否则一个 `鱼子` 会连带把另外几个类别下的同名饵一起放行。
+  // 这个判断由后端 scope_term 给出，前端不自己猜。
+  const lineToTerm=ln=>ln.scope_term||ln.term||ln.base||'';
+  let curLine=null;
+  if(brandList.length){
+    // 未选品牌时把所有品牌的型号平铺出来，但限定在已选类型内
+    const rows=[];
+    brandList.forEach(b=>{
+      (b.lines||[]).forEach(ln=>{
+        rows.push({base:ln.base,count:ln.count,kind:b.kind,label:b.label,unused:ln.unused,
+          term:lineToTerm(ln),shared:ln.shared_with||[]});
+      });
+    });
+    // 型号层只在该层「没有信息量」时才隐藏：只有一个型号且已经选中它。
+    // 但跨类别同名的型号例外——那种情况下这一行是唯一能看到「同名×N」与
+    // 「$限定写法」提示的地方，藏掉就等于什么都没说（`颗粒` 下只有 `鱼子` 一个型号时踩过）。
+    const onlyOne=p.base&&rows.length===1&&rows[0].base===p.base;
+    const hidesModel=onlyOne&&!(rows[0].shared&&rows[0].shared.length);
+    if(rows.length&&!hidesModel){
+      modelHTML=`<div class="br-layer"><div class="k">型号</div><div class="v">`+
+        `<button class="br-opt${p.base===''?' on':''}" onclick="brPickSet({base:''})">全部<span class="n">${rows.reduce((s,x)=>s+x.count,0)}</span></button>`+
+        rows.slice(0,120).map(x=>{
+          const on=p.base===x.base;
+          const st=stateOf(x.term);
+          const sharedTip=x.shared.length?`。同名型号还在：${x.shared.join('、')}——所以写进规则时会带上类别限定`:'';
+          const tip=`写进规则：「${x.term}」——该型号全部 ${x.count} 个规格一起命中${sharedTip}`;
+          return `<button class="br-opt${on?' on':''}${st==='sel'?' sel':''}${st==='in'?' in':''}${x.unused?' dim':''}"`+
+            ` onclick="brPickSet({base:'${esc(x.base)}'})" title="${esc(tip)}">`+
+            `<span class="tick" onclick="event.stopPropagation();brPickToggle('${jsArg(x.term)}')">${st==='in'?'✓':(st==='sel'?'✓':'＋')}</span>`+
+            `${esc(x.base)}<span class="n">${x.count}</span>`+
+            (x.shared.length?`<span class="badge" title="同名型号还在：${esc(x.shared.join('、'))}">同名×${1+x.shared.length}</span>`:'')+
+            `</button>`;
+        }).join('')+(rows.length>120?`<span class="muted" style="font-size:11px;align-self:center">还有 ${rows.length-120} 个，请用搜索</span>`:'')+`</div></div>`;
+    }
+  }
+  if(p.base&&brandList.length){
+    curLine=brandList.flatMap(b=>b.lines||[]).find(l=>(l.base||'')===p.base)||null;
+  }
+
+  // --- 加入按钮组：明确「这一下会写进去什么词」---
+  const addBtns=[];
+  const pushAdd=(term,label,extra)=>{
+    const inList=used.includes(term), sel=brIsPicked(term);
+    addBtns.push(`<button class="br-opt add${sel?' sel':''}"${inList?' disabled':''}`+
+      ` onclick="brPickToggle('${jsArg(term)}')" title="写进规则：${esc(term)}">`+
+      `${inList?'✓ 已在列表':(sel?'✓ 已选':'＋')} ${label}${extra?'（'+extra+'）':''}</button>`);
+  };
+  if(p.base&&curLine){
+    const term=lineToTerm(curLine);
+    const cnt=curLine.count||0;
+    // 限定写法要让用户看见：本类别之外还有同名型号，所以写进去的词带了前缀。
+    const extra=cnt?cnt+' 个规格':'';
+    pushAdd(term,`加入型号「${esc(curLine.base||p.base)}」${(curLine.shared_with||[]).length?'（限本类）':''}`,extra);
+  }else if(p.sub){
+    // 未选型号：允许把整个二级类型加进去（写整类词）；有形态时按形态
+    if(p.shape){
+      const st=(child.shapes||[]).find(s=>s.shape===p.shape);
+      if(st)pushAdd(st.term,`加入整类「${esc(st.label)}」`,st.count?st.count+' 款':'');
+    }else if(child){
+      pushAdd(child.term,`加入整类「${esc(child.label)}」`,child.count?child.count+' 款':'');
+    }
+  }else if(p.cat&&node){
+    pushAdd(node.term,`加入整类「${esc(node.label)}」`,node.count?node.count+' 款':'');
+  }
+
+  // --- 规格列表：只有选了型号才出现，逐个勾选 ---
+  const specBox=`<div id="brSpecBox"></div>`;
+
+  // --- 当前收束范围说明：让用户随时知道自己站在第几层、范围多大 ---
+  const trail=[];
+  if(p.cat)trail.push((BR_CATS||[]).find(c=>c.key===p.cat)?.label||'');
+  if(child)trail.push(child.label);
+  if(p.shape)trail.push(p.shape==='popup'?'Pop-up':'下沉');
+  if(p.kind)trail.push(p.kind);
+  if(p.base)trail.push(p.base);
+  const rangeText=trail.length?trail.filter(Boolean).join(' › '):'全部饵料 / 拟饵';
+  // 当前收束范围会写进规则的到底是哪个词：型号名 > 形态词 > 整类词（二级）> 整类词（大类）。
+  // 单独算出来而不是塞进模板字符串，避免嵌套三元把括号写乱（此前就在这里出过语法错）。
+  let ruleTerm='—';
+  if(curLine){
+    ruleTerm=lineToTerm(curLine);
+  }else if(p.shape&&child){
+    const st=(child.shapes||[]).find(s=>s.shape===p.shape);
+    if(st)ruleTerm=st.term;
+  }else if(child){
+    ruleTerm=child.term||'—';
+  }else if(node){
+    ruleTerm=node.term||'—';
+  }
+  const sharedNote=(curLine&&(curLine.shared_with||[]).length)
+    ? `<br><span class="warn-text">同名型号还出现在：${esc(curLine.shared_with.join('、'))}。`+
+      `所以这里写进规则的是限定写法 <code>${esc(ruleTerm)}</code>，只影响本类别。</span>`
+    : '';
+  const preview=`<div class="br-preview">当前位置：<b>${esc(rangeText)}</b>`+
+    `<br>加入后会写进规则的是：<code>${esc(ruleTerm)}</code>`+
+    `<br><span class="muted">层级越深，收束越窄。写「型号名」= 该型号全部规格；写整类词 = 该类型全部饵。</span>`+
+    sharedNote+`</div>`;
+
+  // --- 底部批量工具条：多选暂存区的入口 ---
+  const pickedN=brPickedList().length;
+  const bar=`<div class="br-pickbar">`+
+    `<div class="info">已勾选 <b>${pickedN}</b> 项${pickedN?`：<span class="chips">${brPickedList().map(v=>`<span class="tag">${esc(v)}<a href="javascript:void(0)" onclick="brPickToggle('${jsArg(v)}')" style="margin-left:6px;color:#ff9aac;text-decoration:none">×</a></span>`).join('')}</span>`:''}</div>`+
+    `<div class="acts">`+
+      `<button class="btn good" onclick="brPickCommit()"${pickedN?'':' disabled'}>一次性加入 ${pickedN||''} 项</button>`+
+      `<button class="btn alt" onclick="brPickClear()"${pickedN?'':' disabled'}>清空勾选</button>`+
+      `<button class="btn alt" onclick="brPickBack()">返回编辑</button>`+
+    `</div></div>`;
+
+  const html=
+    `<div class="br-layer"><div class="k">类型</div><div class="v">${catBtns}</div></div>`+
+    (typeHTML?`<div class="br-layer"><div class="k"></div><div class="v">${typeHTML}</div></div>`:'')+
+    shapeHTML+brandHTML+modelHTML+
+    `<div class="br-layer br-layer-empty"><div class="k">加入</div><div class="v">${addBtns.join('')||'<span class="muted" style="font-size:12px;align-self:center">先选类型，再逐级收束</span>'}</div></div>`+
+    `<div class="field" style="margin-top:10px"><input id="brPickQ" placeholder="搜索名称 / ID（会在当前收束范围内过滤）" value="${esc(p.q)}" oninput="brPickSearch(this.value)" style="width:100%"></div>`+
+    preview+specBox+bar;
+
+  showModal('选择鱼饵 · 加入「'+brBucketLabel(p.bucket)+'」',
+    '按游戏里的层级往下选：类型 › 品牌 › 型号 › 规格。点圆点是「收窄范围」，点 ＋ 是「勾选待加入」——可以一次勾多个再统一加入。',
+    html,'bait',true);   // 宽弹窗：四级层级 + 规格列表
+  brPickReload();
+}
+
+function brPickClear(){
+  BR_PICK.picked=[];
+  renderBrPicker();
+}
+
+// 统一改选择状态：任意一层变动都要把更深的层清空，否则会留下矛盾的组合。
+function brPickSet(patch){
+  const p=BR_PICK;
+  if('cat' in patch){p.cat=patch.cat;p.sub=0;p.shape='';p.kind='';p.brand='';p.base='';}
+  if('sub' in patch){p.sub=patch.sub;p.shape='';p.kind='';p.brand='';p.base='';}
+  if('shape' in patch){p.shape=patch.shape;p.kind='';p.brand='';p.base='';}
+  if('kind' in patch){p.kind=patch.kind;p.brand='';p.base='';}
+  if('brand' in patch){p.brand=patch.brand;p.base='';}
+  if('base' in patch){p.base=patch.base;}
+  renderBrPicker();
+}
+function brPickBack(){BR_VIEW='edit';renderBrEditor()}
+function brPickSearch(v){BR_PICK.q=v;const seq=++BR_SEQ;setTimeout(()=>{if(seq===BR_SEQ)brPickReload()},250)}
+
+// 规格列表：只在选了型号时出现，列出该型号下每个具体商品。
+// 型号名写进规则就覆盖全部规格，所以这里是「想只开某几个颜色」时才用。
 function brPickReload(){
-  const p=BR_PICK,el=$('#brPickList');
-  if(!el)return;
-  const qs='?cat='+(p.cat||0)+'&sub='+(p.sub||0)+'&q='+encodeURIComponent(p.q||'')+'&limit=200';
+  const p=BR_PICK;
+  const box=$('#brSpecBox');
+  if(!box)return;
+  if(!p.base){box.innerHTML='';return}
+  const qs='?cat='+(p.cat||0)+'&sub='+(p.sub||0)+'&base='+encodeURIComponent(p.base)+
+    (p.kind?'&kind='+encodeURIComponent(p.kind):'')+
+    (p.q?'&q='+encodeURIComponent(p.q):'')+'&limit=200';
+  box.innerHTML='<div class="muted" style="font-size:12px;margin-top:8px">读取规格…</div>';
   api('/api/bait/items'+qs).then(d=>{
-    const rows=d.rows||[];
-    el.innerHTML=rows.map(x=>`<div class="result" onclick="brPickAdd('${esc(x.name_zh||x.item_id)}')">
-        <div><b>${esc(x.name_zh||x.item_id)}</b><div class="muted mono">${esc(x.item_id)}</div></div>
-        <span class="tag">${esc(x.sub_label||'')}</span></div>`).join('')||'<div class="empty">没有匹配的饵料</div>';
-  }).catch(e=>{el.textContent='读取失败：'+e.message});
+    const rows=(d.rows||[]).filter(x=>x.base===p.base);
+    if(!rows.length){box.innerHTML='<div class="muted" style="font-size:12px;margin-top:8px">该型号下没有匹配的规格</div>';return}
+    // 用 matched（过滤后全量命中）而不是 rows.length：rows 会被 limit 截断，
+    // 用 rows.length 会在规格超过上限时把「共 260 个」写成「共 200 个」。
+    const cnt=d.matched||rows.length;
+    const used=brBucket(p.bucket)||[];
+    // 把本页规格名单暂存到模块级变量，供「全选本页」按钮取用。
+    // 不内联进 onclick：规格名里带 NBSP、`#`、`"` 时 JSON 串进 HTML 属性会被转义坏，
+    // 属性截断后 onclick 变成语法错，整屏按钮静默失效。
+    BR_SPEC_PAGE=rows.map(x=>x.name_zh||x.item_id);
+    const addable=BR_SPEC_PAGE.filter(n=>!used.includes(n)).length;
+    box.innerHTML=`<div class="br-spec-head">`+
+        `<span>该型号共 <b>${cnt}</b> 个规格 —— 只加入型号名就已全部覆盖；下面用于只挑其中几个。`+
+        `${addable?` <a href="javascript:void(0)" class="lnk" onclick="brPickTogglePage()">全选本页 ${BR_SPEC_PAGE.length} 个</a>`:''}</span>`+
+      `</div>`+
+      `<div class="br-spec-list">`+rows.map(x=>{
+        const nm=x.name_zh||x.item_id;
+        const inList=used.includes(nm), sel=brIsPicked(nm);
+        const cls='br-spec'+(inList?' picked':'')+(sel?' sel':'');
+        const st=inList?'✓ 已在列表':(sel?'✓ 已选':'＋ 勾选');
+        return `<div class="${cls}" onclick="brPickToggle('${jsArg(nm)}')">`+
+          `<div><b>${esc(nm)}</b><div class="id">${esc(x.item_id)}</div></div>`+
+          `<span class="st">${st}</span></div>`;
+      }).join('')+`</div>`;
+  }).catch(e=>{box.innerHTML='<div class="muted" style="font-size:12px;margin-top:8px">读取失败：'+esc(e.message)+'</div>'});
+}
+
+// 规格层的「全选本页」：把当前列出的规格一次性勾上（已在列表里的跳过）。
+function brPickTogglePage(){brPickToggleMany(BR_SPEC_PAGE)}
+
+// 规格层的「全选本页」：把当前列出的规格一次性勾上（已在列表里的跳过）。
+// 参数用数组字面量传入，前端不需要再发一次请求。
+function brPickToggleMany(names){
+  const p=BR_PICK;
+  if(!p||!Array.isArray(names))return;
+  const used=brBucket(p.bucket)||[];
+  if(!p.picked)p.picked=[];
+  let added=0;
+  names.forEach(n=>{
+    if(!n||used.includes(n))return;
+    if(!p.picked.includes(n)){p.picked.push(n);added++}
+  });
+  renderBrPicker();
+  toast(added?('已勾选 '+added+' 个规格'):'这些都已经勾选或已在列表里',added?'':'bad');
 }
 async function saveBaitRule(){
   if(!BR)return;

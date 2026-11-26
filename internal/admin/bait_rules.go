@@ -125,11 +125,17 @@ func baitSubLabel(category, sub int64) string {
 	return "其他"
 }
 
+// baitCategoryLabel 是大类节点的展示名。
+//
+// 必须与写进规则的「大类规则词」一致：以前这里硬编码返回「饵料」，
+// 而按钮上写的是游戏菜单原文「鱼饵」，同一屏出现两套叫法，
+// 用户会以为「饵料」和「鱼饵」是两个不同范围。现在统一取词表正式名。
+// 「饵料」只作为旧写法别名保留（bait_type_terms.go 的 Alias），不再当展示名。
 func baitCategoryLabel(category int64) string {
-	if category == 17 {
-		return "拟饵"
+	if s, ok := gameserver.ExportedBaitCategoryTerm(category); ok {
+		return s
 	}
-	return "饵料"
+	return "其他"
 }
 
 type baitCatalogEntry struct {
@@ -138,12 +144,48 @@ type baitCatalogEntry struct {
 	Category int64  `json:"category"`
 	Sub      int64  `json:"sub"`
 	SubLabel string `json:"sub_label"`
+	// Brand 是产品系列键（`zmn_spiker2` / `hvz_boils_pp_van`），层级选择器的第三层。
+	// 同一 brand 下是同一款产品的不同规格/颜色。
+	Brand string `json:"brand"`
+	// Kind 是品牌名（`zeiman` / `sorvik` / `Handmade`），层级选择器的第二层。
+	// 天然饵（cat=27）大多没有品牌（kind 为空），只有商品饵才有。
+	Kind string `json:"kind"`
+	// Base 是去掉尾部规格号的基础名（`Aikkila 4g` / `香子兰`），层级选择器的第四层。
+	Base string `json:"base"`
+	// Shape 是形态词（只有 baitType=8 有）：sink=下沉 / popup=Pop-up。
+	Shape string `json:"shape,omitempty"`
+	// Unused 表示这款饵在游戏里拿不到（不在任何商店、无制作配方）：
+	// baitType=1 里那 6 个香煮成饵基料 + 榨饼。规则编辑器里默认折叠。
+	Unused bool `json:"unused,omitempty"`
 }
 
 // loadBaitCatalog 读取全部饵料/拟饵及其二级分类，供选择器与分类树使用。
 func (s *Server) loadBaitCatalog(ctx context.Context) ([]baitCatalogEntry, error) {
+	// 一次性把这些饵的「能否获得」也算出来：在售 或 有配方 就算能拿到。
+	// baitType=1 有 7 款孤立数据（六色香煮成饵基料 + 榨饼），游戏里不可见，
+	// 放进选择器只会让人以为能钓，见 docs/analysis-bait-category-taxonomy §2.2。
+	obtainable := map[string]bool{}
+	for _, q := range []string{
+		`SELECT DISTINCT item_id FROM shop_item`,
+		`SELECT DISTINCT output_id FROM recipe WHERE output_id IS NOT NULL AND output_id<>''`,
+	} {
+		rows, err := s.db.SQL.QueryContext(ctx, q)
+		if err != nil {
+			continue // 拿不到就都按「能获得」处理，不因辅助信息缺失而藏饵
+		}
+		for rows.Next() {
+			var id string
+			if rows.Scan(&id) == nil && id != "" {
+				obtainable[id] = true
+			}
+		}
+		rows.Close()
+	}
+	haveObtain := len(obtainable) > 0
+
 	rows, err := s.db.SQL.QueryContext(ctx, `
-		SELECT d.item_id, COALESCE(c.name_zh,c.name,''), COALESCE(d.category,0), COALESCE(d.attrs_json,'{}')
+		SELECT d.item_id, COALESCE(c.name_zh,c.name,''), COALESCE(d.category,0),
+		       COALESCE(d.brand,''), COALESCE(d.kind,''), COALESCE(d.attrs_json,'{}')
 		FROM item_def d LEFT JOIN item_catalog c ON c.item_id=d.item_id
 		WHERE d.category IN (17,27)
 		GROUP BY d.item_id, d.category
@@ -160,30 +202,73 @@ func (s *Server) loadBaitCatalog(ctx context.Context) ([]baitCatalogEntry, error
 	for rows.Next() {
 		var e baitCatalogEntry
 		var raw string
-		if err := rows.Scan(&e.ItemID, &e.NameZh, &e.Category, &raw); err != nil {
+		if err := rows.Scan(&e.ItemID, &e.NameZh, &e.Category, &e.Brand, &e.Kind, &raw); err != nil {
 			return nil, err
 		}
 		var a attrs
 		_ = json.Unmarshal([]byte(raw), &a)
 		if e.Category == 17 {
 			e.Sub = a.LureType
+			// 拟饵没有形态细分，靠 lureType 区分的已经是最终分类。
 		} else {
 			e.Sub = a.BaitType
+			if a.BaitType == 8 {
+				if gameserver.ExportedBoilIsPopUp(e.Brand) {
+					e.Shape = "popup"
+				} else {
+					e.Shape = "sink"
+				}
+			}
 		}
 		e.SubLabel = baitSubLabel(e.Category, e.Sub)
+		e.Base = gameserver.ExportedBaitBaseName(e.NameZh)
+		if haveObtain && !obtainable[e.ItemID] {
+			e.Unused = true
+		}
 		out = append(out, e)
 	}
 	return out, rows.Err()
 }
 
-// handleBaitCategories 返回「大类 → 二级分类」树，带每种分类的数量。
+// handleBaitCategories 返回「大类 → 二级分类 → 品牌 → 型号」树，带每层的数量。
+//
+// 层级设计对应游戏里的选择方式（用户 2026-11-25 的要求）：
+// 拟饵 → 旋转亮片 → 品牌（Zeiman / Syberia…）→ 型号（Spiker #2）→ 具体规格。
+// 层级越深收束越窄，最后一层才是单个 item。
 func (s *Server) handleBaitCategories(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
 	defer cancel()
 	all, err := s.loadBaitCatalog(ctx)
 	if err != nil {
 		httpError(w, 500, err.Error())
 		return
+	}
+	type line struct {
+		Base  string `json:"base"`
+		Count int    `json:"count"`
+		// Term 是写进规则的词：型号名本身（判鱼按名称匹配，见 ruleKey）。
+		Term string `json:"term"`
+		// ScopeTerm 是「带类别限定的写法」`颗粒@鱼子`。前端在「这个型号名跨了
+		// 多个类别」时必须用它，否则写进去的词会连带命中别的类别下的同名饵。
+		// 只有一个类别含该名时为空，前端仍用 Term（写法更短）。
+		ScopeTerm string `json:"scope_term,omitempty"`
+		// SharedWith 列出同名的其它类别，例如 ["香煮成饵","颗粒"]。
+		// 前端据此提示「这个名字在 3 个类别里都有」，而不是让人以为自己点错了。
+		SharedWith []string `json:"shared_with,omitempty"`
+		// Unused 表示该型号下全部规格在游戏里都拿不到。
+		Unused bool `json:"unused,omitempty"`
+	}
+	type brand struct {
+		Kind  string `json:"kind"`
+		Label string `json:"label"`
+		Count int    `json:"count"`
+		Lines []line `json:"lines"`
+	}
+	type shape struct {
+		Shape string `json:"shape"`
+		Label string `json:"label"`
+		Term  string `json:"term"`
+		Count int    `json:"count"`
 	}
 	type child struct {
 		Sub   int64  `json:"sub"`
@@ -191,6 +276,10 @@ func (s *Server) handleBaitCategories(w http.ResponseWriter, r *http.Request) {
 		Count int    `json:"count"`
 		// Term 是「整类加入」时写进规则的词（如「颗粒」），前端按钮直接用它。
 		Term string `json:"term"`
+		// Shapes 是同一 Sub 内的形态子项（只有香煮成饵有：下沉 / Pop-up）。
+		Shapes []shape `json:"shapes,omitempty"`
+		// Brands 是第三层：品牌（拟饵才有），第四层是型号。
+		Brands []brand `json:"brands,omitempty"`
 	}
 	type node struct {
 		Key      int64   `json:"key"`
@@ -199,6 +288,7 @@ func (s *Server) handleBaitCategories(w http.ResponseWriter, r *http.Request) {
 		Term     string  `json:"term"`
 		Children []child `json:"children"`
 	}
+
 	counts := map[int64]map[int64]int{}
 	totals := map[int64]int{}
 	for _, e := range all {
@@ -208,6 +298,82 @@ func (s *Server) handleBaitCategories(w http.ResponseWriter, r *http.Request) {
 		counts[e.Category][e.Sub]++
 		totals[e.Category]++
 	}
+	// 品牌 → 型号 的聚合要按（大类,子类,品牌,基础名）去重计数
+	type bk struct {
+		cat, sub int64
+		kind     string
+	}
+	brandCount := map[bk]int{}
+	brandLines := map[bk]map[string]*line{}
+	brandOrder := map[bk][]string{}
+	shapeCount := map[[2]int64]map[string]int{}
+	// baseSubs 记录每个型号名出现在哪些二级类别里（键是 (大类, 型号名)）。
+	// 型号名会跨类别重名：实测 25 个型号名横跨 ≥2 个二级类别——`鱼子` 在
+	// 自然的/香煮成饵/颗粒 三处都有、`香子兰` 在 香煮成饵/颗粒/人造玉米 三处。
+	// 前端必须能在重名时写出带限定的词（`颗粒@鱼子`），否则点「颗粒的鱼子」
+	// 写进去的 `鱼子` 会把另外 11 款同名的也一起放行。
+	baseSubs := map[[2]interface{}]map[int64]bool{}
+	for _, e := range all {
+		k := bk{e.Category, e.Sub, e.Kind}
+		if brandLines[k] == nil {
+			brandLines[k] = map[string]*line{}
+		}
+		brandCount[k]++
+		ln := brandLines[k][e.Base]
+		if ln == nil {
+			ln = &line{Base: e.Base, Term: e.Base, Unused: true}
+			brandLines[k][e.Base] = ln
+			brandOrder[k] = append(brandOrder[k], e.Base)
+		}
+		ln.Count++
+		if !e.Unused {
+			ln.Unused = false
+		}
+		if e.Shape != "" {
+			if shapeCount[[2]int64{e.Category, e.Sub}] == nil {
+				shapeCount[[2]int64{e.Category, e.Sub}] = map[string]int{}
+			}
+			shapeCount[[2]int64{e.Category, e.Sub}][e.Shape]++
+		}
+		if e.Base != "" {
+			// 按「去掉规格号后的型号名」聚合，同名型号才认得出来。
+			gk := [2]interface{}{e.Category, e.Base}
+			if baseSubs[gk] == nil {
+				baseSubs[gk] = map[int64]bool{}
+			}
+			baseSubs[gk][e.Sub] = true
+		}
+	}
+
+	// scopeFor 返回该型号名在「本类别」下是否需要用限定写法，
+	// 以及它同时出现在哪几个其它类别（供前端提示）。
+	//
+	// sharedWith 里放的是**类别规则词**（「香煮成饵」）而不是分类树的 label
+	// （「香煮成饵（下沉 + Pop-up）」）：提示语要短，且必须与 scope_term 的前缀
+	// 是同一个词，否则用户看到「香煮成饵@鱼子」却被告知它跟「香煮成饵（下沉 + Pop-up）」
+	// 重名，会以为是两回事。
+	scopeFor := func(cat, sub int64, base string) (scopeTerm string, shared []string) {
+		subs := baseSubs[[2]interface{}{cat, base}]
+		if len(subs) < 2 {
+			return "", nil // 只有一个类别含这个名字：不用限定，写法越短越好
+		}
+		// 术语必须是类别词（判鱼按类别词解析限定），拿不到就退回不限定的写法。
+		term, ok := gameserver.ExportedBaitTypeTermOf(cat, sub)
+		if !ok || term == "" {
+			return "", nil
+		}
+		for s := range subs {
+			if s == sub {
+				continue
+			}
+			if other, ok := gameserver.ExportedBaitTypeTermOf(cat, s); ok && other != "" {
+				shared = append(shared, other)
+			}
+		}
+		sort.Strings(shared)
+		return gameserver.JoinBaitScope(term, base), shared
+	}
+
 	nodes := make([]node, 0, 2)
 	for _, cat := range []int64{27, 17} {
 		catTerm, _ := gameserver.ExportedBaitCategoryTerm(cat)
@@ -219,15 +385,55 @@ func (s *Server) handleBaitCategories(w http.ResponseWriter, r *http.Request) {
 		sort.Slice(subs, func(i, j int) bool { return subs[i] < subs[j] })
 		for _, sub := range subs {
 			term, _ := gameserver.ExportedBaitTypeTermOf(cat, sub)
-			n.Children = append(n.Children, child{
-				Sub: sub, Label: baitSubLabel(cat, sub), Count: counts[cat][sub], Term: term,
+			c := child{Sub: sub, Label: baitSubLabel(cat, sub), Count: counts[cat][sub], Term: term}
+			// 形态子项（下沉 / Pop-up）
+			for _, sh := range gameserver.ExportedBaitShapeTerms(cat, sub) {
+				c.Shapes = append(c.Shapes, shape{
+					Shape: sh.Shape, Label: sh.Label, Term: sh.Term,
+					Count: shapeCount[[2]int64{cat, sub}][sh.Shape],
+				})
+			}
+			// 品牌 → 型号（只给带品牌的；天然饵大多没有品牌，留空由前端直出型号）
+			kinds := make([]string, 0, 16)
+			for k := range brandLines {
+				if k.cat == cat && k.sub == sub {
+					kinds = append(kinds, k.kind)
+				}
+			}
+			sort.Slice(kinds, func(i, j int) bool {
+				a, b := brandCount[bk{cat, sub, kinds[i]}], brandCount[bk{cat, sub, kinds[j]}]
+				if a != b {
+					return a > b
+				}
+				return kinds[i] < kinds[j]
 			})
+			for _, kind := range kinds {
+				k := bk{cat, sub, kind}
+				bd := brand{Kind: kind, Label: kind, Count: brandCount[k]}
+				if bd.Label == "" {
+					bd.Label = "无品牌 / 手工"
+				}
+				for _, base := range brandOrder[k] {
+					ln := *brandLines[k][base]
+					// 跨类别同名时才填 ScopeTerm / SharedWith，其余留空。
+					ln.ScopeTerm, ln.SharedWith = scopeFor(cat, sub, ln.Base)
+					bd.Lines = append(bd.Lines, ln)
+				}
+				sort.SliceStable(bd.Lines, func(i, j int) bool {
+					if bd.Lines[i].Count != bd.Lines[j].Count {
+						return bd.Lines[i].Count > bd.Lines[j].Count
+					}
+					return bd.Lines[i].Base < bd.Lines[j].Base
+				})
+				c.Brands = append(c.Brands, bd)
+			}
+			n.Children = append(n.Children, c)
 		}
 		nodes = append(nodes, n)
 	}
 	// terms 是「按大类加入」按钮的完整清单：顺序、标签、规则词都由 gameserver 定，
 	// 前端不再硬编码（以前硬编码 4 个通配词，删改一次就要改两处）。
-	terms := make([]map[string]any, 0, 40)
+	terms := make([]map[string]any, 0, 48)
 	for _, t := range gameserver.ExportedBaitTypeTerms() {
 		cnt := 0
 		switch {
@@ -236,13 +442,17 @@ func (s *Server) handleBaitCategories(w http.ResponseWriter, r *http.Request) {
 		case len(t.Subs) == 0:
 			cnt = totals[t.Cat]
 		default:
-			for _, sub := range t.Subs {
-				cnt += counts[t.Cat][sub]
+			if t.Shape != "" {
+				cnt = shapeCount[[2]int64{t.Cat, t.Subs[0]}][t.Shape]
+			} else {
+				for _, sub := range t.Subs {
+					cnt += counts[t.Cat][sub]
+				}
 			}
 		}
 		terms = append(terms, map[string]any{
 			"term": t.Term, "label": t.Label, "cat": t.Cat, "sub": baitTermSub(t),
-			"count": cnt, "alias": t.Alias,
+			"shape": t.Shape, "count": cnt, "alias": t.Alias,
 		})
 	}
 	writeJSON(w, map[string]any{"categories": nodes, "terms": terms})
@@ -257,11 +467,16 @@ func baitTermSub(t gameserver.BaitTypeTerm) int64 {
 	return t.Subs[0]
 }
 
-// handleBaitItems 给规则编辑器提供可选饵料清单（只读），支持按大类/二级分类/关键字过滤。
+// handleBaitItems 给规则编辑器提供可选饵料清单（只读）。
+// 支持按大类/二级分类/品牌/型号/关键字逐层收束：层级选择器的每一层
+// 都只是把过滤条件往下叠，最终落到单个 item 或整个型号组。
 func (s *Server) handleBaitItems(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	cat, _ := strconv.ParseInt(r.URL.Query().Get("cat"), 10, 64)
 	sub, _ := strconv.ParseInt(r.URL.Query().Get("sub"), 10, 64)
+	kind := strings.TrimSpace(r.URL.Query().Get("kind"))
+	brand := strings.TrimSpace(r.URL.Query().Get("brand"))
+	base := strings.TrimSpace(r.URL.Query().Get("base"))
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if limit <= 0 || limit > 500 {
 		limit = 200
@@ -275,6 +490,10 @@ func (s *Server) handleBaitItems(w http.ResponseWriter, r *http.Request) {
 	}
 	lower := strings.ToLower(q)
 	out := make([]baitCatalogEntry, 0, limit)
+	// matched 是过滤后的命中总数，total 是入库总数。
+	// 两者必须分开：前端层级选择器用 matched 显示「该型号共 N 个规格」，
+	// 以前 total 直接返回 len(all)，无论怎么收窄都是 4123，会把提示写成「共 4123 个规格」。
+	matched := 0
 	for _, e := range all {
 		if cat != 0 && e.Category != cat {
 			continue
@@ -282,17 +501,27 @@ func (s *Server) handleBaitItems(w http.ResponseWriter, r *http.Request) {
 		if sub != 0 && e.Sub != sub {
 			continue
 		}
+		if kind != "" && e.Kind != kind {
+			continue
+		}
+		if brand != "" && e.Brand != brand {
+			continue
+		}
+		if base != "" && e.Base != base {
+			continue
+		}
 		if lower != "" &&
 			!strings.Contains(strings.ToLower(e.NameZh), lower) &&
 			!strings.Contains(strings.ToLower(e.ItemID), lower) {
 			continue
 		}
-		out = append(out, e)
-		if len(out) >= limit {
-			break
+		matched++
+		// 计数要继续扫完，只截断返回的切片，保证 matched 是全量命中数。
+		if len(out) < limit {
+			out = append(out, e)
 		}
 	}
-	writeJSON(w, map[string]any{"rows": out, "total": len(all)})
+	writeJSON(w, map[string]any{"rows": out, "matched": matched, "total": len(all)})
 }
 
 // baitRulesEnabled 规则开关是否打开：关闭时规则不参与判鱼，后台需要提示。

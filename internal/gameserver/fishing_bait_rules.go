@@ -142,7 +142,51 @@ func keyDigitBoundaryOK(term, name string) bool {
 	if rest[0] < '0' || rest[0] > '9' {
 		return true
 	}
-	return len(rest) >= 2 && rest[0] == '0' && rest[1] >= '0' && rest[1] <= '9'
+	return isZeroPaddedIndex(rest)
+}
+
+// isZeroPaddedIndex 判断「规则词之后剩下的那截」是不是规格编号。
+//
+// 客户端把同一型号的不同规格写成补零的三位编号：`Baby Craw 3.5 001`、
+// `Salmon T1 Crank 10 013`。写了型号名 `Baby Craw 3.5` 就应该覆盖它全部规格，
+// 因此「以 0 开头的纯数字」视为规格号，允许前缀命中。
+//
+// 反向要求：`Hunter 1` 后面接 `000`（即 `Hunter 1000`）不是规格号，那是另一个型号。
+// 数据里不存在全零编号（4123 款实测 0 例），所以「至少含一个非零数字」即判是：
+// `001`/`012`/`010` 都算规格号，`000`/`00` 不算。
+//
+// 注意不要写成「次位必须是 1-9」——那会把 `001`（次位是 0）也否掉，
+// 而 `001` 恰恰是最常见的规格号。这个错误曾让 37 个以数字结尾的型号组零命中。
+func isZeroPaddedIndex(rest string) bool {
+	if len(rest) < 2 {
+		return false
+	}
+	if rest[0] != '0' {
+		return false
+	}
+	// 全部为 0 时是产品名的一部分（`Hunter 1000` 的 `000`），不是规格号。
+	for i := 1; i < len(rest); i++ {
+		if rest[i] < '0' || rest[i] > '9' {
+			return false // 混进非数字，交给调用方的其它分支
+		}
+		if rest[i] != '0' {
+			return true
+		}
+	}
+	return false
+}
+
+// onlyDigits 判断整段都是数字（已由 ruleKey 去掉排版字符）。
+func onlyDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		if s[i] < '0' || s[i] > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // BaitRuleInfo 一条"鱼吃饵"规则的可读形态（供管理后台展示）。
@@ -264,6 +308,104 @@ func (r *fishBaitRule) deriveConditionFlags() {
 	r.needBoat = strings.Contains(r.condition, "已上船")
 }
 
+// splitBaitTerms 按 "/" 切分饵名词表，支持用 "\/" 转义饵名里的真实斜杠。
+//
+// 为什么需要转义：部分饵的官方名自带斜杠——`Finesse Micro Jig 1/8 oz 002`、
+// `Brilliance Colorado 1/4 oz 001`、`Super GummiMakk 8/0 - 03`。这些名字若原样
+// 写进规则表，会被当成两个词（`Finesse Micro Jig 1` + `8 oz 002`），拆完以后
+// 两个碎片都匹配不上完整饵名（前者的 ruleKey 以数字 1 结尾，按
+// keyDigitBoundaryOK 只认三位型号；后者根本不是前缀），于是"吃"变成"不吃"。
+// 历史上规则表靠"恰好第一片是前缀"蒙对过几次，但那是巧合，换个型号就失效——
+// 2026-11-25 合并后台覆盖时就踩了：363 万组判定里有 40 组因此翻转。
+//
+// 所以规则表支持写 `1\/8 oz`，解析时还原成 `1/8 oz`，与覆盖表的 JSON 口径等价。
+func splitBaitTerms(s string) []string {
+	if !strings.Contains(s, `\/`) {
+		return strings.Split(s, "/")
+	}
+	parts := strings.Split(strings.ReplaceAll(s, `\/`, "\x00"), "/")
+	for i := range parts {
+		parts[i] = strings.ReplaceAll(parts[i], "\x00", "/")
+	}
+	return parts
+}
+
+// joinBaitTerms 是 splitBaitTerms 的逆运算，写规则表时用。
+func joinBaitTerms(terms []string) string {
+	esc := make([]string, len(terms))
+	for i, t := range terms {
+		esc[i] = strings.ReplaceAll(t, "/", `\/`)
+	}
+	return strings.Join(esc, "/")
+}
+
+// baitScopeSep 是「类别限定词」与「饵名/型号名」之间的分隔符，写法 `颗粒@鱼子`。
+//
+// 为什么必须有这个机制：型号名会跨类别重名。实测 4123 款饵里有 25 个型号名
+// 横跨 ≥2 个二级类别——`鱼子` 在 自然的(1)/香煮成饵(4)/颗粒(3) 三处都有，
+// `香子兰` 更是横跨 香煮成饵(6)/颗粒(4)/人造玉米(1)。只写 `鱼子` 会命中全部 14 款，
+// 无法表达「只要香煮成饵的鱼子」。后台层级选择器点得再细，写进规则的词也表达不了。
+//
+// 为什么选 `@`：实测 4123 个饵的官方名与全部型号名里 `@` 出现 0 次（`>`/`｜`/`·`
+// 同样 0 次，但 `@` 在中文输入下最顺手，且不会与「系列饵」后缀等现有语法混淆）。
+// 同时 `ruleKey` 不去掉 `@`，所以限定词不会被归一化吃掉。
+const baitScopeSep = "@"
+
+// splitBaitScope 拆 `限定词@饵名`：ok=false 表示这只是一个普通饵名。
+//
+// 判定必须双向都成立才认作限定：
+//  1. `@` 左边能解析成一个类别词（baitTypeTerms，如「香煮成饵」「颗粒」「拟饵」）；
+//  2. `@` 右边非空。
+//
+// 只判「含 @」是不够的：饵名里原则上可能出现 `@`（现在是 0 款，但以后可能变），
+// 那样会被误拆成「限定词不存在 → 匹配失败 → 原本能吃的饵变不吃」。
+func splitBaitScope(term string) (scope BaitTypeTerm, name string, ok bool) {
+	i := strings.Index(term, baitScopeSep)
+	if i <= 0 || i >= len(term)-1 {
+		return BaitTypeTerm{}, "", false
+	}
+	left := strings.TrimSpace(term[:i])
+	name = strings.TrimSpace(term[i+len(baitScopeSep):])
+	if left == "" || name == "" {
+		return BaitTypeTerm{}, "", false
+	}
+	// 限定词本身必须是已知类别词，否则不当限定（避免误拆带 @ 的真实饵名）。
+	if cat, found := baitTypeTermOf(ruleKey(left)); found {
+		return cat, name, true
+	}
+	// 也允许用展示名（Label）当限定词：后台按钮显示的是 Label，
+	// 两者在少数条目上不同（如「香煮成饵（下沉 + Pop-up）」）。
+	for _, t := range baitTypeTerms {
+		if t.Alias {
+			continue
+		}
+		if ruleKey(t.Label) == ruleKey(left) {
+			return t, name, true
+		}
+	}
+	return BaitTypeTerm{}, "", false
+}
+
+// JoinBaitScope 拼出类别限定写法，供后台选择器生成规则词。
+// 例：JoinBaitScope("香煮成饵", "鱼子") == "香煮成饵@鱼子"。
+func JoinBaitScope(scopeTerm, name string) string {
+	scopeTerm, name = strings.TrimSpace(scopeTerm), strings.TrimSpace(name)
+	if scopeTerm == "" || name == "" {
+		return name
+	}
+	return scopeTerm + baitScopeSep + name
+}
+
+// SplitBaitScope 是 JoinBaitScope 的逆，供后台把已有规则词还原成「限定词 + 名字」，
+// 这样界面上能正确显示「这个标签是限定过的」，并在高亮时区分同名项。
+func SplitBaitScope(term string) (scopeTerm, name string, ok bool) {
+	cat, n, found := splitBaitScope(term)
+	if !found {
+		return "", strings.TrimSpace(term), false
+	}
+	return cat.Term, n, true
+}
+
 func parseFishBaitRules(raw string) map[string]fishBaitRule {
 	out := map[string]fishBaitRule{}
 	for _, line := range strings.Split(raw, "\n") {
@@ -277,15 +419,15 @@ func parseFishBaitRules(raw string) map[string]fishBaitRule {
 		}
 		bait = strings.NewReplacer("（", "(", "）", ")").Replace(bait)
 		allowed, extra, _ := strings.Cut(bait, "(")
-		r := fishBaitRule{allow: strings.Split(strings.TrimSpace(allowed), "/"), condition: strings.TrimSpace(condition)}
+		r := fishBaitRule{allow: splitBaitTerms(strings.TrimSpace(allowed)), condition: strings.TrimSpace(condition)}
 		r.deriveConditionFlags()
 		if _, denied, ok := strings.Cut(extra, "不吃"); ok {
 			denied = strings.FieldsFunc(denied, func(c rune) bool { return c == ')' || c == '；' || c == ';' })[0]
-			r.deny = strings.Split(denied, "/")
+			r.deny = splitBaitTerms(denied)
 		}
 		if _, only, ok := strings.Cut(extra, "底钓只吃"); ok {
 			only = strings.TrimRight(only, ") \r\t")
-			r.bottomOnly = strings.Split(only, "/")
+			r.bottomOnly = splitBaitTerms(only)
 		}
 		out[ruleName(name)] = r
 	}
@@ -295,6 +437,10 @@ func parseFishBaitRules(raw string) map[string]fishBaitRule {
 type ruleBait struct {
 	id, name                     string
 	category, lureType, baitType int64
+	// brand 是产品系列键（`zmn_spiker2` / `hvz_boils_pp_van` 这种）。
+	// 唯一用途是区分香煮成饵的下沉 / Pop-up 两种形态：库里 baitType=8
+	// 把两者记成同一个枚举，只有 brand 里带 `_pp_` 能分辨（578/578 零例外）。
+	brand string
 }
 
 // baitNameAliases 是「同一个饵在攻略里有多种叫法」的别名表。
@@ -323,26 +469,60 @@ var baitNameAliases = map[string][]string{
 //
 // termIdx 把「大类词」预先解析成 baitTypeTerms 下标（-1=普通饵名）：
 // 批量匹配时直接按枚举比较，不必每款饵再查一次哈希表。
+//
+// scopeIdx / nameRaw / nameT / nameKT 承载「类别限定词」`颗粒@鱼子`：
+// 限定词本身也要匹配类别（否则 `颗粒@鱼子` 会命中所有叫鱼子的饵），
+// 所以拆成几段——scopeIdx 是限定词下标（-1=该词没有限定），
+// nameRaw 是拆出来的饵名原文（matchOne 要用它跟型号名做精确比较），
+// nameT/nameKT 是它的两种归一化。
 type matchTerms struct {
-	raw     []string
-	t       []string
-	kt      []string
-	termIdx []int32
+	raw      []string
+	t        []string
+	kt       []string
+	termIdx  []int32
+	scopeIdx []int32 // 限定词在 baitTypeTerms 的下标；-1 = 无限定
+	nameRaw  []string
+	nameT    []string
+	nameKT   []string
 }
 
 func newMatchTerms(terms []string) matchTerms {
 	m := matchTerms{
-		raw:     terms,
-		t:       make([]string, len(terms)),
-		kt:      make([]string, len(terms)),
-		termIdx: make([]int32, len(terms)),
+		raw:      terms,
+		t:        make([]string, len(terms)),
+		kt:       make([]string, len(terms)),
+		termIdx:  make([]int32, len(terms)),
+		scopeIdx: make([]int32, len(terms)),
+		nameRaw:  make([]string, len(terms)),
+		nameT:    make([]string, len(terms)),
+		nameKT:   make([]string, len(terms)),
 	}
 	for i, term := range terms {
 		m.t[i] = ruleName(term)
 		m.kt[i] = ruleKey(term)
 		m.termIdx[i] = -1
+		m.scopeIdx[i] = -1
 		if idx, ok := baitTypeTermIndex[m.kt[i]]; ok {
 			m.termIdx[i] = int32(idx)
+		}
+		// 类别限定写法 `颗粒@鱼子`：先把限定词与饵名拆开，各自归一化。
+		// 拆开后必须**同时**过两道判定（属于该类 + 名字匹配），顺序无关。
+		if scope, name, ok := splitBaitScope(term); ok {
+			for j := range baitTypeTerms {
+				if baitTypeTerms[j].Term == scope.Term && baitTypeTerms[j].Alias == scope.Alias &&
+					baitTypeTerms[j].Cat == scope.Cat && baitTypeTerms[j].Shape == scope.Shape {
+					m.scopeIdx[i] = int32(j)
+					break
+				}
+			}
+			if m.scopeIdx[i] >= 0 {
+				m.nameRaw[i] = name
+				m.nameT[i] = ruleName(name)
+				m.nameKT[i] = ruleKey(name)
+				// 拆成功以后，termIdx 不能再生效：`颗粒@鱼子` 的整串不是类别词，
+				// 让它回落成普通饵名会去匹配「名字叫颗粒@鱼子」的饵（0 款）→ 静默零命中。
+				m.termIdx[i] = -1
+			}
 		}
 	}
 	return m
@@ -361,6 +541,14 @@ var baitAliasNorm = func() map[string][]string {
 
 func (b ruleBait) matches(term string) bool {
 	kt := ruleKey(term)
+	// 类别限定写法 `颗粒@鱼子`：先确认属于该类别，再按名字匹配。
+	// 两道都要过——只判类别会把该类的全部颗粒都放行，只判名字会把三种鱼子都放行。
+	if scope, name, ok := splitBaitScope(term); ok {
+		if !scope.matches(b) {
+			return false
+		}
+		return b.matchOne(name, ruleName(name), ruleKey(name), ruleName(b.name), ruleKey(b.name))
+	}
 	// 大类词先判：写「颗粒」就是要整类，不能退化成「名字叫颗粒的那款饵」。
 	if cat, ok := baitTypeTermOf(kt); ok {
 		return cat.matches(b)
@@ -386,6 +574,15 @@ func (b ruleBait) matchesPreNorm(p matchTerms, n, kn string) bool {
 		return false
 	}
 	for i, term := range p.raw {
+		// 类别限定写法 `颗粒@鱼子`：类别 + 名字两道都要过。
+		if idx := p.scopeIdx[i]; idx >= 0 {
+			if baitTypeTerms[idx].matches(b) {
+				if b.matchOne(p.nameRaw[i], p.nameT[i], p.nameKT[i], n, kn) {
+					return true
+				}
+			}
+			continue
+		}
 		if idx := p.termIdx[i]; idx >= 0 {
 			if baitTypeTerms[idx].matches(b) {
 				return true
@@ -426,9 +623,50 @@ func (b ruleBait) matchOne(term, t, kt, n, kn string) bool {
 	if n == t {
 		return true
 	}
+	// 规则词等于「该饵去掉尾部规格号后的型号名」时直接命中。
+	//
+	// 这一条必须复用 baitBaseName：后台层级选择器的「型号」层、自动轮换的分组、
+	// 判鱼的命中范围三者是同一个概念，只能有一把尺子。否则会出现
+	// 「后台点了 Spiker #2、抽查签也按 Spiker #2 分组、判鱼却一条都不认」的静默失效。
+	//
+	// 覆盖的写法差异：规格编号补零（`Spiker #2 001`）、带小数点（`Baby Craw 3.5 001`）、
+	// 规格用连字符（`板条路亚 120-1`）、NBSP 分隔（`Baby Tube\u00a02.4\u00a0002`）。
+	// 这些名字靠下面的字符串前缀判定都判不出来，只有走「去规格号」才一致。
+	//
+	// 用 base 的两种归一化（原样 / 去排版）各比一次：界面上写「Spiker #2」，
+	// 而库里的 base 是 `Spiker #2`，两边排版写法可能不同。
+	if b.name != "" {
+		bb := baitBaseName(b.name)
+		if bb != "" && (term == bb || kt == ruleKey(bb)) {
+			return true
+		}
+		// 型号名本身还带一层规格号时（`Gummi Makk 10` 对规则词 `Gummi Makk`），
+		// 允许「base 以规则词开头且剩余部分是数字/连字符」——这是同一产品线的
+		// 不同尺寸型号（Gummi Makk 10 / 12），不是不同产品。
+		if bn := ruleKey(bb); bn != "" && len(bn) > len(kt) && strings.HasPrefix(bn, kt) {
+			rest := bn[len(kt):]
+			if rest[0] >= '0' && rest[0] <= '9' && onlyDigits(rest) {
+				return true
+			}
+		}
+	}
+	// 规则词以数字结尾时不能直接放弃：大量型号名以型号号/尺寸结尾
+	// （`Baby Craw 3.5`、`Salmon T1 Crank 10`、`Hornet #3`、`Fire Gummi Eel 12/0`），
+	// 它们的规格是「补零编号」`001`/`002`…，属于正常的前缀扩展。
+	// 早前这里直接 return false，导致这 37 个型号组无论怎么写规则都零命中
+	// （实测 873 组里 37 组，见 docs/analysis-bait-category-taxonomy §5）。
 	if strings.ContainsAny(t, "abcdefghijklmnopqrstuvwxyz") && strings.HasPrefix(n, t) {
 		tail := strings.TrimPrefix(n, t)
-		return len(tail) > 0 && (tail[0] == '-' || tail[0] == '#' || (t[len(t)-1] < '0' || t[len(t)-1] > '9') && tail[0] >= '0' && tail[0] <= '9')
+		if len(tail) == 0 {
+			return false
+		}
+		if tail[0] == '-' || tail[0] == '#' {
+			return true
+		}
+		if t[len(t)-1] < '0' || t[len(t)-1] > '9' {
+			return tail[0] >= '0' && tail[0] <= '9'
+		}
+		return isZeroPaddedIndex(tail)
 	}
 	// 去排版后再比一次：连字符/空格/NBSP/全角字符造成的“看起来一样但对不上”。
 	// 规则词可能带“类/饵/系列/系列饵”后缀，先剥掉再比，并对同义叫法做改写
@@ -469,8 +707,8 @@ func (s *Server) filterFishBaits(loc, bait string, keys []string, weights []floa
 func (s *Server) loadRuleBait(ctx context.Context, id string) (ruleBait, bool) {
 	b := ruleBait{id: id}
 	var raw string
-	if err := s.DB.SQL.QueryRowContext(ctx, `SELECT COALESCE(c.name_zh,c.name,''),d.category,COALESCE(d.attrs_json,'{}')
-   FROM item_def d LEFT JOIN item_catalog c ON c.item_id=d.item_id WHERE d.item_id=?`, id).Scan(&b.name, &b.category, &raw); err != nil {
+	if err := s.DB.SQL.QueryRowContext(ctx, `SELECT COALESCE(c.name_zh,c.name,''),d.category,COALESCE(d.brand,''),COALESCE(d.attrs_json,'{}')
+   FROM item_def d LEFT JOIN item_catalog c ON c.item_id=d.item_id WHERE d.item_id=?`, id).Scan(&b.name, &b.category, &b.brand, &raw); err != nil {
 		return ruleBait{}, false
 	}
 	if b.category != 17 && b.category != 27 {
