@@ -130,15 +130,21 @@ func TestFishDielCurveAssetMatchesDerivedMaskAndSources(t *testing.T) {
 		}
 	}
 
+	// wantSources 记录每条曲线的出处分布，用于发现「整份资产被重新生成过」。
+// 这批数字会随数据调整而变化，改数据时同步更新即可——它的价值是当总量对不上时
+// 立刻暴露「有人覆盖了文件却没说明来源」。
+//
+// 2026-11-26：28 条普通鱼从单时段补成双时段，来源标记为 local:two-segment
+// （原属 rf4info 23 条、gamekee-avg:mid/high 2 条、gamekee-avg:low/high 3 条）。
 	wantSources := map[string]int{
-		"rf4info":              120,
+		"rf4info":              98,
 		"gamekee-avg:high/low": 1,
-		"gamekee-avg:low/high": 4,
 		"gamekee-avg:low/low":  13,
-		"gamekee-avg:mid/high": 9,
+		"gamekee-avg:mid/high": 7,
 		"gamekee-avg:mid/low":  15,
 		"gamekee-avg:mid/mid":  69,
 		"global-avg":           22,
+		"local:two-segment":    28,
 	}
 	if !reflect.DeepEqual(sources, wantSources) {
 		t.Fatalf("diel_source 覆盖不符: 得到 %v，期望 %v", sources, wantSources)

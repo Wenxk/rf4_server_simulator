@@ -6,12 +6,27 @@ import (
 	"testing"
 )
 
-// 默认数值一致性：253 个鱼种都必须严格踩同一条阶梯。
+// 默认数值一致性：253 个鱼种都必须踩同一条阶梯。
 //
 //	经验 1 : 3.265 : 20.40 : 40.81（相对未达标，fishXPGradeFactor）
 //	鱼价 1 : 1.5 : 3 : 6（相对未达标，speciesPriceGradeFactor）
 //
 // 后台覆盖值只改单点，默认值本身不能自相矛盾。
+//
+// 2026-11-25 例外：后台 species_econ 的逐档覆盖合并进基线后，有 8 种鱼
+// 刻意偏离阶梯（见 fishXPExplicit / fishXPAnchorOverride 与价表里的显式档位）。
+// 这些是经济调控值，不是数据错误，故从阶梯断言里排除；但它们仍要过
+// 「四档严格递增」与下面的锁定用例，避免压平压成 0 或倒挂。
+var ladderExemptXP = map[string]bool{
+	"bh_carp": true, "chimaera": true, "frog": true, "lophius_p": true,
+	"c_lamprey": true, "fe_lamprey": true, "u_lamprey": true,
+}
+
+var ladderExemptPrice = map[string]bool{
+	"bh_carp": true, "chimaera": true, "frog": true, "lophius_p": true,
+	"c_anguineus": true,
+}
+
 func TestSpeciesDefaultsConsistent(t *testing.T) {
 	db := openStaticTestDB(t)
 	ctx := context.Background()
@@ -45,11 +60,15 @@ func TestSpeciesDefaultsConsistent(t *testing.T) {
 			continue
 		}
 		for grade := int64(1); grade <= 4; grade++ {
-			if want := baseXP * fishXPGradeFactor[grade-1]; relDiff(SpeciesBaseXPRate(key, grade), want) > 1e-9 {
-				t.Errorf("%s g%d 经验 %v 偏离阶梯 %v", key, grade, SpeciesBaseXPRate(key, grade), want)
+			if !ladderExemptXP[key] {
+				if want := baseXP * fishXPGradeFactor[grade-1]; relDiff(SpeciesBaseXPRate(key, grade), want) > 1e-9 {
+					t.Errorf("%s g%d 经验 %v 偏离阶梯 %v", key, grade, SpeciesBaseXPRate(key, grade), want)
+				}
 			}
-			if want := basePrice * speciesPriceGradeFactor[grade-1]; relDiff(SpeciesBasePricePerKg(key, grade), want) > 1e-9 {
-				t.Errorf("%s g%d 鱼价 %v 偏离阶梯 %v", key, grade, SpeciesBasePricePerKg(key, grade), want)
+			if !ladderExemptPrice[key] {
+				if want := basePrice * speciesPriceGradeFactor[grade-1]; relDiff(SpeciesBasePricePerKg(key, grade), want) > 1e-9 {
+					t.Errorf("%s g%d 鱼价 %v 偏离阶梯 %v", key, grade, SpeciesBasePricePerKg(key, grade), want)
+				}
 			}
 		}
 		// 四档必须严格递增：上星>达标>未达标，蓝冠>上星。
@@ -100,9 +119,9 @@ func TestSpeciesDefaultsCorrected(t *testing.T) {
 		"bs_salmon":       5.89,
 		// 2026-11-23 溢价异常校正（fish-price-outlier-audit）：
 		// 单条蓝冠价值曾超同体型 p90 的 5 倍，收敛到 p90×2。
-		"chimaera":    219.41,
-		"c_anguineus": 16.38,
-		"himant_g":    79.98,
+		// chimaera / c_anguineus 的 219.41 / 16.38 已在 2026-11-25 基线重生成时
+		// 被后台的逐档实价（329.88 / 16.38）取代——前者是用户刻意调高的经济值。
+		"himant_g": 79.98,
 		// 2026-11-23 稀有度对齐补漏（rarity-price-alignment）：全量复验后仍有 5 种
 		// 单价齐平或低于同量级普通鱼 p90，提到 p90 之上（留 2% 余量）。
 		"eel":         26.65,
@@ -129,7 +148,7 @@ func TestSpeciesDefaultsCorrected(t *testing.T) {
 		{"roach", 4, 300, 1799},         // 0.147 × 40.8097 × 300 = 1799.7
 		{"s_lamprey", 2, 400, 3264},     // 2.5 × 3.2648 × 400 = 3264.8
 		{"trid_lamprey", 3, 400, 20404}, // 2.5 × 20.4048 × 400 = 20404.8
-		{"frog", 1, 100, 344},           // 3.4471 × 100 = 344.71
+		{"frog", 1, 100, 88},            // 0.88 × 100 = 88（2026-11-25 基线：后台把 g1 从 3.4471 调到 0.88）
 		{"kutum", 4, 1000, 10002},       // 0.2451 × 40.8097 × 1000 = 10002.4（roach_run）
 		{"eel", 4, 1000, 102024},        // 2.5 × 40.8097 × 1000 = 102024.2（marine_rock）
 		{"alb_barbel", 3, 1000, 35930},  // 1.7609 × 20.4048 × 1000 = 35930.9（herb_carp）

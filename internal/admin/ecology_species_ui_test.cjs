@@ -133,7 +133,18 @@ test('ecology species page edits full ecology profile',async()=>{
   assert.equal(posted.season_mask,null);
   assert.equal(posted.diel_mask,null);
   assert.equal(posted.enabled,null);
-  assert.equal(posted.diet_json,null);
+  // 五个偏好矩阵（食性/天气/拟饵动作/底质/水色）已从弹窗移除：它们是多键 JSON，
+  // 手改容易打错且写进覆盖后没有回滚入口。保存时**根本不下发**这些键，
+  // 而不是发 null——发 null 会把已有的矩阵覆盖清成「继承基线」，等于静默丢数据。
+  assert.equal(posted.diet_json,undefined,'矩阵不该再下发（发 null 会清掉已有覆盖）');
+  assert.equal(posted.weather_json,undefined);
+  assert.equal(posted.action_json,undefined);
+  assert.equal(posted.substrate_json,undefined);
+  assert.equal(posted.color_json,undefined);
+  // 界面上也不该再有这些输入框。
+  assert.equal(await page.locator('#eco_s_diet').count(),0,'食性矩阵输入框应已移除');
+  assert.equal(await page.locator('#eco_s_color').count(),0,'水色矩阵输入框应已移除');
+  assert.equal(await page.locator('textarea#eco_s_action').count(),0,'拟饵动作矩阵输入框应已移除');
 
   // 编辑已覆盖的狗鱼：季节掩码应回显为「自定义」且只有春、冬两个勾。
   await page.locator('#ecoFilter').selectOption('overlaid');
@@ -209,6 +220,69 @@ test('ecology curve input converts to json and rejects bad values',async()=>{
   await page.locator('button:has-text("保存")').click();
   await new Promise(r=>setTimeout(r,400));
   assert.equal(calls,1);
+
+  assert.deepEqual(errors,[]);
+  await context.close();
+ } finally {
+  if(browser)await browser.close();
+  server.close();
+ }
+});
+// 勾选与曲线打架时必须拦下：判鱼侧只认曲线，界面却按勾选写「已覆盖」，
+// 结果是「改了勾选、咬口没变」——这是最难排查的一类问题（2026-11-26 实际踩过）。
+test('saving mismatched diel mask and curve is blocked',async()=>{
+ const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
+ let calls=0;
+ const base={fish_key:'burbot',layer_min:0.3,layer_pref:0.75,layer_max:1,
+  temp_min_c:4,temp_pref_c:8,temp_max_c:14,
+  // 基线本身就是「夜+昏」，曲线与掩码自洽
+  diel_mask:9,diel_curve:'[1,0.3,0.2,0.65]',season_mask:15,
+  diet_json:'{}',weather_json:'{}',action_json:'{}',substrate_json:'{}',color_json:'{}',
+  current_pref:0.5,activity:1,light_pref:0.5,clarity_pref:0.5,aggression:1,
+  enabled:1,origin:'baseline',updated_by:'',updated_ts:0};
+ const server=http.createServer((req,res)=>{
+  const key=new URL(req.url,'http://fixture').pathname.replace(/^\/admin/,'');
+  const json=v=>{res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(v))};
+  if(key==='/api/me')return json({username:'admin',item_categories:{}});
+  if(key==='/api/fish/ecology-species'&&req.method==='GET')
+   return json({items:[{fish_key:'burbot',name_zh:'江鳕',rarity_tier:0,origin:'',overlaid:false,base,override:null}],count:1,total:1});
+  if(key==='/api/fish/ecology-species'&&req.method==='POST'){calls++;return json({ok:true})}
+  if(key.startsWith('/api/'))return json({});
+  res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html);
+ });
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ let browser;
+ try{
+  browser=await chromium.launch({headless:true,executablePath:process.env.RF4_TEST_BROWSER||path.join(process.env['ProgramFiles(x86)'],'Microsoft/Edge/Application/msedge.exe')});
+  const context=await browser.newContext({viewport:{width:1600,height:1000}});
+  await context.addInitScript(()=>{localStorage.setItem('rf4_admin_token','fixture')});
+  const page=await context.newPage(),errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#ecology`,{waitUntil:'networkidle'});
+  await page.locator('#ecoTable').locator('text=江鳕').waitFor();
+  await page.locator('button:has-text("编辑")').click();
+  await page.locator('#eco_s_curve').waitFor();
+
+  // 一进来就该看到「曲线 → 实际开口」的实时提示，且与勾选一致。
+  await page.waitForFunction(()=>document.querySelector('#ecoDielHint').textContent.includes('实际开口'),null,{timeout:4000});
+  assert.match(await page.locator('#ecoDielHint').innerText(),/与勾选一致/);
+
+  // 把勾选改成「只有夜」，但曲线仍让夜+昏开口 → 保存必须被拦。
+  await page.locator('#eco_s_diel_mode').selectOption('1');
+  await page.locator('#eco_s_diel_b0').check();   // 夜
+  await page.locator('#eco_s_diel_b1').uncheck(); // 晨
+  await page.locator('#eco_s_diel_b2').uncheck(); // 昼
+  await page.locator('#eco_s_diel_b3').uncheck(); // 昏
+  await page.locator('button:has-text("保存")').click();
+  await new Promise(r=>setTimeout(r,300));
+  assert.equal(calls,0,'勾选(仅夜)与曲线(夜+昏)不一致，不该发出保存请求');
+  assert.match(await page.locator('#toast').innerText(),/不一致/);
+
+  // 把曲线改成与勾选一致（只有夜是活跃段）→ 放行。
+  await page.locator('#eco_s_curve').fill('1,0.3,0.2,0.2');
+  await page.locator('button:has-text("保存")').click();
+  await new Promise(r=>setTimeout(r,400));
+  assert.equal(calls,1,'勾选与曲线一致后应放行');
 
   assert.deepEqual(errors,[]);
   await context.close();

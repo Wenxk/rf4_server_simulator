@@ -383,11 +383,70 @@ var fishXPInferred = map[string]float64{
 	"frog":         3.4471,
 }
 
+// fishXPAnchorOverride g1 基数的人工设定值（2026-11-25 基线重生成）。
+//
+// 与 fishXPAnchor 的区别：那边靠「锚档实测 c ÷ 阶梯」反推 g1，这里直接钉 g1 本身。
+// 用于后台调过 base rate、但没有新实测样本的鱼种——把它们塞进 fishXPAnchor
+// 会谎称自己有条实测锚点，塞进 fishXPInferred 又违反那张表「只放无实测推断种」
+// 的语义，所以单开一张。
+//
+// 值为 species_econ 覆盖里的 g1 原值；g2~g4 若偏离阶梯，另见 fishXPExplicit。
+var fishXPAnchorOverride = map[string]float64{
+	"c_lamprey":  850.0,
+	"chimaera":   88.88,
+	"fe_lamprey": 2888.88,
+	"frog":       0.88,
+	"lophius_p":  28.8,
+	"u_lamprey":  2888.88,
+}
+
 // fishXPRateFor 返回 XP 速率 c（XP = trunc(c×W_g)）。
 // 优先级：本种实测精确命中 → g4 由上星推导 → 同种锚×档位乘子 → 皮肤别名→宿主整链 →
 // 无实测种推断表 → 亲缘组 → 旧 valueRates → 缺省。
 // 注意：皮肤变种（common_carp 等）官服有独立经济数值，实测/锚优先于宿主继承；
 // 别名仅兜零实测的皮肤种。
+// fishXPExplicit 逐档显式值：后台 species_econ 覆盖合并进基线后的落点
+// （2026-11-25 基线重生成）。语义与 fishXPRateC 相同，都是 (鱼种,档位)→c 的
+// **绝对值**，但优先级在阶梯之上——命中即直接返回，不再按 g1 基数 × 阶梯推算。
+//
+// 为什么需要这张表：species_econ 原有 8 种鱼的覆盖，其中 7 种把 g2~g4 人为压平
+// （七鳃鳗族 g4 只有阶梯值的 8%，frog 的 g3 是阶梯的 33%），这是刻意的经济调控，
+// 不是实测噪声。若只把 g1 基数搬进 fishXPAnchor/fishXPInferred，四档会被
+// fishXPGradeFactor 重新拉成统一形状，压平的效果全丢。
+//
+// 缺省仍然走阶梯：这张表只放**显式偏离阶梯**的档位，没列的档位照旧
+// c = fishXPBaseRate(鱼种) × fishXPGradeFactor[档位]。
+var fishXPExplicit = map[vgKey]float64{
+	// chimaera：g2 抬到 488.88（阶梯值 290.17 的 1.68×），g3/g4 压到阶梯的 38%/30%。
+	{"chimaera", 2}: 488.88,
+	{"chimaera", 3}: 688.88,
+	{"chimaera", 4}: 1088.88,
+	// frog：g1 0.88，g2~g4 全部压平（阶梯会给 2.87/17.96/35.91）。
+	{"frog", 2}: 2.88,
+	{"frog", 3}: 5.88,
+	{"frog", 4}: 8.88,
+	// lophius_p：g1 28.8，g2~g4 压到阶梯的 73%/19%/14%。
+	{"lophius_p", 2}: 68.88,
+	{"lophius_p", 3}: 108.88,
+	{"lophius_p", 4}: 168.88,
+	// 七鳃鳗三兄弟：g1 基数很高（850~2888.88），但 g2~g4 被封在 1 万以内，
+	// 避免高价值鱼在高档位刷出天文数字经验。阶梯原值会到 11.8 万。
+	{"c_lamprey", 2}:  2168.0,
+	{"c_lamprey", 3}:  6888.0,
+	{"c_lamprey", 4}:  9888.0,
+	{"fe_lamprey", 2}: 6888.88,
+	{"fe_lamprey", 3}: 8999.99,
+	{"fe_lamprey", 4}: 9999.99,
+	{"u_lamprey", 2}:  6888.88,
+	{"u_lamprey", 3}:  8888.88,
+	{"u_lamprey", 4}:  9999.99,
+}
+
+// 刻意不进本表：bh_carp。后台曾把它覆盖成 g2=0.4233/g3=1.6933/g4=4.4333，
+// 但 fishXPAnchor 里 bh_carp 有官服实测锚点 {grade:3, c:4.3333}，实测 XP
+// 37894g 得 164206（TestOfficialXPAnchors 锁着）。覆盖值把 g3 压到实测的 39%，
+// 等于用手填值盖掉实测证据——合并基线时按「实测优先」原则丢弃覆盖，保留锚点。
+
 // fishXPRateFor 返回 XP 速率 c（XP = trunc(c×W_g)）。
 // 2026-11-23 起全表统一阶梯：c = 本种未达标基数 × fishXPGradeFactor[档位]。
 // 官服实测只用来定「未达标基数」——取该种锚档实测值 ÷ 锚档乘子；
@@ -399,6 +458,10 @@ func fishXPRateFor(species string, grade int64) float64 {
 	} else if grade > 4 {
 		grade = 4
 	}
+	// 逐档显式值优先：后台刻意压平/抬高的档位不能被阶梯拉回统一形状。
+	if v, ok := fishXPExplicit[vgKey{species: species, grade: grade}]; ok {
+		return v
+	}
 	// 锚档直接回实测值，避免 (c/f)×f 的浮点尾差把 trunc 结果挪一格。
 	if a, ok := fishXPAnchor[species]; ok && a.grade == grade {
 		return a.c
@@ -407,8 +470,13 @@ func fishXPRateFor(species string, grade int64) float64 {
 }
 
 // fishXPBaseRate 返回未达标档（g1）的 XP/克基数。
-// 优先级：本种锚档实测 → 皮肤别名→宿主 → 无实测种推断表 → 亲缘组 → 旧 valueRates → 缺省。
+// 优先级：人工设定 g1 → 本种锚档实测 → 皮肤别名→宿主 → 无实测种推断表
+// → 亲缘组 → 旧 valueRates → 缺省。
+// 人工设定排最前：它承载的是后台调过的经济值，比「锚档反推」更直接。
 func fishXPBaseRate(species string) float64 {
+	if v, ok := fishXPAnchorOverride[species]; ok {
+		return v
+	}
 	if a, ok := fishXPAnchor[species]; ok {
 		return a.c / fishXPGradeFactor[a.grade-1]
 	}

@@ -18,11 +18,18 @@ import (
 // 版本号停在 5 的话 `WHERE profile_version < excluded.profile_version` 全不成立，
 // 曲线上不来，等于白改。
 //
+// 7：温度三列改为文献值（ref/fish_temp_final.csv，253 条全部覆盖），资产里原先
+// 那套按 profile 合成的温度（如 agar 的 4.44/16.84/26.64）作废。此前文献温度寄存在
+// fish_ecology_species 的 253 条覆盖行里——那层唯一的作用就是承载温度，其余 12 列
+// 全是基线副本；一旦在后台点「恢复基线」就会整行删掉，温度也跟着没了（2026-11-25
+// 鳄雀鳝就是这么丢的）。现在温度成为真基线，覆盖表可以清空，语义归位。
+// **必须抬版本号**：不改这个常量，新温度进不了已有的 253 行。
+//
 // 稀有度不在这里：rarity_tier 现在是鱼种固有属性（species_rarity：0 普通 /
 // 1 稀有 / 2 超稀有），由启动时的 SyncFishRarityFromStatic 写入，种子 JSON
 // 里不再带这个字段——少一个会随文件漂移的档位来源。
 const (
-	fishEcologyProfileVersion = 6
+	fishEcologyProfileVersion = 7
 	// fishDielCurveMin 是曲线的最低系数：低活跃段仍允许偶发记录，
 	// 但不置 0，避免该鱼在整段内彻底消失（与上游同口径）。
 	fishDielCurveMin = 0.08

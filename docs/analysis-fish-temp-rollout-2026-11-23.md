@@ -188,6 +188,43 @@ case c.depthCM > 0:                    layer = normalizeWaterLayer(float64(c.dep
 **WAL 模式下备份要用 `sqlite3.backup`。**
 直接 `cp data/rf4server.db` 拿到的是不一致快照（`-wal` 里有未落盘数据）。
 
+**`--max-drift` 默认值是 999.0，等于这道保护不存在（2026-11-25 发现）。**
+`fish_temp_dynamic.py` 的 tier2「移动 pref」有一段保护：
+
+```python
+if ref is not None and abs(c - ref) > args.max_drift:
+    continue   # 漂移超限：宁可这一档空着
+```
+
+注释写得很明确——宁可留空档也不硬搬。但 argparse 里
+`--max-drift` 的 `default=999.0`，任何漂移都拦不住，保护形同虚设。
+
+后果：8 条**广温鱼**被整批搬到低温区，全部违背文献，且漂移量 5.5~14℃：
+
+| 鱼 | 文献 pref | 实得 pref | 漂移 |
+|---|---|---|---|
+| `c.carp` 金鲫 | 21 | 7.0 | 14.0 |
+| `eel` 鳗鱼（文献「最适 15~22℃」） | 17 | 4.5 | 12.5 |
+| `s_bass` 条纹狼鲈 | 18 | 7.0 | 11.0 |
+| `c.roach` 常见拟鲤（文献「最适 14~20℃」） | 16 | 7.0 | 9.0 |
+| `dreissena` 河斑马纹贻贝 | 16 | 7.0 | 9.0 |
+| `ruffe` 梅花鲈 | 15 | 7.0 | 8.0 |
+| `chartus_kuoriius` 廓里湖红点鲑 | 12 | 4.5 | 7.5 |
+| `palia_kr` 黑口红点鲑 | 10 | 4.5 | 5.5 |
+
+为什么偏偏挑中这些鱼：tier2 的排序第 1 键 `drift` 算的是
+**窗口超出文献区间的绝对度数**，不是 pref 偏离量。文献区间宽的广温鱼
+（常见拟鲤 6~26℃）窗口整体下移 9℃ 后「超格量」只有 4.5，反而比窄区间
+冷水鱼代价低，于是最该保留的常见鱼被优先搬走——`c.roach` 与 `c.carp`
+都在 7 张图的名册里。
+
+体检方式：看 `ref/fish_temp_final.csv` 的 `basis` 列。
+`补缺-移动` 的 8 条全部落在低温区、且 pref 与 `fish_temp_literature.SPECIES`
+的文献值差 5℃ 以上，就是这道保护失效了。
+
+修法：跑之前显式给 `--max-drift 3.0`（或改默认值）。已验证把 8 条
+改回文献 pref 后，每个水温档（含最低 4℃ 档）仍有 8~53 条鱼，不会空档。
+
 ---
 
 ## 7. 复现方式

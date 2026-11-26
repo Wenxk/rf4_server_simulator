@@ -807,10 +807,59 @@ function ecoMaskRead(id){
   let m=0;for(let i=0;i<4;i++)if($('#'+id+'_b'+i).checked)m|=(1<<i);
   return m;
 }
-function ecoText(id){
-  const el=$('#'+id);if(!el)return null;
-  const raw=el.value.trim();
-  return raw===''?null:raw;
+// 昼夜口径实时提示：把「勾选框写的」和「曲线实际生效的」摆在一起，不一致就标红。
+// 判鱼侧 fishDielWeight 在有曲线时只读曲线，所以勾选框与曲线打架时，玩家看到的
+// 活跃时段和真正的咬口分布会不同——这是最容易误判「改了没生效」的地方。
+const DIEL_ACTIVE_LINE=0.5;
+// 昼夜勾选是否被本次编辑动过（含「继承 ↔ 自定义」的切换与任一勾选框变化）。
+// 只在动过时才校验曲线一致性：历史数据里存在曲线/掩码本就不匹配的行，
+// 用户若只改水温，不该被昼夜口径挡回来。
+let ECO_DIEL_INIT=null;
+function dielMaskTouched(){
+  if(ECO_DIEL_INIT===null)return false;
+  const mode=$('#eco_s_diel_mode')?.value??'';
+  let mask=null;
+  if(mode!=='')mask=ecoMaskRead('eco_s_diel');
+  return mode!==ECO_DIEL_INIT.mode||mask!==ECO_DIEL_INIT.mask;
+}
+// 生效曲线：输入框优先，留空则取基线（与判鱼侧「曲线非空就用曲线」同口径）。
+// 返回 null 表示既没填也没有基线曲线，此时只能按勾选判断。
+function dielCurveEffective(){
+  const raw=($('#eco_s_curve')?.value||'').trim();
+  if(raw!==''){
+    const parts=raw.replace(/[[\]]/g,'').split(/[,\s]+/).filter(Boolean).map(Number);
+    if(parts.length===4&&parts.every(v=>Number.isFinite(v)&&v>=0&&v<=1))return parts;
+    return null; // 非法值交给上面已有的格式校验去报错
+  }
+  const base=(ECO_EDIT?.base||{}).diel_curve;
+  if(!base)return null;
+  try{const c=JSON.parse(base);return Array.isArray(c)&&c.length===4?c:null}catch(e){return null}
+}
+function ecoDielState(){
+  const r=ECO_EDIT||{},base=r.base||{};
+  const curve=dielCurveEffective();
+  // 勾选框：自定义取勾选，继承取基线
+  let mask=null;
+  if($('#eco_s_diel_mode')&&$('#eco_s_diel_mode').value!=='')mask=ecoMaskRead('eco_s_diel');
+  else if(base.diel_mask!=null)mask=Number(base.diel_mask);
+  return {curve,mask};
+}
+function updateEcoDielHint(){
+  const el=$('#ecoDielHint');if(!el)return;
+  const {curve,mask}=ecoDielState();
+  const names=ECO_DIEL_NAMES;
+  const maskOn=mask==null?[]:names.filter((_,i)=>mask&(1<<i));
+  if(!curve){
+    el.innerHTML=`当前没有曲线，判鱼按勾选生效：<b>${maskOn.length?maskOn.join('/'):'无'}</b>（命中 1.0 / 未命中 0.35）。`;
+    return;
+  }
+  const curveOn=names.filter((_,i)=>curve[i]>=DIEL_ACTIVE_LINE);
+  const same=curveOn.join('/')===maskOn.join('/');
+  const fmt=curve.map((v,i)=>`${names[i]} ${v.toFixed(2)}`).join(' · ');
+  el.innerHTML=`曲线 <span class="mono">${esc(fmt)}</span> → 实际开口 <b>${curveOn.length?curveOn.join('/'):'无'}</b>`+
+    (same
+      ? '<span style="color:#6ff0b7">（与勾选一致）</span>'
+      : `<span class="danger-text">（与勾选「${maskOn.length?maskOn.join('/'):'无'}」不一致：判鱼只认曲线，勾选仅展示）</span>`);
 }
 function openEcologyEditor(key){
   const r=ECO_ROWS.find(x=>x.fish_key===key);if(!r)return;
@@ -831,14 +880,6 @@ function openEcologyEditor(key){
   const f=(id,label,val,step,hint,baseKey)=>`<div class="field"><label for="${id}">${label}</label>
     <input id="${id}" type="number" step="${step}" value="${v(baseKey)}" placeholder="${esc(inh(baseKey))}">
     <div class="tunable-hint">${hint}</div></div>`;
-  const ta=(id,label,baseKey,hint)=>{
-    const raw=ov[baseKey]??'';
-    let pretty=raw;
-    try{pretty=raw?JSON.stringify(JSON.parse(raw)):''}catch(e){pretty=raw}
-    return `<div class="field span2"><label for="${id}">${label}</label>
-      <textarea id="${id}" rows="2" placeholder="${esc('继承 '+JSON.stringify(base[baseKey]??{}))}">${esc(pretty)}</textarea>
-      <div class="tunable-hint">${hint}；留空＝继承基线</div></div>`;
-  };
   const curveRaw=ov.diel_curve??'';
   const curveVal=curveRaw?String(curveRaw).replace(/[[\]"\s]/g,'').split(',').map(s=>s.replace(/[^0-9.]/g,'')).join(','):'';
   const body=`
@@ -866,7 +907,8 @@ function openEcologyEditor(key){
   </div>
   <div class="field" style="margin-top:10px"><label for="eco_s_curve">昼夜曲线 夜/晨/昼/昏</label>
     <input id="eco_s_curve" type="text" value="${esc(curveVal)}" placeholder="${esc('继承 '+(base.diel_curve||'—'))}">
-    <div class="tunable-hint">四个 0~1 的数，如 <b>1,0.3,0.2,0.5</b>；峰值固定 1、最低 0.08，只压不抬。填了曲线就以曲线为准，掩码只在没有曲线时生效。</div>
+    <div class="tunable-hint">四个 0~1 的数，如 <b>1,0.3,0.2,0.5</b>；峰值固定 1、最低 0.08，只压不抬。<b>曲线非空时判鱼只看曲线，上面的昼夜勾选只用于界面展示</b>——想让某个时段真的活跃，必须让它这一段 ≥0.5，光勾勾选框没用。</div>
+    <div class="tunable-hint" id="ecoDielHint" style="margin-top:4px">—</div>
   </div>
 
   <h3 style="font-size:13px;margin:16px 0 8px">行为系数</h3>
@@ -878,14 +920,7 @@ function openEcologyEditor(key){
     ${f('eco_s_clarity','清澈度偏好',ov.clarity_pref,'0.01','0~1，越大越爱清水','clarity_pref')}
   </div>
 
-  <h3 style="font-size:13px;margin:16px 0 8px">矩阵（JSON 对象，一般不用手改）</h3>
-  <div class="form-grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-    ${ta('eco_s_diet','食性矩阵','diet_json','键为饵料类目，值为偏好权重')}
-    ${ta('eco_s_weather','天气矩阵','weather_json','键为天气类型，值为偏好权重')}
-    ${ta('eco_s_action','拟饵动作矩阵','action_json','键为拟饵动作，值为偏好权重')}
-    ${ta('eco_s_substrate','底质矩阵','substrate_json','键为底质类型，值为偏好权重')}
-    ${ta('eco_s_color','水色矩阵','color_json','键为水色，值为偏好权重')}
-  </div>
+  <div class="tunable-hint" style="margin-top:12px">食性 / 天气 / 拟饵动作 / 底质 / 水色五个偏好矩阵不在此处维护：它们是十几到二十几个键的权重表，手改一个字符就会让整条鱼的判鱼权重出错，且写进覆盖后没有回滚入口。需要调整请改 <span class="mono">assets/fish_ecology_defs.json</span> 后重灌基线。</div>
 
   <div class="field" style="margin-top:10px"><label for="eco_s_enabled">本物种是否参与判鱼</label>
     <select id="eco_s_enabled">
@@ -906,6 +941,14 @@ function openEcologyEditor(key){
   // 已覆盖过的掩码要立刻显示出「= 9（春/冬）」，不能等用户再点一下勾选框。
   ecoMaskSync('eco_s_season');
   ecoMaskSync('eco_s_diel');
+  // 曲线与掩码是两套参数，必须实时告诉编辑者「现在到底哪几个时段真的开口」，
+  // 否则会出现「勾了昏、没改曲线、保存后咬口毫无变化」这种无从排查的情况。
+  $('#eco_s_curve').addEventListener('input',updateEcoDielHint);
+  ['eco_s_diel_mode','eco_s_diel_b0','eco_s_diel_b1','eco_s_diel_b2','eco_s_diel_b3']
+    .forEach(id=>{const el=$('#'+id);if(el)el.addEventListener('change',updateEcoDielHint)});
+  // 记下打开弹窗时的昼夜勾选状态，保存时据此判断「用户有没有动过它」。
+  ECO_DIEL_INIT={mode:$('#eco_s_diel_mode')?.value??'',mask:ecoMaskRead('eco_s_diel')};
+  updateEcoDielHint();
 }
 // 实时算窗宽与热响应容差，直接对应判鱼侧
 // tolerance := max(2.2, (temp_max - temp_min) / 2)。
@@ -939,8 +982,8 @@ async function saveEcologySpecies(){
     temp_min_c:ecoNum('eco_s_tmin'),temp_pref_c:ecoNum('eco_s_tpref'),temp_max_c:ecoNum('eco_s_tmax'),
     diel_mask:ecoMaskRead('eco_s_diel'),
     diel_curve,season_mask:ecoMaskRead('eco_s_season'),
-    diet_json:ecoText('eco_s_diet'),weather_json:ecoText('eco_s_weather'),action_json:ecoText('eco_s_action'),
-    substrate_json:ecoText('eco_s_substrate'),color_json:ecoText('eco_s_color'),
+    // 五个偏好矩阵不再下发：弹窗里已没有它们的输入框，若仍带 null 上去，
+    // 保存别的字段时会把已有的矩阵覆盖整列清成「继承基线」——那等于静默丢数据。
     current_pref:ecoNum('eco_s_current'),activity:ecoNum('eco_s_activity'),
     light_pref:ecoNum('eco_s_light'),clarity_pref:ecoNum('eco_s_clarity'),aggression:ecoNum('eco_s_aggr')};
   const en=($('#eco_s_enabled')?.value||'').trim();
@@ -952,10 +995,22 @@ async function saveEcologySpecies(){
   for(const [k,val] of Object.entries(body)){
     if(typeof val==='number'&&Number.isNaN(val))return toast((labels[k]||k)+' 不是有效数字','bad');
   }
-  for(const [k,val] of Object.entries({diet_json:'食性',weather_json:'天气',action_json:'拟饵动作',substrate_json:'底质',color_json:'水色'})){
-    const raw=body[k];if(raw==null)continue;
-    try{const p=JSON.parse(raw);if(!p||typeof p!=='object'||Array.isArray(p))throw 0}
-    catch(e){return toast(val+' 必须是 JSON 对象，如 {"worm":1.2}','bad')}
+// 曲线一旦给了（含继承来的），判鱼就只认曲线。此时若用户改了昼夜勾选却与曲线
+  // 不一致，界面会写「已覆盖」而实际咬口没变，是最难排查的一类「改了没生效」。
+  // 只在**这次真的动了昼夜勾选**时才校验：库里可能有历史数据本身就曲线/掩码不匹配，
+  // 那时用户只想改水温或季节，不该被昼夜口径挡回来。
+  if(body.diel_mask!=null&&dielMaskTouched()){
+    // 用「生效曲线」（输入框优先、否则继承基线），而不是只看输入框：
+    // 输入框留空＝继承，继承来的曲线同样会压过勾选。
+    const effCurve=dielCurveEffective();
+    if(effCurve){
+      const curveOn=[0,1,2,3].filter(i=>effCurve[i]>=DIEL_ACTIVE_LINE);
+      const maskOn=[0,1,2,3].filter(i=>body.diel_mask&(1<<i));
+      if(curveOn.join()!==maskOn.join()){
+        const n=ECO_DIEL_NAMES;
+        return toast(`昼夜勾选与曲线不一致：曲线让 ${curveOn.map(i=>n[i]).join('/')||'无'} 开口，勾选是 ${maskOn.map(i=>n[i]).join('/')||'无'}。判鱼只认曲线，请把两者改成一致（或清空曲线用勾选）`,'bad');
+      }
+    }
   }
   try{
     await api('/api/fish/ecology-species',{method:'POST',body:JSON.stringify(body)});
