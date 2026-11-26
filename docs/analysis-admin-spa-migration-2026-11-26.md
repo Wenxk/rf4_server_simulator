@@ -250,17 +250,46 @@ tunable，其中大量是内部诊断项（`fight_*`、`handitem_throw_*`、`mul
       `bite_delay_max` / `bite_delay_lure_max` / `bite_delay_fixed`）两侧完全一致
 - [x] `event-gifts` 无需改动：SPA 版已用本服的 `event_stage_gifts` 与分支标签，预设从 JSON 读
 
-### 批次 3 · 饵料（高风险，我方为准）
+### 批次 3 · 饵料（高风险，我方为准）— **已完成**
 
-移植 14 个饵料函数到 `pages/bait.js`：
-- 多级联动选择器（分类 → 子类 → 具体饵）
-- `类别@饵名` 写法与解析
-- 型号级抽签（`红蚯蚓（10/14/18）· Pop-up` 视为等价）
-- 形态后缀（煮饵/Pop-up/颗粒/玉米/活饵）
-- `rerollBaitAuto`（立即重抽本期）
+后端一行未改：`/api/bait/categories` 已返回完整六层树（含 `term` / `scope_term` /
+`shared_with` / `shapes` / `brands` / `lines` / `unused`），`/api/bait/items` 支持
+`cat`/`sub`/`kind`/`brand`/`base` 全参数过滤且 `matched` 与 `rows` 分离，
+`/api/bait/auto-rotation` 与 `/auto-rotation/reroll` 都已注册。**缺的纯粹是前端。**
 
-- [ ] **验收**：`bait_rules_ui_test.cjs`、`bait_picker_cascade_ui_test.cjs`、
-      `bait_rules_scope_ui_test.cjs`、`fish_bait_auto_ui_test.cjs` 改指向 SPA 后全绿
+改前实测：SPA 的 `pickBait` 只用了 `sub_label` 一个层级字段，其余八个全未使用。
+即以下七项能力**全部缺失**，本次逐项补上：
+
+| 能力 | 改前 | 改后 |
+|---|---|---|
+| 形态层（下沉 / Pop-up） | 无 | `bait-picker.js` 形态层，只在有 `shapes` 的二级类型出现 |
+| 品牌层（导航，不进规则） | 无 | 有，且**不给勾选钮**——品牌名匹配不到任何饵 |
+| 型号层（写型号名 = 全规格） | 无 | 有，写 `lineToTerm(ln)` = `scope_term \|\| term \|\| base` |
+| `类别@饵名` 限定写法 | 无 | 有，`scope_term` 直接来自后端，前端不自己猜 |
+| 同名型号提示 | 无 | `同名×N` 徽标 + 预览里点名「同名型号还出现在…」 |
+| 规格层（选了型号才拉） | 无 | 有，数量取 `matched` 不取 `rows.length` |
+| 批量勾选暂存 | 无 | 有，`已选`（暂存）与`已在列表`（已生效）视觉分开 |
+
+同时补上三处旧后台有、SPA 完全没有的功能：
+- **自动抽取开关**（按鱼，`POST /api/bait/auto-rotation`，带 `fish_key` 不带中文名）
+- **本期开口**列（`rotation.quota`/`pool_size`/`active_baits`，三种状态分别画）
+- **立即重抽本期**（`POST /api/bait/auto-rotation/reroll`，先确认再执行）
+
+顺手修掉的 SPA 缺陷：
+- **保存丢主键**：原来只传 `fish_zh`。00083 迁移后规则表主键是 `fish_key`，
+  只传中文名会让「同一鱼种多名」（匈红鲤(镜鲤) / 匈红鲤（镜鲤））再次分裂成两行。
+  已改为 `fish_key` + `fish_zh` 双传，`reset` 同样带上。
+- **手工轮换组整块移除**：SPA 还留着 `groups` / `rotate_sec` / `rotate_mode` 的编辑 UI
+  并在保存时一起提交，但旧后台 2026-11-24 已按用户要求删掉这套（改由「自动抽取」管）。
+  留着等于让人编了一堆后端不再读的组。已一并移除。
+- **前置条件是自由文本框**：改为下拉 + 区号输入，按服务端认的原句拼回（`海图30或34号区域`）。
+
+- [x] **验收**：`spa_batch3_ui_test.cjs` 5 个用例全绿——
+      本期开口三态与自动抽取开关、六层级联（越深越窄 / 品牌不进规则）、
+      形态层与跨类别同名限定写法、前置条件反解与拼回、手工轮换组已移除
+- [x] 旧后台三个测试（`bait_picker_cascade` / `bait_rules_scope` / `bait_rules`）零回归
+- [ ] `fish_bait_auto_ui_test.cjs` 仍指旧后台的 `#fish` 钓场页——那一页属**批次 4**
+      （生态与昼夜），本期开口列届时随鱼口表一起迁，不在本批处理
 
 ### 批次 4 · 生态与昼夜（最高风险，我方独有）
 

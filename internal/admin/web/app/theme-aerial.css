@@ -4262,3 +4262,85 @@ body{--side-page-width:clamp(26rem,40vw,44rem);
   .tselect.theme-inline .tb-lab{font-size:11.2px;padding-right:7px}
   .theme-menu{min-width:148px}
 }
+
+/* ===== 鱼饵层级选择器（类型 › 二级类型 › 形态 › 品牌 › 型号 › 规格）=====
+   数据层已在 bait-picker.js 里收束，这里只管「一眼看出自己站在第几层」：
+   每层一行，层名固定在左，按钮流光在右，越往下越窄。
+   品牌层没有 ＋ 勾选钮——品牌名不进规则（判鱼按名称匹配，品牌名匹配不到任何饵）。 */
+.br-layer{display:flex;align-items:flex-start;gap:12px;padding:9px 0;border-top:1px solid var(--line-soft)}
+.br-layer:first-child{border-top:0}
+.br-layer>.k{flex:0 0 54px;padding-top:7px;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.br-layer>.v{flex:1 1 auto;display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.br-opt{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid var(--line);border-radius:9px;
+  background:var(--raise);color:var(--ink);font:inherit;font-size:13px;line-height:1.3;cursor:pointer;text-align:left;
+  transition:border-color .12s,background .12s}
+.br-opt:hover{border-color:var(--accent)}
+.br-opt.on{border-color:var(--accent);background:color-mix(in oklab,var(--accent) 14%,var(--raise));font-weight:600}
+.br-opt.sel{border-style:dashed;border-color:var(--accent)}
+.br-opt.in{opacity:.62}
+.br-opt.dim{opacity:.5}
+.br-opt .n{font-size:11.5px;color:var(--muted);font-weight:400}
+.br-opt .n.ok{color:var(--g2)}
+.br-opt .n.on{color:var(--accent)}
+/* 勾选圆点：与「点按钮=收窄范围」分开的可点区域，不加 stopPropagation 会连带收窄 */
+.br-opt .tick{flex:none;display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;
+  border:1px solid var(--line);border-radius:50%;font-size:11px;line-height:1;color:var(--muted);
+  background:var(--sunk);cursor:pointer}
+.br-opt .tick:hover{border-color:var(--accent);color:var(--accent)}
+.br-opt.sel .tick,.br-opt.in .tick{border-color:var(--accent);color:var(--accent)}
+.br-opt.add{background:var(--sunk);font-weight:600}
+.br-opt.add[disabled]{opacity:.55;cursor:default}
+/* 收束预览：这两行是全页最需要看清的地方——写错词等于规则写错 */
+.br-preview{padding:10px 12px;margin-top:10px;border:1px solid var(--line);border-radius:10px;
+  background:var(--sunk);font-size:12.5px;line-height:1.85;color:var(--text-2,var(--muted))}
+.br-preview b{color:var(--ink)}
+.br-preview code{padding:1px 6px;border-radius:6px;background:var(--raise);border:1px solid var(--line);
+  font:600 12.5px/1.6 ui-monospace,Consolas,monospace;color:var(--accent)}
+.br-preview .warn-text{color:var(--warn)}
+.br-preview .warn-text code{color:var(--warn)}
+.br-spec-head{margin-top:10px;font-size:12.5px;line-height:1.75;color:var(--muted)}
+.br-spec-head b{color:var(--ink)}
+.br-spec-head .lnk{color:var(--accent);cursor:pointer;text-decoration:underline}
+.br-spec-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:6px;margin-top:8px;
+  max-height:230px;overflow:auto}
+.br-spec{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 9px;
+  border:1px solid var(--line);border-radius:9px;background:var(--raise);font-size:12.5px;cursor:pointer}
+.br-spec:hover{border-color:var(--accent)}
+.br-spec.sel{border-style:dashed;border-color:var(--accent)}
+.br-spec.picked{opacity:.55}
+.br-spec .id{font:11px/1.5 ui-monospace,Consolas,monospace;color:var(--muted)}
+.br-spec .st{flex:none;font-size:11.5px;color:var(--muted)}
+.br-spec.sel .st{color:var(--accent)}
+/* 底部多选工具条：勾选不关窗，可跨层累积，这里统一确认 */
+.br-pickbar{position:sticky;bottom:0;margin-top:14px;padding:10px 12px;border:1px solid var(--line);
+  border-radius:11px;background:var(--raise);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.br-pickbar .info{flex:1 1 240px;font-size:12.5px;color:var(--muted);min-width:0}
+.br-pickbar .info b{color:var(--ink)}
+.br-pickbar .acts{display:flex;gap:6px;flex-wrap:wrap}
+.br-pickbar .chips{gap:4px}
+.br-pickbar .tag{display:inline-flex;align-items:center;gap:4px;padding:2px 4px 2px 7px;border-radius:7px;
+  background:var(--sunk);border:1px solid var(--line);font-size:11.5px;color:var(--ink);
+  white-space:nowrap}
+.br-pickbar .tag .rm{border:0;background:none;padding:0;color:var(--muted);cursor:pointer;display:inline-flex}
+.br-pickbar .tag .rm:hover{color:var(--bad)}
+
+/* 已选标签：整类词 / 类别限定 / 普通型号名必须能一眼分开 */
+.chip .sc{opacity:.85}
+.chip .sep{margin:0 3px;color:var(--muted)}
+.chip.scope{border-color:var(--g2);color:var(--g2)}
+.chip.scope .sc{font-weight:600}
+.chip.wild{border-color:var(--g4);color:var(--g4);font-weight:600}
+
+/* 列表卡片上的自动抽取开关：勾选=参与抽签，还需总开关打开才生效 */
+.fishcard-head .autobox{flex:none;display:inline-flex;align-items:center;gap:5px;font-size:12.5px;
+  color:var(--muted);cursor:pointer;white-space:nowrap}
+.fishcard-head .autobox input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer}
+.rulecell{line-height:1.6}
+
+/* 饵料卡片的下半：本期开口 / 规则 两栏。窄屏自动堆叠。 */
+.fishcard-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:18px;
+  padding:0 0 14px;border-top:1px solid var(--line-soft);margin-top:2px}
+.fishcard-body>div{padding-top:11px}
+.fishcard-body>div>em{display:block;font-style:normal;font-size:11.5px;font-weight:700;letter-spacing:.03em;
+  color:var(--muted);margin-bottom:5px}
+@media(max-width:900px){.fishcard-body{grid-template-columns:1fr;gap:10px}}
