@@ -105,7 +105,7 @@ function mkPreview(mapKey,mapName){
 }
 
 test('weather preview page renders days chart bands and season compare',async()=>{
-  const html=fs.readFileSync(path.join(__dirname,'web/spa.html'));
+  const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
   const maps=[
     {key:'level_001_lake',map_name:'克马羚诺也湖',has_data:true},
     {key:'level_009_ahtuba',map_name:'阿赫图巴河',has_data:true},
@@ -154,7 +154,7 @@ test('weather preview page renders days chart bands and season compare',async()=
     await context.addInitScript(()=>{localStorage.setItem('rf4_admin_token','fixture')});
     const page=await context.newPage(),errors=[];
     page.on('pageerror',e=>errors.push(e.message));
-    await page.goto(`http://127.0.0.1:${server.address().port}/admin/spa.html#/weather`,{waitUntil:'networkidle'});
+    await page.goto(`http://127.0.0.1:${server.address().port}/admin/#/weather`,{waitUntil:'networkidle'});
 
     // 1) 默认选中阿赫图巴河，状态行给出图名/天数/季节。
     await page.locator('#wxDayCards .wx-day').first().waitFor();

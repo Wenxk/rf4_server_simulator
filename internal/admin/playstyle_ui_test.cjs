@@ -46,6 +46,16 @@ test('playstyle sync page previews then imports with confirmation',async()=>{
   }
   if(key==='/api/audit')return json({items:[]});
   if(key.startsWith('/api/'))return json({});
+  // SPA 入口会按相对路径去拉 app/*.js 与 *.css：这些必须真的从 web/ 目录读出来，
+  // 不能像旧后台那样一律回 index.html，否则模块加载拿到的是 HTML，整页白屏。
+  const rel=decodeURIComponent(key.replace(/^\/+/,''));
+  const file2=path.join(__dirname,'web',rel);
+  if(rel && fs.existsSync(file2) && fs.statSync(file2).isFile()){
+   const ext=path.extname(file2).toLowerCase();
+   const mime={'.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.jpg':'image/jpeg',
+     '.webp':'image/webp','.png':'image/png','.json':'application/json','.html':'text/html; charset=utf-8'}[ext]||'application/octet-stream';
+   res.writeHead(200,{'Content-Type':mime});res.end(fs.readFileSync(file2));return;
+  }
   res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html);
  });
 
@@ -57,13 +67,13 @@ test('playstyle sync page previews then imports with confirmation',async()=>{
   await context.addInitScript(()=>{localStorage.setItem('rf4_admin_token','fixture')});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#sync`,{waitUntil:'networkidle'});
+  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#/sync`,{waitUntil:'networkidle'});
 
-  // 导航里有入口，页面标题对得上
-  assert.ok(await page.locator('nav button[data-view="sync"]').count()>0,'导航缺少参数同步入口');
-  await page.locator('#view-sync').waitFor({state:'attached',timeout:8000});
-  await page.locator('#view-sync').scrollIntoViewIfNeeded();
-  assert.match(await page.locator('#pageTitle').innerText(),/参数同步/);
+  // 导航里有入口，页面标题对得上。
+  // SPA 的左栏是 <a href="#sync">，旧后台是 <button data-view>，锚点要跟着换。
+  assert.ok(await page.locator('#rail a[data-route="sync"]').count()>0,'导航缺少参数同步入口');
+  await page.locator('#syncExportBtn').waitFor({state:'attached',timeout:8000});
+  assert.match(await page.locator('#title').innerText(),/参数同步/);
 
   // 导出：真发请求 + 文件名取自 Content-Disposition + 内容就是包本体。
   // 这条以前完全没测——导出按钮是新增 UI，坏了也不会有人发现。

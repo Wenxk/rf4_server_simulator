@@ -7,7 +7,7 @@ const path = require('node:path');
 const { chromium } = require('playwright');
 
 const BROWSER = process.env.RF4_TEST_BROWSER || undefined;
-const SPA = path.join(__dirname, 'web/spa.html');
+const SPA = path.join(__dirname, 'web/index.html');
 const spaHTML = fs.readFileSync(SPA, 'utf8');
 const webRoot = path.join(__dirname, 'web');
 
@@ -85,7 +85,7 @@ async function openPage(browser, route, extraPrepare, writeLog) {
       return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fixtures(u.pathname)) });
     }
     // 静态资源走磁盘
-    if (u.pathname === '/' || u.pathname.endsWith('/spa.html')) {
+    if (u.pathname === '/' || u.pathname.endsWith('/index.html')) {
       return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: spaHTML });
     }
     const rel = decodeURIComponent(u.pathname.replace(/^\/+/, ''));
@@ -99,7 +99,7 @@ async function openPage(browser, route, extraPrepare, writeLog) {
   });
   await page.addInitScript(() => localStorage.setItem('rf4_admin_token', 'fixture'));
   if (extraPrepare) await extraPrepare(page);
-  await page.goto('http://127.0.0.1:1/spa.html#/' + route, { waitUntil: 'networkidle', timeout: 30000 });
+  await page.goto('http://127.0.0.1:1/#/' + route, { waitUntil: 'networkidle', timeout: 30000 });
   await page.waitForTimeout(900);
   return { page, errors };
 }

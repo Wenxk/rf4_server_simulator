@@ -93,8 +93,8 @@ async function openEcology(browser, hash = '#/ecology') {
       if (p === '/api/bait/prefs') return ok({ rules_enabled: true, rows: [] });
       return ok({});
     }
-    if (u.pathname === '/' || u.pathname.endsWith('/spa.html')) {
-      return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: fs.readFileSync(path.join(webRoot, 'spa.html')) });
+    if (u.pathname === '/' || u.pathname.endsWith('/index.html')) {
+      return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: fs.readFileSync(path.join(webRoot, 'index.html')) });
     }
     const rel = decodeURIComponent(u.pathname.replace(/^\/+/, ''));
     const file = path.join(webRoot, rel);
@@ -107,7 +107,7 @@ async function openEcology(browser, hash = '#/ecology') {
     return r.fulfill({ status: 404, body: '' });
   });
   await page.addInitScript(() => localStorage.setItem('rf4_admin_token', 'fixture'));
-  await page.goto('http://127.0.0.1:1/spa.html' + hash, { waitUntil: 'networkidle', timeout: 30000 });
+  await page.goto('http://127.0.0.1:1/' + hash, { waitUntil: 'networkidle', timeout: 30000 });
   return { page, errors, hits, writes };
 }
 

@@ -14,7 +14,7 @@ const { chromium } = require('playwright');
 
 const BROWSER = process.env.RF4_TEST_BROWSER || undefined;
 const webRoot = path.join(__dirname, 'web');
-const spaHTML = fs.readFileSync(path.join(webRoot, 'spa.html'), 'utf8');
+const spaHTML = fs.readFileSync(path.join(webRoot, 'index.html'), 'utf8');
 const PAGES = path.join(webRoot, 'app/pages');
 const readPage = (f) => fs.readFileSync(path.join(PAGES, f), 'utf8');
 
@@ -211,7 +211,7 @@ async function openPage(browser, route, extraPrepare, writeLog, tunOverrides) {
       }
       return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fixtures(u.pathname, tunOverrides)) });
     }
-    if (u.pathname === '/' || u.pathname.endsWith('/spa.html')) {
+    if (u.pathname === '/' || u.pathname.endsWith('/index.html')) {
       return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: spaHTML });
     }
     const rel = decodeURIComponent(u.pathname.replace(/^\/+/, ''));
@@ -225,7 +225,7 @@ async function openPage(browser, route, extraPrepare, writeLog, tunOverrides) {
   });
   await page.addInitScript(() => localStorage.setItem('rf4_admin_token', 'fixture'));
   if (extraPrepare) await extraPrepare(page);
-  await page.goto('http://127.0.0.1:1/spa.html#/' + route, { waitUntil: 'networkidle', timeout: 30000 });
+  await page.goto('http://127.0.0.1:1/#/' + route, { waitUntil: 'networkidle', timeout: 30000 });
   await page.waitForTimeout(900);
   return { page, errors };
 }

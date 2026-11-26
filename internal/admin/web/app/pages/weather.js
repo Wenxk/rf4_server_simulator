@@ -83,7 +83,8 @@ export default async function weather(params, scope) {
   const chartEl = h('div', { class: 'wx-chart', id: 'wxChart' }, empty('读取中…'));
   const bandBox = h('div', { id: 'wxBandBox' }, empty('读取中…'));
   const seasonBox = h('div', { id: 'wxSeasonBox' }, empty('读取中…'));
-  const cmpBox = h('div', { class: 'table-wrap', id: 'wxCmpBox' }, empty('点「全部水域对比」加载'));
+  const cmpBox = h('div', { class: 'table-wrap', id: 'wxCmpBox' }, empty('还没有加载对比',
+    '点上面的「全部水域对比」才会去拉。这张表会把每张图的气温区间和水温区间排在一起，方便看哪张图偏冷。'));
   const fishStatus = h('span', { class: 'muted small', id: 'wxFishStatus' });
   const fishSum = h('div', { class: 'wx-sum', id: 'wxFishSum' });
   const fishBox = h('div', { id: 'wxFishBox' }, empty('读取中…'));
@@ -118,13 +119,38 @@ export default async function weather(params, scope) {
           if (state.mapKey) mapSel.value = state.mapKey;
         }
       }
-      if (!state.mapKey) { status.textContent = '没有可用的水域'; return; }
+      if (!state.mapKey) {
+        // 没有可用水域时必须把六个区块一起收尾：只改顶部那行小字的话，
+        // 下面五个卡片会永远停在「读取中…」，用户以为页面卡死了（实际踩到）。
+        status.textContent = '没有可用的水域';
+        const why = empty('没有可预览的水域',
+          '天气预览要按地图算，而现在一张地图都没拿到。通常是服务端没注册地图，'
+          + '或者天气模板没导入 —— 先确认服务端启动日志里地图加载成功，再点「刷新」。');
+        dayCards.replaceChildren(why);
+        chartEl.replaceChildren(why);
+        bandBox.replaceChildren(why);
+        seasonBox.replaceChildren(why);
+        fishBox.replaceChildren(why);
+        return;
+      }
       const want = state.mapKey, wantDays = state.days;
       const d = await api('/api/weather/preview?map=' + encodeURIComponent(want) + '&days=' + wantDays);
       // 期间用户又切了图或改了天数：这一份已经过期，丢掉，免得盖掉新页面的数字。
       if (!scope.isCurrent() || want !== state.mapKey || wantDays !== state.days) return;
       state.cur = d.preview;
-      if (!state.cur) { status.textContent = '没有天气数据'; return; }
+      if (!state.cur) {
+        // 同「没有可用水域」：也得把各区块收尾，别让它们停在读取态。
+        status.textContent = '没有天气数据';
+        const why = empty('这张图没有天气数据',
+          '预览接口返回了成功，但里面没有这张图的天气结果。换个水域看看 —— '
+          + '如果每张图都这样，就是天气模板没导入或世界时钟还没推进。');
+        dayCards.replaceChildren(why);
+        chartEl.replaceChildren(why);
+        bandBox.replaceChildren(why);
+        seasonBox.replaceChildren(why);
+        fishBox.replaceChildren(why);
+        return;
+      }
       const hasNow = state.cur.days.some((x) => x.day === d.now_day);
       state.pick = hasNow ? d.now_day : (state.cur.days[0] || {}).day;
       status.textContent = `${state.cur.map_name} · ${state.cur.days.length} 天 · ${state.cur.season_name}季`;
@@ -146,9 +172,11 @@ export default async function weather(params, scope) {
         markCompare();
       }
     } catch (e) {
+      // 这里两处空态是同一个失败的两半（日卡 + 曲线），文案要一致且指出下一步。
+      const msg = errText(e) + '。这一图的天气预览取不到：确认服务端跑着、地图 key 没写错，再点「重新读取」。';
       status.textContent = '读取失败：' + errText(e);
-      dayCards.replaceChildren(empty('读取失败', errText(e)));
-      chartEl.replaceChildren(empty('读取失败', errText(e)));
+      dayCards.replaceChildren(empty('天气预览读取失败', msg));
+      chartEl.replaceChildren(empty('天气预览读取失败', msg));
     }
   }
 
@@ -212,7 +240,11 @@ export default async function weather(params, scope) {
     if (!p) return;
     const day = p.days.find((d) => d.day === state.pick) || p.days[0];
     const hs = p.hours.filter((x) => x.day === day.day);
-    if (!hs.length) { chartEl.replaceChildren(empty('该日无逐时数据')); return; }
+    if (!hs.length) {
+      chartEl.replaceChildren(empty('这一天没有逐时数据',
+        '预览接口只回了日汇总、没回这一天的 24 个小时点。要么这台机器的天气采样没跑到这天，要么接口把小时序列截断了 —— 换一天看看，如果每天都这样就是后端的问题。'));
+      return;
+    }
     const W = 1180, H = 300, padL = 46, padR = 16, padT = 18, padB = 34;
     const iw = W - padL - padR, ih = H - padT - padB;
     // 纵轴范围：四条温度线一起取，上下各留 2℃。
@@ -299,7 +331,11 @@ export default async function weather(params, scope) {
   // ---------- 温度分档条 ----------
   function renderBands() {
     const p = state.cur;
-    if (!p || !p.bands || !p.bands.length) { bandBox.replaceChildren(empty('无分档数据')); return; }
+    if (!p || !p.bands || !p.bands.length) {
+      bandBox.replaceChildren(empty('没有温度分档数据',
+        '后端没有回 bands —— 分档是按小时水温统计出来的，没有它这条就画不出来。这通常是预览接口的返回里缺了这一块，不是筛选问题。'));
+      return;
+    }
     const bands = p.bands;
     const total = bands.reduce((s, b) => s + b.count, 0) || 1;
     const span = Math.max(1, p.water_max_c - p.water_min_c);
@@ -319,7 +355,8 @@ export default async function weather(params, scope) {
       h('div', { class: 'wx-band' }, ...(bar.length ? bar : [h('i', { style: { width: '100%' } })])),
       h('div', { class: 'wx-band-row' },
         h('span', { text: `冷 ${wxF(p.water_min_c)}℃` }), h('span', { text: `暖 ${wxF(p.water_max_c)}℃` })),
-      h('div', { class: 'wx-band-list' }, ...(rows.length ? rows : [empty('窗口内无数据')])),
+      h('div', { class: 'wx-band-list' }, ...(rows.length ? rows : [empty('窗口内每一档都是 0 小时',
+        `这个窗口（${p.days.length} 天）里没有落在任何温度档上的采样点。多半是窗口太短、水温又没跨过 2℃ 的分档边界 —— 把预览天数调大再看。`)])),
       h('p', { class: 'muted small wx-note' },
         '按', h('b', { text: '中层水温' }), `每 2℃ 分档统计本窗口 ${p.days.length} 天 × 24 小时 = ${total} 个采样点。`,
         `区间（${wxF(p.water_min_c)}~${wxF(p.water_max_c)}℃）取`, h('b', { text: '全水层' }),
@@ -329,7 +366,11 @@ export default async function weather(params, scope) {
   // ---------- 四季对比 ----------
   function renderSeasons() {
     const p = state.cur;
-    if (!p || !p.seasons || !p.seasons.length) { seasonBox.replaceChildren(empty('无季节数据')); return; }
+    if (!p || !p.seasons || !p.seasons.length) {
+      seasonBox.replaceChildren(empty('没有四季对比数据',
+        '后端没有回 seasons —— 这个对比是把四个季节各算一遍再摆在一根轴上，缺了季节数据就画不出来。这通常是预览接口没带这块，不是筛选问题。'));
+      return;
+    }
     // 四条共用一根轴：以全部季节的最低/最高水温为界，横向位置才有可比性。
     const lo = Math.min(...p.seasons.map((s) => s.water_min_c));
     const hi = Math.max(...p.seasons.map((s) => s.water_max_c));
@@ -339,7 +380,9 @@ export default async function weather(params, scope) {
     seasonBox.replaceChildren(
       h('div', { class: 'wx-season' },
         ...p.seasons.map((s) => h('div', { class: 'sr' + (s.is_now ? ' now' : '') },
-          h('span', { class: 'sn', text: s.season_name + (s.is_now ? ' ●' : '') }),
+          // 季节中文名由后端按 season 编号查表给出；万一没给（上游结构变动、
+          // 或者别处拼的 fixture），不能把 undefined 直接当文字渲染。
+          h('span', { class: 'sn', text: (s.season_name || '未命名季节') + (s.is_now ? ' ●' : '') }),
           h('span', { class: 'sb' },
             h('i', { style: { left: pos(s.water_min_c) + '%', width: Math.max(1.5, (s.water_max_c - s.water_min_c) / span * 100).toFixed(1) + '%' } })),
           h('span', { class: 'sv', text: `${wxF(s.water_min_c)}~${wxF(s.water_max_c)}℃` }))),
@@ -349,7 +392,7 @@ export default async function weather(params, scope) {
           h('span'))),
       h('p', { class: 'muted small wx-note' },
         `全年水温 ${wxF(lo)}~${wxF(hi)}℃，跨度 `, h('b', { text: wxF(hi - lo) + '℃' }),
-        nowS ? `；当前 ${nowS.season_name}季 ${wxF(nowS.water_min_c)}~${wxF(nowS.water_max_c)}℃` : '',
+        nowS ? `；当前 ${nowS.season_name || ''}季 ${wxF(nowS.water_min_c)}~${wxF(nowS.water_max_c)}℃` : '',
         '。四季扫描用该图 8 天预报模板 × 24 小时 × 5 个水层（0 / .2 / .45 / .7 / .93），与判鱼的水层口径一致。',
         h('b', { text: '水温的季节项是全局硬编码' }), '，地图差异经热响应衰减后传导，所以各图四季跨度相近、绝对温度不同。'));
   }
@@ -361,7 +404,8 @@ export default async function weather(params, scope) {
       const d = await api('/api/weather/preview?days=' + wantDays);
       if (!scope.isCurrent() || wantDays !== state.days) return;
       const list = Array.isArray(d.maps) ? d.maps : [];
-      if (!list.length) { cmpBox.replaceChildren(empty('没有数据')); return; }
+      if (!list.length) { cmpBox.replaceChildren(empty('没有可对比的水域',
+        '预览接口这次一张地图都没返回。先确认服务端注册了地图，再点一次「全部水域对比」。')); return; }
       const lo = Math.min(...list.map((m) => m.water_min_c));
       const hi = Math.max(...list.map((m) => m.water_max_c));
       const span = Math.max(1, hi - lo);
@@ -394,7 +438,7 @@ export default async function weather(params, scope) {
         h('p', { class: 'muted small wx-note' },
           `窗口 ${wantDays} 天，区间取`, h('b', { text: '全水层' }),
           `。水温跨度最小的是「${narrow.map_name}」，最大的是「${widest.map_name}」，两者相差 ${wxF((widest.water_max_c - widest.water_min_c) - (narrow.water_max_c - narrow.water_min_c))}℃。`));
-    } catch (e) { cmpBox.replaceChildren(empty('读取失败', errText(e))); }
+    } catch (e) { cmpBox.replaceChildren(empty('水域对比读取失败', errText(e) + '。这是对比接口出错，和当前这张图无关；点一次「全部水域对比」重试。')); }
   }
 
   function markCompare() {
@@ -414,13 +458,14 @@ export default async function weather(params, scope) {
       const d = await api('/api/weather/active-fish?map=' + encodeURIComponent(want));
       if (!scope.isCurrent() || want !== state.mapKey) return;
       const a = d.active;
-      if (!a) { fishStatus.textContent = ''; fishBox.replaceChildren(empty('没有数据')); return; }
+      if (!a) { fishStatus.textContent = ''; fishBox.replaceChildren(empty('这一刻没有活跃鱼数据',
+        '接口回了空结果 —— 这张图在这个时刻算不出哪些鱼有活性。换个时刻、或者换张图看看；如果处处都空，可能是鱼种生态档案没导入。')); return; }
       fishStatus.textContent = `${a.game_hour} 点 · ${a.segment} · 水温 ${wxF(a.water_c)}℃`;
       renderFish(a);
     } catch (e) {
       fishStatus.textContent = '读取失败';
       fishSum.replaceChildren();
-      fishBox.replaceChildren(empty('读取失败', errText(e)));
+      fishBox.replaceChildren(empty('活跃鱼读取失败', errText(e) + '。这是活性接口出错，和上面的温度曲线无关；换个时刻会重试，或者重载页面。'));
     }
   }
 
@@ -435,7 +480,9 @@ export default async function weather(params, scope) {
       h('span', { class: 'k', text: k }), v, h('span', { class: 'k', text: s }))));
 
     if (!top.length && !idle.length) {
-      fishBox.replaceChildren(empty('该图还没有配置鱼种生态档案'));
+      fishBox.replaceChildren(empty('这张图还没有配置鱼种生态档案',
+        '它有鱼种名册，但每个鱼种的生态档案（水温窗、昼夜习性）都还没填，所以算不出活性。'
+        + '去「鱼种档案 → 生态基线」给它们补上，或者先「参数同步」导入现成档案。'));
       return;
     }
     // 条长按当前名单里的最大值归一化：整个时段都低迷时也能看出彼此高下。

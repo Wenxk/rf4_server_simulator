@@ -17,6 +17,7 @@ const NAV = [
   ['mail', '邮件', '发消息和物品附件', 'mail'],
   ['tuning', '游戏参数', '手感 · 收益 · 活动', 'sliders'],
   ['release', '发布说明', '版本更新 · 修复内容', 'doc'],
+  ['sync', '参数同步', '导出手感 · 另一台机器导入', 'refresh'],
   ['about', '关于', '项目说明 · README', 'info'],
   ['audit', '审计日志', '后台每次操作的留痕', 'list'],
 ];
@@ -34,6 +35,7 @@ const PAGES = {
   shop: () => import('./pages/shop.js'),
   audit: () => import('./pages/audit.js'),
   release: () => import('./pages/docs.js').then((m) => ({ default: m.changelog })),
+  sync: () => import('./pages/sync.js'),
   about: () => import('./pages/docs.js').then((m) => ({ default: m.about })),
 };
 for (const [name, load] of Object.entries(PAGES)) {
@@ -298,10 +300,13 @@ export function updateBanner(u, slotEl) {
   const slot = slotEl || $('#updateSlot');
   if (!slot) return;
   if (!u || !u.available) { slot.replaceChildren(); return; }
+  // 预览版按钮要带上构建号。预览包是按时间戳构建的，同一天可能有多个，
+  // 只写「抢先体验预览版」用户没法确认自己装的是哪一个——报问题时说不清版本。
+  const previewLabel = u.preview_version ? `预览版 ${u.preview_version}` : '抢先体验预览版';
   const links = [
     [u.download_mirror_url, '下载（国内加速）', 'primary'],
     [u.download_url, '从 GitHub 下载', ''],
-    [u.channel === 'preview' ? '' : u.preview_download_mirror, '抢先体验预览版', 'ghost'],
+    [u.channel === 'preview' ? '' : u.preview_download_mirror, previewLabel, 'ghost'],
     [u.notes_url, '看看更新了什么', 'ghost'],
   ].filter(([url]) => safeURL(url)).map(([url, label, kind]) => h('a', { class: 'pill ' + (kind === 'primary' ? 'ok' : ''), href: safeURL(url), target: '_blank', rel: 'noreferrer', text: label }));
   const dismiss = u.forced ? null : h('button', {

@@ -3,7 +3,9 @@
 > 目标：把上游 `index.html` 单页 SPA 那套后台拉进本地，与现有旧后台**并行存在**；
 > 旧后台保持可用，功能逐个迁移到新平台，全部迁完再切换默认入口。
 >
-> 状态：**骨架已落地，功能零迁移**。本文既是方案，也是验收清单。
+> 状态：**六批全部完成，已切换默认入口**（2026-11-27）。
+> `index.html` 现在是 SPA 空壳，旧后台挪到 `legacy.html` 只作兜底。
+> 本文既是方案，也是验收清单；批次 6 那节记了切换后要知道的操作差异。
 > 分支：`feat/spa-migration`（worktree `G:/Localfish/rf4-spa-migration`）
 > 基线：`fd92304`（main / fork/main 同步点）
 
@@ -112,10 +114,13 @@ G:\Localfish\rf4-spa-migration\node_modules
 | `view-params` | `pages/tuning.js`（282 行） | 中 | 参数项需按我方 tunables 重排 |
 | `view-audit` | `pages/audit.js`（68 行） | 低 | — |
 | `view-about` / `view-release` | `pages/docs.js`（32 行） | 低 | — |
-| `view-sync` | **无** | 待定 | SPA 无对应页 |
-| `view-ecology` | **无**（`bait.js` 仅 218 行，且是老术语） | **高** | 我方独有 33 个生态函数 |
-| `view-weather` | **无** | **高** | 我方独有 21 个天气函数 |
+| `view-sync` | `pages/sync.js` | 低 | 原标注「SPA 无对应页」，批次 6 已移植 |
+| `view-ecology` | `pages/ecology.js` + `ecology-eco/econ/weight.js` + `pages/bait.js` | **高** | 我方独有 33 个生态函数，已迁 |
+| `view-weather` | `pages/weather.js`（约 520 行） | **高** | 我方独有 21 个天气函数，已迁 |
 | — | `pages/event-gifts.js`（227 行） | — | SPA 独有，我方在 `view-fish` 内嵌 |
+
+> 下表是迁移**启动时**的盘点，保留原样作为对照。「SPA 页面」一列里的行数是上游
+> 原始行数，不是迁移后的行数（迁移后普遍更长，因为要补回我方独有的功能）。
 
 ### 3.2 我方独有功能（必须移植，共 89 个函数）
 
@@ -288,9 +293,9 @@ tunable，其中大量是内部诊断项（`fight_*`、`handitem_throw_*`、`mul
       本期开口三态与自动抽取开关、六层级联（越深越窄 / 品牌不进规则）、
       形态层与跨类别同名限定写法、前置条件反解与拼回、手工轮换组已移除
 - [x] 旧后台三个测试（`bait_picker_cascade` / `bait_rules_scope` / `bait_rules`）零回归
-- [ ] `fish_bait_auto_ui_test.cjs` 仍指旧后台的 `#fish` 钓场页。批次 4 已把稀有度与
-      昼夜说明条、档位权重搬进 SPA 的「水域与鱼种」（`#fishRows`），但那份测试断言的
-      是旧后台的表格结构，尚未改指——留到批次 6 收尾时随「测试路径统一」一起处理
+- [x] `fish_bait_auto_ui_test.cjs` 指旧后台的 `#fish` 钓场页，断言的是旧表格结构。
+      批次 6 处置：它验的「本期开口三态」已被 `spa_batch3_ui_test.cjs` 完整覆盖，
+      按「分类处理」退役归档到 `_retired_legacy_tests/`，没有重复重写
 
 ### 批次 4 · 生态与昼夜（最高风险，我方独有）— **已完成**
 
@@ -393,13 +398,109 @@ tunable，其中大量是内部诊断项（`fight_*`、`handitem_throw_*`、`mul
 - [x] 全量回归：29 个 `.cjs`（67 个用例，含 `RF4_TEST_BROWSER` 指定 Edge）+ `go test ./...` 全绿
 - [x] 视觉验收：明暗两套主题各一张全页截图，逐块核对（卡片、曲线、分档条、四季、对比表、鱼种表）
 
-### 批次 6 · 切换与收尾
+### 批次 6 · 切换与收尾 · **已完成**
 
-- [ ] 全量回归：29 个 `.cjs`（67 个用例）+ `go test ./...` 全绿
-- [ ] `view-sync` 决定去向（迁移或废弃）
-- [ ] SPA 各页面的裸 `null`、空态文案统一修一遍
-- [ ] **切换**：把 `index.html` 换成 SPA 入口，旧后台改名 `legacy.html` 留存
-- [ ] 收尾：更新 `docs/admin-console.md`、`.cjs` 测试路径、`bait_rotation_sync_test.go:26`
+这一批不再是「移植某个页面」，而是把并行的两套收敛成一套，并把迁移期攒下的
+债一次还清：入口切换、测试归属、空态与裸值的统一、文档。
+
+#### 6.1 入口切换
+
+| 文件 | 改动 |
+|---|---|
+| `web/index.html` | 410 KB 单文件后台 → **516 字节 SPA 空壳**（挂载点 + 两份 CSS + `app/main.js`） |
+| `web/legacy.html` | 旧后台原封不动搬过来，**只留兜底，不再更新** |
+| `web/spa.html` | 删除（内容进了 `index.html`） |
+
+部署形态与 `BASE` 推导都验证过：`/admin/`、`/admin/index.html`、独立端口 `/` 三种
+访问方式下 API 前缀都正确。`//go:embed all:web` 的 `all:` 前缀保证以后新增的
+非文本资源自动内嵌，服务端**仍然零改动**。
+
+#### 6.2 旧后台的 18 个测试怎么处置
+
+这是方案文档最初没预料到的问题：这些 `.cjs` 测试大量直接调旧后台的全局函数
+（`applyEventRewardPreset`、`saveEventStageGifts`…）、依赖固定 id（`#eventGiftBranch`、
+`#eventStageGiftJson`）。SPA 是模块化的，一个全局都不暴露、状态全在闭包里，
+**改路径无效** —— 界面在，但驱动方式完全不同。
+
+按「分类处理」拆成三类：
+
+| 类别 | 处理 | 数量 |
+|---|---|---|
+| 已被 `spa_batch1~5` 覆盖 | 归档到 `_retired_legacy_tests/`，附 README 说明为什么退役 | 4 |
+| 有独特业务断言、能改写成 SPA 版 | **整份重写**，业务断言一条不减，只换驱动方式 | 13 |
+| 只验「旧后台还能打开」 | 收进 `spa_parallel_ui_test.cjs` 的一条轻量冒烟 | 1 |
+
+重写的原则是「断言照旧、驱动换掉」。以 `event_stage_gifts` 为例，原来靠调
+`applyEventRewardPreset` 验「预设只填空阶段」，现在改成点界面上的下拉与按钮，
+验的还是「已有内容的阶段不被覆盖、保存前不落库」。
+`fish_hunt_stage` 甚至借重写纠正了我方一个旧做法（见下）。
+
+#### 6.3 重写过程中发现并修正的真实缺陷
+
+| 缺陷 | 影响 | 修法 |
+|---|---|---|
+| 文档页空态只有四个字「没有更新日志」 | 用户分不清是文件真空、没打包进发布包、还是接口坏了 | `docs.js` 的空态补「服务端返回了什么 + 文件本该在哪 + 源码直跑属正常」 |
+| 预览版按钮丢了构建号 | 同一天可能有多个预览包，报问题时说不清装的是哪个 | `main.js` 加 `previewLabel`，带上 `preview_version` |
+| 长标识撑破侧栏（`shop` 页横向溢出 647px） | 店 ID / 鱼 key / 道具 key 是一长串不折的字符，把 `<dl>` 顶宽、再把整页撑出横向滚动条 | `theme-aerial.css`：`.ib dl dd` 加 `min-width:0` + `overflow-wrap:anywhere`，`.ib dl dt` 钉住不缩，`.storebar select` 补 `min-width:0`（原来只在 ≤1260px 的媒体查询里有） |
+| 长说明文字撑破页面 2727px | `max-width:56ch` 只限「按字符平均宽度算的宽度」，管不住单个 420 字符的不可断词 | `.row .lab` 加 `min-width:0`，`.lab b/small` 加 `overflow-wrap:anywhere` |
+| `fish_hunt_stage` 的占比保存会漂移 | 旧后台每次把四档归一化后的百分比整组写回，归一化有舍入，反复保存数字会慢慢走样 | SPA 只写用户改过的那一个键、写的是**原始相对权重**，归一化交给后端 `fourStageGradeWeights` 每次读取时算。测试按新语义重写并写明理由 |
+| 页面上出现 `Lv.undefined` / `UID null` / `NaN kg` | 数据库里字段为 NULL 或静态库派生不全时，模板直接把 `undefined`/`null` 拼进字符串 | 见 6.4 |
+
+#### 6.4 空态与裸值统一
+
+原来的空态大多只有一句话（「没有记录」「没有数据」「没有找到」）。这三件事
+在界面上长得一样，但处置完全不同：**去导入数据 / 放宽筛选 / 报障**。
+
+统一后的写法是「标题 + 一句为什么 + 下一步去哪」，例如：
+
+```js
+// 「一条都没有」和「筛选后一条都没有」是两件事：前者要去看看后台是不是刚装好，
+// 后者只要放宽筛选。只写「没有记录」时用户分不清是哪一种，会白翻一遍类型按钮。
+empty(list.length ? '没有符合的记录' : '还没有任何记录', list.length
+  ? `最近 ${list.length} 条里没有符合当前类型和关键词的。换个类型，或者把搜索词清空。`
+  : '后台还没人做过修改。第一次改参数、发物品、发邮件、封禁玩家，都会记在这里。')
+```
+
+覆盖 19 个路由、约 40 处空态。同时顺手修掉两个同源问题：
+
+- **`catch(() => [])` 把失败伪装成空结果**。`waters` 的鱼种搜索和 `players` 的
+  放鱼搜索都这么写过 —— 接口挂掉和「确实没这个鱼种」在界面上完全一样，
+  用户会一直换关键词试。改成失败照实报「鱼种库读取失败」。
+- **`String(null)` 得到 `"null"`**。`p.uid ?? '—'` 只兜 `undefined`，兜不住 `null`；
+  数值字段先用 `Number()` 再 `toFixed()` 会渲染成 `NaN`。补了一个 `numText()` 助手，
+  并统一改成 `x == null ? '—' : …`（`==` 同时覆盖 `null` 和 `undefined`）。
+
+#### 6.5 新守门测试
+
+`spa_empty_state_ui_test.cjs` —— 两个用例，防的就是上面这类回退：
+
+1. **脏数据下不渲染裸值**。用「键都在、值全 null」的对象喂 19 个路由，
+   抓可见文本里的 `null` / `undefined` / `NaN` / `[object Object]`。
+   空数组测不出这个问题（页面走空态分支），必须用「对象在、字段没了」的脏数据。
+2. **空态不能是一句话**。接口全回空，逐个路由扫 `#view .empty` 的文字，
+   门槛定在 14 字（一句话的标题通常 4–10 字）。加载态（「读取中…」）排除在外。
+
+#### 6.6 验收
+
+- [x] 全量回归：25 个 `.cjs` + `go test ./...`（18 个包）全绿
+- [x] `view-sync` 已迁移为 `pages/sync.js`，并有 `spa_parallel_ui_test.cjs` 守门
+- [x] 裸 `null` / 空态文案统一（19 路由、约 40 处，附新守门测试）
+- [x] 入口切换：`index.html` → SPA，旧后台 → `legacy.html`，`spa.html` 删除
+- [x] `docs/admin-console.md` 补「前端入口与目录结构」；`.cjs` 测试路径全改指 SPA；
+      `bait_rotation_sync_test.go` 改按 `tap` 字段断言
+- [x] 视觉验收：明暗两套主题全页截图
+
+#### 6.7 切换到 SPA 后，配置上要知道的变化
+
+`docs/admin-console.md` 里写的是长期约定，这里只记迁移期的操作差异：
+
+- 刷书签：旧后台的深链是 `#view-hooks` 这种形式，SPA 用 `#hooks`。
+  **旧书签会落到默认页**，不是报错。`legacy.html` 里那些深链仍然可用。
+- 改前端要**重新编译**：前端是 `go:embed` 进去的，改完 `.js`/`.css` 必须重新 build
+  `launcher` 才生效 —— 直接刷新浏览器拿到的是旧二进制里的旧文件。
+  这一点和迁移期最不一样：以前改 `index.html` 也是要重编译的，但那时改得少。
+- 没有「刷新单页」这回事了：SPA 的路由是 hash，`F5` 会重新加载整个应用（含登录态）。
+  切换页面用左栏，不要再按 F5。
 
 ---
 
@@ -419,7 +520,7 @@ tunable，其中大量是内部诊断项（`fight_*`、`handitem_throw_*`、`mul
 | 风险 | 说明 | 对策 |
 |---|---|---|
 | **静默功能丢失** | `bait_consumption.go` 类问题：无冲突标记但老版本覆盖新版，编译测试都能过，功能没了 | 每批必须做「旧后台能做的操作，新平台也能做」的逐项对照，不能只看测试绿 |
-| SPA 空态渲染裸 `null` | 已实证存在 | 批次内顺手修，列入验收 |
+| SPA 空态渲染裸 `null` | 已实证存在 | **已做**：批次 6 统一 19 个路由的空态与取值兜底，并用 `spa_empty_state_ui_test.cjs` 守门 |
 | 参数键位漂移 | 两侧 tunables 键不完全一致 | **已做**：批次 2 全量对表，删 14 个死键、补 8 个漏键 + 四阶段 16 键，并用 `spa_batch2_ui_test.cjs` 双向守门 |
 | 迁移编号撞车 | 00070 起全部撞车但内容不同 | 依赖 `retireStaleMigrationRows` 自愈；新增从 00085 起 |
 | 浏览器内核缺失 | `.cjs` 测试默认起不来 | 统一用 `RF4_TEST_BROWSER` 指向系统 Chrome |
@@ -428,20 +529,22 @@ tunable，其中大量是内部诊断项（`fight_*`、`handitem_throw_*`、`mul
 
 ## 7. 日常使用方式
 
-迁移期间：
+迁移已完成，现在只有一套：
 
 ```
-旧后台（日常用）  http://127.0.0.1:9500/admin/
-新 SPA（迁移中）  http://127.0.0.1:9500/admin/spa.html
+管理后台  http://127.0.0.1:9500/admin/
+旧后台    http://127.0.0.1:9500/admin/legacy.html   （兜底，不再更新）
 ```
 
-两套共用同一个后端与数据库，改任何一边的数据，另一边刷新即可见。
+`legacy.html` 只在 SPA 出问题、需要翻旧界面确认某个数据怎么改时用。
+两边共用同一个后端与数据库，改任何一边的数据，另一边刷新即可见 ——
+但**别再往 legacy 里加东西**，它不会跟着前端演进。
 
 工作目录：
 
 ```
 主仓库（旧平台稳定版）  G:/Localfish/rf4_server_simulator        分支 main
-迁移仓库（骨架+迁移）    G:/Localfish/rf4-spa-migration          分支 feat/spa-migration
+迁移仓库（已完成合并）  G:/Localfish/rf4-spa-migration          分支 feat/spa-migration
 ```
 
-`main` 与迁移分支互不干扰；随时可在主仓库构建部署旧平台。
+`main` 与迁移分支互不干扰；迁移分支合回 `main` 之后，这两个 worktree 就可以收成一个。

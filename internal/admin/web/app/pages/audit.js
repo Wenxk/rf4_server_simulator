@@ -32,7 +32,11 @@ export default async function audit() {
         h('td', { class: 'mono small', text: (e.Target ?? e.target) || '—' }),
         h('td', { class: 'small text-2', style: { whiteSpace: 'normal', maxWidth: '520px', wordBreak: 'break-all' }, text: (e.Detail ?? e.detail) || '' }),
         h('td', { class: 'muted small', text: e.Admin ?? e.admin ?? '' }));
-    }) : [h('tr', {}, h('td', { colspan: 5 }, empty('没有记录')))]));
+    }) : [h('tr', {}, h('td', { colspan: 5 }, list.length
+      // 「一条都没有」和「筛选后一条都没有」是两件事：前者要去看看后台是不是刚装好，
+      // 后者只要放宽筛选。只写「没有记录」时用户分不清是哪一种，会白翻一遍类型按钮。
+      ? empty('没有符合的记录', `最近 ${list.length} 条里没有符合当前类型和关键词的。换个类型，或者把搜索词清空。`)
+      : empty('还没有任何记录', '后台还没人做过修改。第一次改参数、发物品、发邮件、封禁玩家，都会记在这里。')))]));
   };
   draw();
   const filters = h('div', { class: 'seg audit-kind-options' }, KINDS.map(([k, l]) => h('button', { type: 'button', class: k === kind ? 'on' : '', onclick: (ev) => { kind = k; [...filters.children].forEach((b) => b.classList.toggle('on', b === ev.currentTarget)); draw(); } }, l)));

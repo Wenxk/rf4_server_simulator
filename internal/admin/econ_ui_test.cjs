@@ -5,7 +5,7 @@ const {chromium}=require('playwright');
 
 // 「鱼种档案 → 经济四档」页签：列表 → 编辑 → 试算 → 保存，POST 必须只带 (鱼种, 四档)。
 test('species econ page edits xp and price per grade',async()=>{
- const html=fs.readFileSync(path.join(__dirname,'web/spa.html'));
+ const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
  let posted=null;
  let previewCalls=0;
  const grades=[1,2,3,4].map(g=>({grade:g,base_xp:[0.0735,0.24,1.4999,2.9998][g-1],base_price:[3.31,4.965,9.93,19.86][g-1],xp_c:null,price_per_kg:null}));
@@ -51,7 +51,7 @@ test('species econ page edits xp and price per grade',async()=>{
   await context.addInitScript(()=>{localStorage.setItem('rf4_admin_token','fixture')});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/admin/spa.html#/ecology`,{waitUntil:'networkidle'});
+  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#/ecology`,{waitUntil:'networkidle'});
   // 鱼种经济已并入「鱼种档案」的第 3 个页签（生态基线 / 饵料规则 / 经济四档 / 权重档位）。
   await page.locator('#ecoTabs button[data-etab="econ"]').click();
 

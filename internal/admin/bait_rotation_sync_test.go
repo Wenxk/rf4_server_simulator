@@ -22,8 +22,12 @@ func mustOverride(fishZh string) store.FishBaitOverride {
 	}
 }
 
-func readWebIndex() ([]byte, error) {
-	return fs.ReadFile(WebFS(), "index.html")
+// readWeb 读内嵌前端里的单个文件。
+//
+// 2026-11-27 批次 6 切换后，index.html 已是 SPA 空壳（真正的界面在 app/ 下的模块里），
+// 所以前端约束不能再靠「读 index.html 找字符串」——那条路在切换当天就永久失效了。
+func readWeb(rel string) ([]byte, error) {
+	return fs.ReadFile(WebFS(), rel)
 }
 
 // 鱼饵偏好页配置的覆盖，必须在钓场鱼口页（/api/fish/config）同步可见：
@@ -93,22 +97,142 @@ func TestFishConfigWithoutOverrideHasDefaultSource(t *testing.T) {
 	t.Fatal("鱼口配置里没有 c.roach")
 }
 
-// 前端约束：钓场页必须把轮换渲染出来，且鱼饵偏好保存后要失效饵料缓存。
+// stripJSComments 去掉 // 行注释与 /* */ 块注释，保留字符串字面量。
+//
+// 为什么需要它：waters.js 顶部有一段注释专门解释「`bait_groups` / `bait_rotate_mode`
+// 已经删除、不要再读」。不剥注释的话，那句**说明**会把「不得读旧字段」的断言
+// 直接判成违规——测试反而阻止了记录历史。断言要针对代码，不针对散文。
+//
+// 字符串里的 // 不能当注释（`'#rules'`、URL 都含斜杠），所以这里跟一个最小的
+// 状态机：单引号 / 双引号 / 反引号模板各算一个状态，模板里还允许 ${} 嵌套。
+func stripJSComments(src string) string {
+	var b strings.Builder
+	b.Grow(len(src))
+	runes := []rune(src)
+	const (
+		normal = iota
+		line
+		block
+		single
+		double
+		backtick
+	)
+	st := normal
+	for i := 0; i < len(runes); i++ {
+		c := runes[i]
+		var next rune
+		if i+1 < len(runes) {
+			next = runes[i+1]
+		}
+		switch st {
+		case normal:
+			switch {
+			case c == '/' && next == '/':
+				st = line
+				i++
+			case c == '/' && next == '*':
+				st = block
+				i++
+			case c == '\'':
+				st = single
+				b.WriteRune(c)
+			case c == '"':
+				st = double
+				b.WriteRune(c)
+			case c == '`':
+				st = backtick
+				b.WriteRune(c)
+			default:
+				b.WriteRune(c)
+			}
+		case line:
+			if c == '\n' {
+				st = normal
+				b.WriteRune(c)
+			}
+		case block:
+			if c == '*' && next == '/' {
+				st = normal
+				i++
+			}
+		case single:
+			b.WriteRune(c)
+			if c == '\\' && i+1 < len(runes) {
+				b.WriteRune(runes[i+1])
+				i++
+			} else if c == '\'' {
+				st = normal
+			}
+		case double:
+			b.WriteRune(c)
+			if c == '\\' && i+1 < len(runes) {
+				b.WriteRune(runes[i+1])
+				i++
+			} else if c == '"' {
+				st = normal
+			}
+		case backtick:
+			b.WriteRune(c)
+			if c == '\\' && i+1 < len(runes) {
+				b.WriteRune(runes[i+1])
+				i++
+			} else if c == '`' {
+				st = normal
+			}
+		}
+	}
+	return b.String()
+}
+
+// 前端约束：钓场页必须把「本期开口」渲染出来，且保存鱼饵规则后要重新拉列表。
+//
+// 批次 6 切换后这条不再读 index.html（它已是 SPA 空壳），改读真正实现该功能的两个
+// 页面模块。断言的重点也跟着变了：不只是「有没有这个词」，还要保证**没有回去读
+// 已被后端删掉的字段**——照 `bait_groups` 读会永远显示「模式未取得」，界面看着像
+// 功能坏了，而且不会有任何报错。
 func TestFishPageRendersBaitRotation(t *testing.T) {
-	b, err := readWebIndex()
+	waters, err := readWeb("app/pages/waters.js")
 	if err != nil {
 		t.Fatal(err)
 	}
-	html := string(b)
+	page := string(waters)
 	for _, sub := range []string{
-		"baitSummaryHTML(f.fish_key,f)", // 传入整行，才能拿到 bait_* 字段
-		"invalidateBaitMap",             // 保存后失效缓存
-		"row.bait_pick",                 // 自动抽取本期开口饵走接口快照，不在前端另算
-		"本期开口",                          // 列上直接显示抽中的饵
+		"row.bait_pick", // 自动抽取本期开口饵走接口快照，不在前端另算
+		"本期开口",          // 列上直接显示抽中的饵
 	} {
-		if !strings.Contains(html, sub) {
+		if !strings.Contains(page, sub) {
 			t.Errorf("钓场页缺少轮换同步标记：%q", sub)
 		}
+	}
+	// 手工轮换组已整体删除（store.FishConfigRow 不再返回），前端不能再读。
+	// 只查代码：注释里点名这三个字段是在解释「不要再读」，那是有价值的记录。
+	code := stripJSComments(page)
+	for _, dead := range []string{"bait_groups", "bait_rotate_mode", "bait_rotate_sec"} {
+		if strings.Contains(code, dead) {
+			t.Errorf("钓场页仍在读已删除的字段 %q：后端不返回，界面会一直显示「未取得」", dead)
+		}
+	}
+
+	// 鱼饵偏好保存后必须重新拉一次列表：SPA 没有旧后台那层 BAIT_MAP 缓存，
+	// 但「保存完还停在旧数据上」是同一类缺陷，靠 reload() 保证。
+	bait, err := readWeb("app/pages/bait.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := string(bait)
+	save := strings.Index(src, `put('/api/bait/rules'`)
+	if save < 0 {
+		t.Fatal("鱼饵页缺少保存规则的 PUT /api/bait/rules")
+	}
+	// 保存那一段结尾必须重新拉列表（load() 或 reload()），否则刚存的值当场看不见。
+	tail := src[save:]
+	if end := strings.Index(tail, "catch (e)"); end > 0 {
+		tail = tail[:end]
+	} else if len(tail) > 600 {
+		tail = tail[:600]
+	}
+	if !strings.Contains(tail, "reload()") && !strings.Contains(tail, "load()") {
+		t.Error("鱼饵页保存后没重新拉列表：刚存的值会当场看不见")
 	}
 }
 

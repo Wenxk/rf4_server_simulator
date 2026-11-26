@@ -2,7 +2,7 @@
 import {
   h, api, apiList, post, icon, toast, errText, pageHead, pageTabs, work, ib, h2s, h3s, hint, note, kv, bullets, pill, callout, badge,
   empty, btn, loading, Form, savebar,
-  searchBox, debounce, confirmDialog, sidePage, fmt, timeText, relTime, navigate, segmented, hideSavebar, replaceHash, render, setCrumbTail,
+  searchBox, debounce, confirmDialog, sidePage, fmt, timeText, relTime, navigate, segmented, hideSavebar, replaceHash, render, rerender, setCrumbTail,
   getToken, loginDialog,
 } from '../core.js';
 import { itemIcon, pickItem } from '../widgets.js';
@@ -58,8 +58,11 @@ export default async function players(params, scope) {
         type: 'button', dataset: {uid: p2.uid}, 'aria-pressed': String(String(p2.uid) === String(uid)),
         class: String(p2.uid) === String(uid) ? 'roster-option on' : 'roster-option',
         onclick: () => { if (String(p2.uid) !== String(uid)) navigate('players', p2.uid, tab); },
-      }, h('span', { class:'player-identity' }, h('strong', {text:p2.name, title:p2.name}), h('small', { text:'UID ' + p2.uid })),
-      h('span', {class:'roster-level', text:`Lv.${p2.level}`}), h('span', {class:'roster-state'}, presence(p2), p2.banned ? h('small',{text:'已封禁'}) : null),
+      }, h('span', { class:'player-identity' }, h('strong', {text:p2.name || `UID ${p2.uid ?? '?'}`, title:p2.name || ''}),
+        h('small', { text:'UID ' + (p2.uid ?? '?') })),
+      // 字段缺失时不能把 undefined 直接拼进字符串：名单里出现「Lv.undefined」
+      // 会让人以为玩家等级坏了，实际只是这条记录没同步全。
+      h('span', {class:'roster-level', text: p2.level == null ? '等级未上报' : `Lv.${p2.level}` }), h('span', {class:'roster-state'}, presence(p2), p2.banned ? h('small',{text:'已封禁'}) : null),
       h('span', {class:'roster-mark', 'aria-hidden':'true'}, String(p2.uid) === String(uid) ? icon('check',16) : null))))
         : h('span', { class: 'hint', text: listError ? '玩家名单读取失败：' + listError : QUERY ? '没有找到这个玩家' : '还没有玩家登录过' }),
       list.length > shown.length ? h('span', { class: 'hint', text: '共 ' + list.length + ' 人，用上面的搜索找' }) : null,
@@ -121,7 +124,9 @@ export default async function players(params, scope) {
   const resume = () => { expired = false; syncStatus(); };
   document.addEventListener('rf4:login', resume);
   scope.setPageCleanup(() => { clearInterval(poll); document.removeEventListener('rf4:login', resume); });
-  const meta = `UID ${p.uid} · Lv.${p.level} · 经验 ${fmt(p.xp)} · 物品 ${p.item_count || 0} · 鱼护 ${p.keepnet_count || 0} · 邮箱 ${p.mail_count || 0}`;
+  // 数值缺失一律走 fmt（回「—」），不要直接拼字符串 —— 否则页面上会出现
+// 「Lv.undefined · 经验 undefined」这种看起来像数据坏了的字样。
+  const meta = `UID ${p.uid ?? '—'} · ${p.level == null ? '等级未上报' : 'Lv.' + p.level} · 经验 ${fmt(p.xp)} · 物品 ${fmt(p.item_count || 0)} · 鱼护 ${fmt(p.keepnet_count || 0)} · 邮箱 ${fmt(p.mail_count || 0)}`;
   const actRow = h('div', { class: 'row', style: { gap: '8px', margin: '0 0 14px', padding: '0', borderBottom: '0', flexWrap: 'nowrap', justifyContent: 'flex-start' } },
     btn('发邮件', () => navigate('mail', p.uid), 'sm', { icon: 'mail' }),
     btn('踢下线', async () => {
@@ -140,9 +145,9 @@ export default async function players(params, scope) {
   const hh = p.happy_hour || {};
   const aside = [
     ib('这个账号', null, status, kv([
-      ['UID', String(p.uid)],
+      ['UID', p.uid == null ? '—' : String(p.uid)],
       ['昵称', p.name || '—'],
-      ['等级', 'Lv.' + p.level],
+      ['等级', p.level == null ? '未上报' : 'Lv.' + p.level],
       ['银币', cents(p.silver) + ' 银'],
       ['金币', cents(p.gold) + ' 金'],
       ['会员', p.membership === 1 ? (p.membership_active === false ? '限时会员已到期' : '限时会员') : p.membership === 2 ? '永久会员' : '普通'],
@@ -162,7 +167,7 @@ export default async function players(params, scope) {
   return [
     pageHead('玩家管理', '查看和修改角色的等级、货币、背包、鱼护、图鉴和技能。'),
     tabsEl,
-    work([searchRow, whoRow, h('div', {class:'player-heading'}, h2s(`${p.name}（UID ${p.uid}）`), headerStatus), hint(meta), actRow, pane], aside),
+    work([searchRow, whoRow, h('div', {class:'player-heading'}, h2s(`${p.name || '未命名角色'}（UID ${p.uid ?? '—'}）`), headerStatus), hint(meta), actRow, pane], aside),
   ];
 }
 
@@ -204,8 +209,16 @@ function createPlayer() {
           const r = await post('/api/players/create', payload);
           toast(`已创建 ${r.name} #${r.uid}`);
           // 建完直接跳到这个人，省一次搜索；整页重渲染会带上新名单。
-          replaceHash(`players/${r.uid}`);
-          render();
+          //
+          // 一定要带 `#`：replaceHash 直接交给 history.replaceState，漏了 `#`
+          // 会把 "players/1000002" 当成相对路径写进 URL path——浏览器随即按新
+          // 路径重新请求文档，页面整页重载、草稿全丢，而且 URL 长得像 SPA 路由
+          // 一样，排查时很容易以为是路由问题。其余五个调用点都是带 `#` 的。
+          //
+          // 一定要用 rerender 而不是 render：这里是侧页动作内部，pending 还是 true，
+          // render() 会被 leaveSidePages 拦掉、静默不重绘。
+          replaceHash(`#players/${r.uid}`);
+          rerender();
         } catch (e) { error.textContent = errText(e); error.hidden = false; return true; }
       } },
     ],
@@ -324,7 +337,11 @@ function items(p, reload) {
       h('td', { class: 'num' }, btn('删除', async () => {
         if (!(await confirmDialog({ title: `删除「${x.name || x.item_id}」？`, desc: `${p.name}（UID ${p.uid}） · 实例 ${x.guid} · 数量 ${x.qty}，不能恢复。`, confirm: '删除', danger: true }))) return;
         try { await post('/api/players/items/delete', { uid: p.uid, guids: [x.guid] }); toast('已删除，约 2 秒后生效'); setTimeout(reload, 2300); } catch (e) { toast(errText(e), 'bad'); }
-      }, 'ghost sm')))) : [h('tr', {}, h('td', { colspan: 5 }, empty(q ? '没有匹配的物品' : '背包是空的')))]));
+      }, 'ghost sm')))) : [h('tr', {}, h('td', { colspan: 5 }, empty(
+        q ? '没有匹配的物品' : '背包和装备栏都是空的',
+        // 「搜不到」和「真没有」是两件事：后者是玩家里没东西，不是筛选问题。
+        q ? '这个玩家的物品里没有符合当前关键词的。清空搜索框看全部。'
+          : '这个玩家没有装备在身上的东西，背包里也是空的。可以用上面的「发放物品」给他补。')))]));
   };
   draw();
   return h('div', { class: 'stack' },
@@ -353,7 +370,8 @@ function keepnet(p, reload) {
         h('td', {}, btn('删除', async () => {
           if (!(await confirmDialog({ title: '从护鱼网删除这条鱼？', desc: '不能恢复。', confirm: '删除', danger: true }))) return;
           try { await post('/api/players/keepnet/delete', { uid: p.uid, guids: [x.echo_guid] }); toast('已删除，约 2 秒后生效'); setTimeout(reload, 2300); } catch (e) { toast(errText(e), 'bad'); }
-        }, 'ghost sm'))))))) : h('div', { class: 'card' }, empty('护鱼网是空的')));
+        }, 'ghost sm'))))))) : h('div', { class: 'card' }, empty('护鱼网是空的',
+      '这个玩家的鱼护里一条鱼都没有 —— 他没钓到，或者刚被清空过。点上面的「放入一条鱼」可以手工补一条。')));
 }
 function addFish(p, reload) {
   const form = new Form();
@@ -366,10 +384,16 @@ function addFish(p, reload) {
   speciesInput.addEventListener('input', debounce(async () => {
     const q = speciesInput.value.trim();
     if (!q) { results.replaceChildren(); return; }
-    const list = await apiList('/api/fish/pool?limit=30&q=' + encodeURIComponent(q)).catch(() => []);
+    // 不要吞成空数组：否则「接口挂了」和「确实没这个鱼名」在界面上完全一样，
+    // 用户会一直换关键词试。失败就照实说。
+    let list, err = null;
+    try { list = await apiList('/api/fish/pool?limit=30&q=' + encodeURIComponent(q)); }
+    catch (e) { list = []; err = e; }
     if (speciesInput.value.trim() !== q) return;
+    if (err) { results.replaceChildren(empty('鱼种库读取失败', errText(err) + '。这是接口出错，不是没有这个鱼名。')); return; }
     results.replaceChildren(list.length ? h('div', { class: 'list' }, list.map((f) => h('button', { type: 'button', class: 'list-item clickable', onclick: () => { selected = speciesInput.value = f.fish_key; hint.textContent = `${f.name_zh}，常见 ${fmt(f.min_g)}–${fmt(f.max_g)} g`; results.replaceChildren(); } },
-      h('div', { class: 'grow' }, h('div', { class: 'title', text: f.name_zh }), h('div', { class: 'sub mono', text: f.fish_key })), h('span', { class: 'muted small', text: `${fmt(f.min_g)}–${fmt(f.max_g)} g` })))) : empty('没有找到', '换个鱼名或 ID 试试。'));
+      h('div', { class: 'grow' }, h('div', { class: 'title', text: f.name_zh }), h('div', { class: 'sub mono', text: f.fish_key })), h('span', { class: 'muted small', text: `${fmt(f.min_g)}–${fmt(f.max_g)} g` }))))
+      : empty('没有这个鱼种', `鱼种库里没有匹配「${q}」的鱼。中文名、拉丁名或 fish_key 都认，换个写法再试。`));
   }, 250));
   sidePage({
     title: '放入护鱼网', beforeClose: () => !form.isDirty() || confirm('放弃未保存的鱼护记录？'), isDirty: () => form.isDirty(),
@@ -411,7 +435,7 @@ function records(p, reload, setDirty) {
   async function load(lv) {
     box.replaceChildren(loading(5));
     try { data = await api('/api/players/records?uid=' + p.uid + '&level=' + encodeURIComponent(lv || '')); level = data.level; draw(); }
-    catch (e) { box.replaceChildren(empty('读取失败', errText(e))); }
+    catch (e) { box.replaceChildren(empty('补录记录读取失败', errText(e) + '。这张地图的历史记录取不到，补录不可用；重试一次，仍失败就看服务端日志。')); }
   }
   function draw() {
     const mapSel = h('select', { class: 'select', style: { width: '220px' }, onchange: async (e) => {
@@ -464,8 +488,8 @@ function skills(p, reload, setDirty) {
       const save = btn('保存', async () => {
         try { await post('/api/players/skills/update', { uid: p.uid, skill_id: s.skill_id, points: +range.value }); unsaved.delete(s.skill_id); toast(`已保存「${s.name}」，在线玩家立即收到刷新`); save.hidden = true; } catch (e) { toast(errText(e), 'bad'); }
       }, 'primary sm', { hidden: true });
-      return h('div', { class: 'card', style: { padding: '12px 14px', background: 'var(--surface-2)' } },
-        h('div', { class: 'row', style: { justifyContent: 'space-between' } }, h('b', { text: s.name }), save),
+      return h('div', { class: 'card skill-card', style: { padding: '12px 14px', background: 'var(--surface-2)' } },
+        h('div', { class: 'row', style: { justifyContent: 'space-between' } }, h('b', { class: 'skill-name', text: s.name }), save),
         h('div', { class: 'range-row', style: { marginTop: '6px' } }, range, out));
     })),
     h('div', {}, btn('全部清零', async () => {
@@ -489,5 +513,6 @@ function mail(p, reload) {
         h('td', {}, btn('删除', async () => {
           if (!(await confirmDialog({ title: `删除邮件 #${m.id}？`, desc: `${p.name}（UID ${p.uid}） · ${m.text || '只有附件'}。不能恢复。`, confirm: '删除', danger: true }))) return;
           try { await post('/api/players/mail/delete', { uid: p.uid, ids: [m.id] }); toast('已删除'); setTimeout(reload, 300); } catch (e) { toast(errText(e), 'bad'); }
-        }, 'ghost sm'))))))) : h('div', { class: 'card' }, empty('邮箱是空的')));
+        }, 'ghost sm'))))))) : h('div', { class: 'card' }, empty('邮箱是空的',
+      '这个玩家没有收到过任何邮件，自己也没发过。用上面的表单可以直接给他发一封。')));
 }

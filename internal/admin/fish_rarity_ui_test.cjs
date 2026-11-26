@@ -8,7 +8,7 @@ const {chromium}=require('playwright');
 //   2. 每个鱼种标固有档位（普通/稀有/超稀有）与该档预设权重，不再展示本图/全服渔获；
 //   3. 「按稀有度重设权重」只发三档（tier0~2），没有第四档。
 test('fish rarity bar shows intrinsic tiers and preset posts three tiers',async()=>{
- const html=fs.readFileSync(path.join(__dirname,'web/spa.html'));
+ const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
  let posted=null;
  const tiers=[
   {tier:0,label:'普通',weight:100,species:169,rows:200,avg_base:5.2},
@@ -64,7 +64,7 @@ test('fish rarity bar shows intrinsic tiers and preset posts three tiers',async(
   await context.addInitScript(()=>{localStorage.setItem('rf4_local_admin_token','fixture');localStorage.setItem('rf4_admin_token','fixture');});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/admin/spa.html#/waters`,{waitUntil:'networkidle'});
+  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#/waters`,{waitUntil:'networkidle'});
 
   // 说明条：只讲固有属性，不能出现按渔获量切出来的阈值或「重算稀有度」入口。
   const bar=page.locator('.params-bar', {hasText:'稀有度'});

@@ -33,7 +33,7 @@ export function weightTab() {
       TIERS = Array.isArray(d.tiers) ? d.tiers : [];
       draw(d);
     } catch (e) {
-      box.replaceChildren(empty('读取失败', errText(e)));
+      box.replaceChildren(empty('权重档位读取失败', errText(e) + '。这是接口出错，没有任何可编辑的档位；重试一次，仍失败就看服务端日志。'));
     }
   }
 
@@ -41,7 +41,7 @@ export function weightTab() {
     const rows = TIERS.length
       ? TIERS.map((t) => h('tr', {},
         h('td', {},
-          h('b', { text: TIER_NAMES[t.tier] || t.label || `档位 ${t.tier}` }),
+          h('b', { text: TIER_NAMES[t.tier] || t.label || (Number.isInteger(t.tier) ? `档位 ${t.tier}` : '未命名档位') }),
           h('div', { class: 'muted', style: { fontSize: '11.5px' }, text: TIER_HINTS[t.tier] || '' })),
         h('td', { class: 'mono' }, fmt(t.species)),
         h('td', { class: 'mono' }, fmt(t.rows)),
@@ -50,7 +50,9 @@ export function weightTab() {
           class: 'input', id: 'tp_' + t.tier, type: 'text', inputmode: 'decimal',
           style: { width: '100px' }, value: String(WEIGHTS[t.tier] ?? ''),
         }))))
-      : [h('tr', {}, h('td', { colspan: 5 }, empty('没有读到稀有度档案', '后端未返回 tiers，暂时无法按档位重设。')))];
+      : [h('tr', {}, h('td', { colspan: 5 }, empty('没有读到稀有度档案',
+        '接口没有返回 tiers，所以这里列不出各档各有多少鱼种，也就不能按档位重设权重。'
+        + '多半是鱼种数据还没导入 —— 先去「参数同步」导一次，再回来看。')))];
 
     // 状态说明必须写清「现在生效的是哪一套」：档位预设与攻略原值差十倍以上，
     // 不说明白，管理员会以为页面上的数字没生效。

@@ -120,7 +120,10 @@ export default function shop(params, scope) {
           h('td', { class: 'num' }, price ? [cell(x, 'silver'), cell(x, 'gold')] : cell(x, 'stock')),
           h('td', {}, pill(x.has_override ? '覆盖' : '默认', x.has_override ? 'ok' : ''), h('div', {}, effective(x))),
           h('td', {}, x.has_override ? btn('恢复默认', () => write(x), 'ghost') : '—')))))),
-      !rows.length ? empty('没有匹配的商品') : null,
+      !rows.length ? empty('没有匹配的商品',
+        // 区分「搜错了」和「这家店本来就空」：后者要去别处加货，搜半天也搜不出来。
+        items.length ? '按当前关键词在这家店里没搜到。清空搜索框看全部商品。'
+          : '这家店一件商品都没登记。先确认选中的店对不对 —— 换个店看看有没有货架。') : null,
       rows.length > shown ? btn('显示更多', () => { shown += 50; drawShelf(); }, 'ghost') : null);
   }
 
@@ -195,7 +198,12 @@ export default function shop(params, scope) {
   }
   function drawShelf() {
     if (!active || loading) return;
-    shelf.replaceChildren(error ? h('div', {role:'alert'}, empty('读取失败', error), btn('重试读取', () => reload(true), 'ghost')) : cur ? table() : empty('请选择有效店铺', storeId ? `找不到店铺：${storeId}` : '未登记店铺'));
+    shelf.replaceChildren(error ? h('div', {role:'alert'}, empty('读取失败', error + '。这是货架接口出错，改不了价也改不了库存；重试一次，仍失败就看服务端日志。'), btn('重试读取', () => reload(true), 'ghost')) : cur ? table()
+    // 两种「选不到店」分开说：带 id 进来说明是链接/书签里的店不存在了；
+    // 没带 id 说明库里一个店都没登记，这不是错误，是还没开始建。
+    : empty('请选择有效店铺', storeId
+      ? `找不到店铺 ${storeId} —— 它可能已经被删了。从上面的下拉里重新选一家。`
+      : '还没登记任何店铺。这通常意味着商店数据没导入，先确认服务端数据目录是完整的。'));
     syncSave();
   }
   function drawAside() {

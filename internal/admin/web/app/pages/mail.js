@@ -43,13 +43,14 @@ export default async function mail(params, scope) {
       catch (e) {
         if (!search.isConnected || search.querySelector('input').value !== q) return;
         if (e.status === 401) { expired = true; drawTo(); return; }
-        results.hidden = false; results.replaceChildren(empty('查询失败', errText(e))); return;
+        results.hidden = false; results.replaceChildren(empty('玩家查询失败', errText(e) + '。这是查询接口出错，不是没这个人；重试一次，仍失败就看服务端日志。')); return;
       }
       if (search.querySelector('input').value !== q) return;
       results.hidden = false;
       results.replaceChildren(list.length ? h('div', { class: 'list' }, list.slice(0, 20).map((p) => h('button', { type: 'button',
         class: 'list-item clickable', onclick: () => { to = { uid: p.uid, name: p.name, level: p.level }; target = String(p.uid); drawTo(); preview(); },
-      }, h('div', { class: 'avatar', text: (p.name || '?').slice(0, 1) }), h('div', { class: 'grow' }, h('div', { class: 'title', text: p.name }), h('div', { class: 'sub', text: `UID ${p.uid} · ${p.level} 级` })), p.online ? badge('在线', 'ok', true) : null))) : empty('没有找到'));
+      }, h('div', { class: 'avatar', text: (p.name || '?').slice(0, 1) }), h('div', { class: 'grow' }, h('div', { class: 'title', text: p.name }), h('div', { class: 'sub', text: `UID ${p.uid} · ${p.level} 级` })), p.online ? badge('在线', 'ok', true) : null)))
+        : empty('没有这个玩家', `按「${q}」没搜到玩家。这里只搜昵称和 UID，完整的 UID 可以直接填在下面的收件人里。`));
     }, 250), recipientQuery);
     toBox.replaceChildren(...(targetError ? [hint(targetError)] : []), search, results);
     if (recipientQuery) search.querySelector('input').dispatchEvent(new Event('input'));

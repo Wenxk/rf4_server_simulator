@@ -8,7 +8,7 @@ const {chromium}=require('playwright');
 //   1) 列表里「基线灰、覆盖金」不能串位（override 与 base 是两份独立对象）；
 //   2) 留空字段必须发 null（= 继承基线），不能发 0。
 test('ecology species page edits full ecology profile',async()=>{
- const html=fs.readFileSync(path.join(__dirname,'web/spa.html'));
+ const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
  let posted=null;
 
  // 基线：江鳕的合成值（18.9℃）——正是要纠正的那类数据。
@@ -73,7 +73,7 @@ test('ecology species page edits full ecology profile',async()=>{
   await context.addInitScript(()=>{localStorage.setItem('rf4_admin_token','fixture')});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/admin/spa.html#/ecology`,{waitUntil:'networkidle'});
+  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#/ecology`,{waitUntil:'networkidle'});
 
   // 列表：两张卡片、状态分别是「基线」和「已覆盖」，窗宽 = 上限-下限。
   // 2026-11-26 起本页是卡片式（与鱼饵页一致），不再是宽表：
@@ -185,7 +185,7 @@ test('ecology species page edits full ecology profile',async()=>{
 
 // 昼夜曲线用逗号输入、JSON 数组下发；非法值必须在前端就被拦住，不发请求。
 test('ecology curve input converts to json and rejects bad values',async()=>{
- const html=fs.readFileSync(path.join(__dirname,'web/spa.html'));
+ const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
  let calls=0;
  const base={fish_key:'pike',layer_min:0,layer_pref:0.5,layer_max:1,
   temp_min_c:4,temp_pref_c:12,temp_max_c:20,diel_mask:15,diel_curve:'',season_mask:15,
@@ -220,7 +220,7 @@ test('ecology curve input converts to json and rejects bad values',async()=>{
   await context.addInitScript(()=>{localStorage.setItem('rf4_admin_token','fixture')});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/admin/spa.html#/ecology`,{waitUntil:'networkidle'});
+  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#/ecology`,{waitUntil:'networkidle'});
   await page.locator('#ecoTable').locator('text=狗鱼').waitFor();
   await page.locator('#ecoTable button:has-text("展开修改")').first().click();
   await page.locator('#eco_s_curve').waitFor();
@@ -254,7 +254,7 @@ test('ecology curve input converts to json and rejects bad values',async()=>{
 // 勾选与曲线打架时必须拦下：判鱼侧只认曲线，界面却按勾选写「已覆盖」，
 // 结果是「改了勾选、咬口没变」——这是最难排查的一类问题（2026-11-26 实际踩过）。
 test('saving mismatched diel mask and curve is blocked',async()=>{
- const html=fs.readFileSync(path.join(__dirname,'web/spa.html'));
+ const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
  let calls=0;
  const base={fish_key:'burbot',layer_min:0.3,layer_pref:0.75,layer_max:1,
   temp_min_c:4,temp_pref_c:8,temp_max_c:14,
@@ -291,7 +291,7 @@ test('saving mismatched diel mask and curve is blocked',async()=>{
   await context.addInitScript(()=>{localStorage.setItem('rf4_admin_token','fixture')});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/admin/spa.html#/ecology`,{waitUntil:'networkidle'});
+  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#/ecology`,{waitUntil:'networkidle'});
   await page.locator('#ecoTable').locator('text=江鳕').waitFor();
   await page.locator('#ecoTable button:has-text("展开修改")').first().click();
   await page.locator('#eco_s_curve').waitFor();
@@ -327,7 +327,7 @@ test('saving mismatched diel mask and curve is blocked',async()=>{
 // 冷暖筛选的阈值必须跟着现有数据走。历史 bug：阈值写死 22℃，
 // 而全库偏好温度最高只有 21.2℃，导致「暖水鱼」永远 0 行——看起来像坏掉了。
 test('cold and warm filters stay non-empty when data is cool-shifted',async()=>{
- const html=fs.readFileSync(path.join(__dirname,'web/spa.html'));
+ const html=fs.readFileSync(path.join(__dirname,'web/index.html'));
  // 造 4 条偏好温度都挤在 16~18℃ 的鱼，模拟现有合成基线整体偏冷的情况。
  const mk=(key,name,pref)=>({
   fish_key:key,name_zh:name,rarity_tier:0,origin:'',overlaid:false,
@@ -366,7 +366,7 @@ test('cold and warm filters stay non-empty when data is cool-shifted',async()=>{
   await context.addInitScript(()=>{localStorage.setItem('rf4_admin_token','fixture')});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/admin/spa.html#/ecology`,{waitUntil:'networkidle'});
+  await page.goto(`http://127.0.0.1:${server.address().port}/admin/#/ecology`,{waitUntil:'networkidle'});
   await page.locator('#ecoTable').locator('text=冷鱼').waitFor();
   const table=page.locator('#ecoTable');
 

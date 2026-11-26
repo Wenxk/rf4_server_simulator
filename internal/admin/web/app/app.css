@@ -31,6 +31,12 @@ code,.mono{font-family:var(--mono);font-size:.92em}
 .nowrap{white-space:nowrap}
 .grow{flex:1;min-width:0}
 .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+/* 表单行是「标签 + 说明」在左、「控件」在右的两栏。这两栏在宽屏下必须并排：
+   .row 上的 flex-wrap:wrap 是给工具栏那种「一行随意换行的小件」用的，
+   落到表单行上，说明文字一长就把控件挤到第二行——同一张表单里短说明的行横排、
+   长说明的行竖排，行高在 82px 和 113px 之间来回跳，看起来像样式坏了。
+   这里把表单行单独定死：不换行，标签让位（min-width:0 已在下面规则里给了）。 */
+.rows .row,.pblock .two .row{flex-wrap:nowrap}
 .stack{display:flex;flex-direction:column;gap:12px}
 .spacer{flex:1}
 

@@ -290,6 +290,21 @@ function leaveSidePages(force = false) {
   while (sidePages.length) sidePages.at(-1).remove(false);
   return true;
 }
+
+// 侧页动作里「保存完重新拉一遍页面」要用这个，别直接调 render()。
+//
+// 原因：render() 第一行就是 `if (!leaveSidePages()) return`，而侧页动作执行期间
+// 该侧页的 pending 恒为 true（见 sidePage 的 tools 处理：pending 会一直保持到动作
+// 结束），canLeave() 因此必定为 false。于是 render() 静默返回，页面停在旧数据上，
+// 看起来像「保存了但没生效」。这条不是理论风险：新建玩家后跳转就是这么坏掉的
+// （hash 变了、页面没重绘，名单里还是旧人）。
+//
+// rerender 关掉侧页后强制重绘：动作成功之后，草稿已经落库，再弹「放弃未保存」
+// 只会让用户困惑。
+export function rerender() {
+  leaveSidePages(true);
+  return render();
+}
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('.overlay') || !sidePages.length) return;
   e.preventDefault(); sidePages.at(-1).close();
@@ -366,6 +381,8 @@ const HPOS = {
   bait: '44% 56%', mail: '58% 64%', tuning: '58% 46%', params: '58% 46%',
   // 天气页看的是天空与水面：取景往左上抬，别把横幅落在纯水面上。
   weather: '42% 34%',
+  // 参数同步是「文件搬运」页，横幅取中性的远景，不抢注意力。
+  sync: '50% 52%',
   changelog: '62% 88%', release: '62% 88%', about: '50% 58%', audit: '54% 44%',
 };
 
@@ -802,6 +819,9 @@ export function pushHash(hash) {
   lastHash = location.hash;
 }
 let renderID = 0;
+// 上一次 startViewTransition 是否还在跑。用它避免「新过渡打断旧过渡」的
+// 控制台警告，见 render() 里的说明。
+let vtRunning = false;
 export async function render() {
   const { name, params } = parseHash();
   const def = routes.get(name) || routes.get('dashboard');
@@ -836,8 +856,19 @@ export async function render() {
     const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (typeof document.startViewTransition === 'function' && !reduce) {
       // 支持 View Transitions 的浏览器用一次 180ms 交叉淡入，避免硬切。
+      //
+      // 上一次过渡还没跑完就再起一次时，浏览器会丢弃前一个并在控制台留一条
+      // "Transition was skipped. New ViewTransition started"。侧页保存后立刻
+      // 重绘正是这种情形（动作里换 hash + 重绘，两帧内连开两次）。这条警告本身
+      // 无害，但每个保存动作都往控制台丢一行，真出问题时会被淹掉；而且页面
+      // 本来就要整块换掉，淡入没有意义。所以：已有过渡在跑就直接换。
       const done = () => { if (renderID === id) root.classList.remove('is-busy'); };
-      document.startViewTransition(swap).finished.then(done, done);
+      if (vtRunning) { swap(); done(); } else {
+        vtRunning = true;
+        const t = document.startViewTransition(swap);
+        const clear = () => { vtRunning = false; done(); };
+        t.finished.then(clear, clear);
+      }
     } else {
       swap();
       root.classList.remove('is-busy');

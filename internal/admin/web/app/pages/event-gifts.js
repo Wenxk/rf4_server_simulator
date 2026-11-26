@@ -201,7 +201,9 @@ export function eventView(t) {
     } }), '', { icon: 'plus' });
     giftsBox.replaceChildren(h('div', { class: 'row' }, select('奖励预设', [['all', '全部预设'], ...PRESETS], preset, v => { preset = v; }), btn('填入所选预设', fill)),
       h('div', { class: 'row' }, select('奖励分支', branches.map(b => [b, `${b} · ${labels[b]}`]), branch, b => choose(b, stage)), select('奖励阶段', stageOptions, stage, s => choose(branch, s))),
-      rows.length ? h('div', { class: 'list' }, rows) : empty('这个阶段没有额外奖励'),
+      rows.length ? h('div', { class: 'list' }, rows) : empty('这个阶段没有额外奖励',
+        // 「没有」是正常状态而不是遗漏：基础奖励照给，阶段礼包是可选的加码。
+        '只有基础奖励，没有额外加码 —— 这是允许的。要加就点上面的「添加奖励」，从物品库挑。'),
       h('div', { class: 'row' }, add,
         btn('清空可选分支奖励', () => { for (const b of branches) delete draft[G][b]; message.textContent = '已清空可选分支的奖励草稿。'; drawGifts(); update(); }, 'ghost')), details);
   }

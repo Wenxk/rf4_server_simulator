@@ -74,7 +74,7 @@ td input::placeholder{color:var(--muted);opacity:.6}
 .scrollx table{min-width:660px}
 aside>.ib+.ib{margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}
 .ib>h2{margin-bottom:2px}
-.ib .sub{color:var(--muted);font-size:12.4px;line-height:1.55;margin:0 0 8px}
+.ib .sub{color:var(--muted);font-size:12.4px;line-height:1.55;margin:0 0 8px;overflow-wrap:anywhere}
 h2{font:600 17px/1.35 system-ui,'Microsoft YaHei',sans-serif;margin:0 0 4px}
 h2.serif{font:400 23px/1.34 var(--display);margin-bottom:6px}
 h3{font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin:22px 0 6px;font-weight:600}
@@ -168,6 +168,13 @@ td .btn+.btn,td button+button{margin-left:6px}
 .rows .row{gap:10px}
 .rows .row .ctrl input{width:132px}
 .row .lab b{display:block;font-size:14.8px;font-weight:600}
+/* 说明文字会带上来后端给的标识符（饵料 key、鱼 key、tunable 键），
+   一旦是长连串，正常换行只在空格/连字符处断，整行就一折都不肯折。
+   max-width:56ch 只限「按字符平均宽度算的宽度」，管不住单个不可断词的宽度——
+   56ch 的盒子照样会被 420 个字符撑到 2727px。两件事一起做：
+   .lab 允许收缩（flex 子项默认 min-width:auto），文字允许任意处断。 */
+.row .lab{min-width:0}
+.row .lab b,.row .lab small{overflow-wrap:anywhere}
 .row .lab small{display:block;color:var(--muted);font-size:12.3px;margin-top:2px;max-width:56ch;line-height:1.5}
 .row .ctrl{display:flex;align-items:center;gap:8px;flex:none}
 .row.wide .ctrl{flex:1;min-width:0}
@@ -2027,10 +2034,16 @@ html{scrollbar-width:thin;scrollbar-color:rgba(20,32,28,.55) transparent}
 
 .ib dl{margin:0}
 .ib dl>div{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:6px 0;
-  border-bottom:1px solid var(--line-soft)}
+  border-bottom:1px solid var(--line-soft);min-width:0}
 .ib dl>div:last-child{border-bottom:0}
-.ib dl dt{color:var(--muted);font-size:13px}
-.ib dl dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+/* dt 是标签（「店 ID」「货架条目」），给它固定不缩的宽度：dd 允许收缩之后，
+   如果不钉住 dt，flex 会把「店 ID」这行字压到 9px、竖着摞起来。 */
+.ib dl dt{color:var(--muted);font-size:13px;flex:0 0 auto;white-space:nowrap}
+/* dd 装的是标识符（店 ID、鱼 key、道具 key），正常换行只在空格/连字符处断，
+   遇到连写长串就整行不折。而 flex 项默认 min-width:auto，连缩都不肯缩——
+   两件事凑一起，一个字都不肯让的 dd 会把 flex 容器顶宽，侧栏跟着被顶穿。
+   min-width:0 允许它缩，overflow-wrap:anywhere 允许它在任意处断。 */
+.ib dl dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;min-width:0;overflow-wrap:anywhere}
 
 .upd{padding:8px 12px!important;font-size:13px!important;border-left-width:2px!important}
 .upd b{font-size:13px!important}
@@ -3894,7 +3907,13 @@ details.advanced>summary{font-size:13px;color:var(--ink);padding:12px 0 2px}
 
 /* 商店页：一行下拉选店，代替 205 个按钮 */
 .storebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 14px}
-.storebar select{height:36px;padding:0 10px;font-size:13.2px!important}
+/* select 的宽度由最长选项撑出来，店 ID 一旦是长串，下拉本身就能把整栏顶宽。
+   flex-wrap 只负责换行，不负责收缩——所以这里必须 min-width:0 + max-width:100%：
+   让下拉在窄栏里老实缩短、把长 ID 裁掉，而不是逼着页面出横向滚动条。
+   这两条原本只写在 1260px 以下的媒体查询里，宽屏反而没有保护（长 ID 撑到 2069px
+   时就是这么漏过去的），现在提到基础规则上。 */
+.storebar>label{min-width:0;max-width:100%;flex:0 1 auto;overflow:hidden}
+.storebar select{height:36px;padding:0 10px;font-size:13.2px!important;min-width:0;max-width:100%}
 .storebar .hint{margin:0;font-size:12.2px}
 .shop-filters{align-items:center}
 .shop-filters>label{display:inline-flex;align-items:center;gap:6px;min-height:36px;white-space:nowrap;cursor:pointer}
@@ -4585,3 +4604,57 @@ body{--side-page-width:clamp(26rem,40vw,44rem);
     row-gap:3px}
   .wx-frow>span:nth-child(6),.wx-frow>span:nth-child(7){display:none}
   .wx-clock{margin-left:0;width:100%;justify-content:space-between}}
+
+/* ===== 参数同步（批次 6 补齐） ===== */
+/* 这一页是旧后台 #view-sync 的移植。除了卡片版式，只有几处需要样式：
+   导出说明、导入结果表的三列数字、以及「已更新/已新增」的着色。
+   旧后台用 #ffcf7a / #7dd3a0 两个写死的亮色（深色底专用），这里换变量。 */
+
+.ps-note{font-size:12.5px;line-height:1.72;color:var(--muted)}
+.ps-note p{margin:0 0 8px}
+.ps-note p:last-child{margin-bottom:0}
+.ps-note b{color:var(--ink);font-weight:600}
+
+.ps-toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 10px}
+.ps-toolbar input[type=file]{flex:1 1 260px;min-width:180px;font-size:12.5px}
+.ps-toolbar .btn{margin-left:0}
+
+.ps-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.ps-table th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);
+  padding:7px 10px;border-bottom:1px solid var(--line)}
+.ps-table th.num,.ps-table td.num{text-align:right}
+.ps-table td{padding:6px 10px;border-bottom:1px solid var(--line-soft)}
+.ps-table td.mono{font-family:var(--mono);font-size:11.8px;color:var(--ink)}
+.ps-table td.num.mono{color:var(--muted)}
+.ps-table td.num.mono b{font-weight:700}
+.ps-upd{color:var(--warn)}
+.ps-ins{color:var(--g2)}
+
+.ps-msgs{margin-top:12px;display:flex;flex-direction:column;gap:5px;font-size:12.2px;line-height:1.6}
+.ps-warn{color:var(--warn)}
+.ps-warn b{font-weight:700}
+.ps-info{color:var(--muted)}
+.ps-done{color:var(--g2);font-weight:700}
+
+/* ===== 钓场页的「本期开口」格（批次 6 修正） ===== */
+/* 后端已经把手工轮换组整套删掉，只留 bait_auto + bait_pick。
+   这一格要能一眼分出四种态：正常抽中 / 总开关未开 / 型号不足配额全开 / 没取到。 */
+.bait-cell{display:flex;flex-direction:column;gap:3px;font-size:11.6px;line-height:1.55}
+.bait-pick{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bait-pick .tag{display:inline-flex;align-items:center;padding:0 6px;border-radius:3px;
+  font-size:11px;font-weight:700;border:1px solid var(--line);color:var(--muted);background:var(--sunk)}
+.bait-pick .tag.on{color:var(--g4);border-color:var(--g4);background:transparent}
+.bait-pick.off .tag{color:var(--warn);border-color:var(--warn)}
+.bait-pick.off span:last-child{color:var(--warn)}
+.bait-picked{color:var(--g4);font-weight:600;line-height:1.5;overflow-wrap:anywhere}
+:root[data-theme=dark] .bait-picked{color:#d9c8ff}
+
+/* ===== 玩家技能卡（批次 6 修正） ===== */
+/* 技能名来自后端（skills 表的 name），管理员可以改成长串。
+   卡片是 flex 行 + 右侧保存按钮，技能名不允许缩、也不允许断行时，
+   长名字会直接把卡片顶宽、连带把整页撑出横向滚动条。
+   让名字可以缩、可以在任意处断；保存按钮保持不缩。 */
+.skill-card{min-width:0}
+.skill-card .row{align-items:flex-start;gap:10px;min-width:0}
+.skill-card .skill-name{min-width:0;flex:1 1 auto;overflow-wrap:anywhere;line-height:1.45}
+.skill-card .row > button{flex:0 0 auto}

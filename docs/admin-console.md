@@ -4,6 +4,69 @@
 
 该界面可以修改玩家数据、发放物品、调整经济配置以及管理会话。请仅在可信网络接口上开放。
 
+## 前端入口与目录结构
+
+后台前端是纯静态的模块化 SPA，通过 `//go:embed all:web` 内嵌进 `launcher`，
+改动 `.js` / `.css` 后重新编译即可，新增的非文本资源（图片、字体）也会因为
+`all:` 前缀被自动带上，服务端不需要额外配置。
+
+```text
+internal/admin/web/
+  index.html          SPA 入口（十几行空壳：挂载点 + 两份 CSS + app/main.js）
+  legacy.html         迁移前的单文件后台，保留只读兜底，不再更新
+  app/
+    main.js           登录、左栏导航、路由注册、页面模块按需 import
+    core.js           h() 建 DOM、api/post、路由、Form 表单模型、toast、empty() 等公共件
+    widgets.js        跨页面复用的小部件（itemIcon / fishIcon / 地图舞台等）
+    labels.js         审计动作、档位、技能等枚举的中文名
+    markdown.js       文档页的 Markdown 渲染（含相对链接改写成 GitHub blob 绝对地址）
+    app.css           基础排版与布局
+    theme-aerial.css  主题、照片横幅、深色模式（<html data-theme>）与各页专属样式
+    pages/*.js        一页一个模块：dashboard / players / shop / rules / ecology(4 个页签)
+                      / waters / hooks / bait / weather / mail / tuning / docs / sync / audit
+```
+
+几条维护时必须知道的约束：
+
+- **模块要给对 MIME**。`.js` 必须以 JS MIME 返回，否则 `import` 直接失败、整页白屏。
+  自己写静态服务或测试替身时这点最容易漏。
+- **`BASE` 是推导出来的，不是配置的**。`core.js` 按 `location.pathname` 结尾是不是
+  `/admin` 决定前缀，所以 `/admin/` 下 `src` 会变成 `/admin/app/...`；
+  只有独立跑 `cmd/admin`（挂在 `/`）时才没有前缀。任何拼接资源的代码都走 `webURL(p)`。
+- **`render()` 在侧页打开期间是静默无效的**。侧页动作期间 `pending=true`，
+  `render()` 第一行 `if (!leaveSidePages()) return` 会直接返回。侧页里想刷新页面必须用
+  `rerender()`。这里踩过一次：保存成功后调 `render()`，界面毫无变化也没报错。
+- **`replaceHash(hash)` 的参数必须自带 `#`**：它原样交给 `history.replaceState`。
+- **图片/贴图来自 `ref/` 运行时目录**，不在仓库里；测试里一律给空占位图，
+  所以别在测试里断言图片像素或尺寸。
+
+`legacy.html` 只是迁移期的兜底，不接任何新功能，也不会再修样式。
+它保留在 `spa_parallel_ui_test.cjs` 里的一条冒烟用例，确保「还能打开」。
+
+### 改完前端怎么验
+
+```bash
+export RF4_TEST_BROWSER="C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
+cd internal/admin
+for f in *_ui_test.cjs; do node "$f" || echo "FAILED: $f"; done
+```
+
+浏览器用例都在 `internal/admin/*_ui_test.cjs`，靠 `web_fixture.cjs` 里的假后端
+（`serveAsset` 负责发静态文件、`fixture` 负责发 JSON）把整个 SPA 在 Playwright 里跑起来，
+不需要真的起服务端。新增页面时请顺手补一条，否则那块 UI 出问题没人拦。
+
+自动断言之外还有一份**人工核对**用的截图脚本：
+
+```bash
+node internal/admin/visual_shots.cjs
+```
+
+它把 14 个页面按明暗两套主题各渲染一张全页图到 `internal/admin/_shots/`（已 gitignore），
+同时每张报一行 `scrollWidth x innerWidth`。这个脚本抓的是断言写不出来的东西 ——
+行高跳变、控件错位、空态只剩四个字、某块永久停在「读取中」。批次 6 收尾时
+表单行高不齐、天气页六区块永久加载、季节名兜底缺失这三个真实缺陷都是它先看出来的，
+肉眼扫一遍图比读十个用例快。
+
 ## 玩家管理
 
 - 按 UID 或名称搜索玩家。

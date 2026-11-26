@@ -48,11 +48,21 @@ func TestHookProfileAPI(t *testing.T) {
 		return w
 	}
 
+	// 批次 6 切换后 `/` 是 SPA 空壳（app/main.js + 两个 CSS），
+	// 旧的单文件后台挪到 /legacy.html 保留。
+	// 所以「钩子手感」这四个字和 view-hooks 这个 id 都不在首页 HTML 里了 ——
+	// 前者是 SPA 运行时才渲染的文案，后者是旧后台的容器 id。
+	// 这里只验「首页还是那个后台入口」，业务是否真的可用由 .cjs 浏览器测试守
+	// （spa_batch1_ui_test / hooks 相关用例）。
 	page := call(http.MethodGet, "/", "", "")
-	if page.Code != http.StatusOK ||
-		!strings.Contains(page.Body.String(), "钩子手感") ||
-		!strings.Contains(page.Body.String(), "view-hooks") {
-		t.Fatalf("后台钩子页面不可用: %d", page.Code)
+	if page.Code != http.StatusOK {
+		t.Fatalf("后台首页不可用: %d", page.Code)
+	}
+	if body := page.Body.String(); !strings.Contains(body, "app/main.js") {
+		if len(body) > 200 {
+			body = body[:200]
+		}
+		t.Fatalf("首页不再是 SPA 入口（没引到 app/main.js）: %s", body)
 	}
 	if got := call(http.MethodGet, "/api/hooks/profiles", "", "").Code; got != http.StatusUnauthorized {
 		t.Fatalf("未认证读取应 401，实得 %d", got)

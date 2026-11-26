@@ -47,13 +47,16 @@ export function econTab() {
       MAPS = Array.isArray(d.maps) ? d.maps : [];
       status.textContent = `${ROWS.length} 个鱼种 · ${ROWS.filter((r) => r.overridden).length} 个已覆盖`;
       draw();
-    } catch (e) { listEl.replaceChildren(empty('读取失败', errText(e))); }
+    } catch (e) { listEl.replaceChildren(empty('经济四档读取失败', errText(e) + '。这是列表接口出错，不是筛选问题；重试一次，仍失败就看服务端日志。')); }
   }
 
   function draw() {
     const rows = ONLY === 'overridden' ? ROWS.filter((r) => r.overridden) : ROWS;
     if (!rows.length) {
-      listEl.replaceChildren(empty(ROWS.length ? '没有已覆盖的鱼种' : '没有符合条件的鱼种', ROWS.length ? '去掉筛选看全部。' : '换个搜索词。'));
+      listEl.replaceChildren(empty(ROWS.length ? '没有已覆盖的鱼种' : '还没有经济四档数据',
+        ROWS.length
+          ? '当前只显示「人工覆盖过」的鱼种，而现在一条都没有。去掉这个筛选就能看到全部按默认档位走的鱼种。'
+          : '后端一条鱼种四档数据都没返回。通常是鱼种数据还没导入，先去「参数同步」导一次。'));
       return;
     }
     listEl.replaceChildren(...rows.map(card));

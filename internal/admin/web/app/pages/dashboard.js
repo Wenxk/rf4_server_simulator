@@ -120,7 +120,7 @@ export default async function dashboard() {
       ib('最近修改', '按时间倒序，只列最近几条。', [
         updates.length
           ? kv(updates.slice(0, 5).map((u) => [clockText(u.ts), h('span', {}, h('b', { text: u.what }), u.target ? h('span', { class: 'mono', text: ' · ' + u.target }) : null)]))
-          : empty('还没有修改记录'),
+          : empty('还没有修改记录', '审计表里一条都没有。改过参数、发过物品之后，这里会列出最近 5 条。'),
         h('p', { class: 'hint' }, h('a', { href: '#audit', text: '看全部审计日志 →', onclick: (e) => { e.preventDefault(); navigate('audit'); } })),
       ]),
       ib('这一页的数据', '没有假数字，读不到就写「未上报」。', bullets([

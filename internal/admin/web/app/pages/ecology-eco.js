@@ -99,7 +99,7 @@ export async function ecoTab() {
       ROWS = d.items || [];
       status.textContent = statusLine(d);
       draw();
-    } catch (e) { listEl.replaceChildren(empty('读取失败', errText(e))); }
+    } catch (e) { listEl.replaceChildren(empty('鱼种档案读取失败', errText(e) + '。这是列表接口出错，不是筛选问题；重试一次，仍失败就看服务端日志。')); }
   }
 
   function statusLine(d) {
@@ -118,7 +118,14 @@ export async function ecoTab() {
 
   function draw() {
     const rows = visible();
-    if (!rows.length) { listEl.replaceChildren(empty('没有符合条件的鱼种', '换个筛选，或者把搜索词清空。')); return; }
+    if (!rows.length) {
+      // 分两种：库里有鱼但筛没了，和库里根本没数据（状态行会写「0 / N」）。
+      listEl.replaceChildren(empty(ROWS.length ? '没有符合条件的鱼种' : '还没有鱼种档案',
+        ROWS.length
+          ? '当前的筛选（类型 / 搜索词）把这个都筛掉了。把筛选改回「全部」，或者清空搜索词。'
+          : '后端一条鱼种生态档案都没返回。先去「参数同步」把鱼种数据导进来，或者确认服务端数据目录是完整的。'));
+      return;
+    }
     const page = rows.slice(0, SHOWN);
     const more = rows.length > page.length
       ? h('div', { style: { display: 'flex', justifyContent: 'center', padding: '14px 0 4px' } },

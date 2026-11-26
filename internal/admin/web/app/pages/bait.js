@@ -129,7 +129,7 @@ export default async function bait() {
       banner.replaceChildren(rulesOn ? '' : callout('warn',
         h('span', {}, '「鱼会挑饵」开关当前是关闭的：这里保存的规则不影响判鱼。', h('a', { href: '#rules', text: '去打开' }))));
       draw();
-    } catch (e) { listWrap.replaceChildren(empty('读取失败', errText(e))); }
+    } catch (e) { listWrap.replaceChildren(empty('鱼饵偏好读取失败', errText(e) + '。这是列表接口出错，不是筛选问题；重试一次，仍失败就看服务端日志。')); }
   }
 
   // 逐鱼切换自动抽取。用 fish_key 而不是中文名：开关表以 fish_key 为主键，
@@ -188,7 +188,11 @@ export default async function bait() {
         h('div', { class: 'fishcard-body' },
           h('div', { class: 'pickcell' }, h('em', { text: '本期开口' }), autoPickCell(r)),
           h('div', { class: 'rulewrap' }, h('em', { text: '规则' }), ruleCell(r))));
-    }) : [empty('没有符合条件的鱼', '换个筛选，或者把搜索词清空。')];
+    }) : [empty(rows.length ? '没有符合条件的鱼' : '还没有鱼饵偏好数据',
+      // 「筛没了」和「一条都没有」处置不同：前者放宽筛选，后者要去导入数据。
+      rows.length
+        ? '当前筛选（水域 / 分类 / 搜索词）把这个都筛掉了。把筛选改回「全部」，或者清空搜索词。'
+        : '后端没有返回任何鱼饵偏好记录。通常是鱼种数据和规则表还没导入，先去「参数同步」导一次。')];
     listWrap.replaceChildren(...(more ? [...cards, more] : cards));
   }
 

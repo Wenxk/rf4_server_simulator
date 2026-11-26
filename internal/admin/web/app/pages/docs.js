@@ -6,7 +6,13 @@ function docPage(title, desc, path, emptyText, actions) {
     let body;
     try {
       const d = await api(path);
-      body = d.content ? h('div', { class: 'md', html: markdownHTML(d.content) }) : empty(emptyText);
+      // 空态写成「标题 + 一句为什么 + 去哪看」。
+      // 旧后台只丢一句「没有更新日志」：用户看不出是文件真的空、还是没打包进
+      // 发布包、还是接口坏了，只能去翻源码。这四种情况的处置完全不同。
+      body = d.content
+        ? h('div', { class: 'md', html: markdownHTML(d.content) })
+        : empty(emptyText, `服务端返回了 ${d.filename ? d.filename + '（内容为空）' : '空内容'}。`
+          + '发布包里应该有这个文件；自己从源码直接运行的话，它可能没被带进来，这不影响其它功能。');
     } catch (e) {
       body = empty('读取失败', errText(e) + '。如果是自己从源码运行，没有发布包里的文件是正常的。');
     }

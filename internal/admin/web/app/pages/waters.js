@@ -20,7 +20,7 @@ export default async function waters(params, scope) {
   try {
     areas = await api('/api/fish/areas');
     if (!Array.isArray(areas)) throw new Error('水域列表格式不完整');
-  } catch (e) { return [head, work([empty('水域读取失败', errText(e)), btn('重试', render)])]; }
+  } catch (e) { return [head, work([empty('水域读取失败', errText(e) + '。这是列表接口本身出错，不是筛选问题；重试一次，仍失败就看服务端日志。'), btn('重试', render)])]; }
   if (!scope.isCurrent()) return [];
   const list = areas.slice().sort((a, b) => {
     const ia = ORDER.indexOf(a.loc), ib = ORDER.indexOf(b.loc);
@@ -35,7 +35,13 @@ export default async function waters(params, scope) {
   const seg = h('div', { class: 'seg areas' }, list.map(a => h('button', {
     type: 'button', class: a.loc === loc ? 'on' : '', onclick: () => { if (a.loc !== loc) navigate('waters', a.loc, tab); },
   }, a.loc)));
-  if (!area) return [head, work([empty(params[0] ? `水域「${loc}」已失效，请重新选择` : '水域列表为空'), seg, btn('重新读取', render)])];
+  // 三种情况分开说，因为处置完全不同：
+  //   · 带 loc 进来却没这个水域 —— 多半是书签/链接过期，或者水域在上游改过名；
+  //   · 列表整个是空的 —— 鱼种库没导入，去「参数同步」导一次；
+  //   · 其它 —— 接口报错，重试。
+  if (!area) return [head, work([empty(params[0] ? `水域「${loc}」已失效` : '还没有任何水域', params[0]
+    ? '这个链接里的水域已经不存在了（水域改名或删掉了）。从下面的列表里重新选一个。'
+    : '鱼种库里一个水域都没有，通常是鱼种数据还没导入。先去「参数同步」导一次，或者确认服务端数据目录是完整的。'), seg, btn('重新读取', render)])];
   const query = encodeURIComponent(loc);
   const [cfg, zonesData, prefs] = await Promise.all([
     api('/api/fish/config?loc=' + query).catch(() => null),
@@ -109,19 +115,76 @@ function rarityBar() {
     }));
 }
 
-// 爱吃的饵：静态规则来自鱼饵偏好；轮换只认名册行里后端给的 bait_groups / bait_rotate_sec
+// 爱吃的饵 + 本期自动抽取到哪几款。
+//
+// **口径必须与后端一致**：`/api/fish/config` 的行现在给的是 `bait_auto`（逐鱼开关）
+// 与 `bait_pick`（本期抽签快照，见 store.BaitAutoPick）。手工轮换那套
+// `bait_groups` / `bait_rotate_mode` / `bait_rotate_sec` 已经整体删除，
+// 后端不再返回——照旧字段读会永远显示「模式未取得」，看着像功能坏了。
+//
+// 这一格是给管理员核对「玩家拿 A 饵不咬，到底是没抽中还是规则没配」用的。
+// 只写一句「按稀有度重抽」看不出版本期内开什么，还得跳去鱼饵页对一遍。
 function baitLine(row, pref) {
   const allow = (pref && pref.allow) || [];
-  const groups = (row.bait_groups || []).filter((g) => g && g.length);
-  const state = pref?.rotation;
-  const txt = allow.length
+  const deny = (pref && pref.deny) || [];
+  const pick = row.bait_pick || null;
+  const auto = !!row.bait_auto;
+  const picked = ((pick && pick.active_baits) || []).filter(Boolean);
+
+  // 规则一行：吃什么 / 不吃什么。
+  const allowTxt = allow.length
     ? '吃 ' + allow.slice(0, 3).join('、') + (allow.length > 3 ? ` 等 ${allow.length} 种` : '')
     : '';
-  if (!groups.length) return txt ? hint(txt) : null;
-  const mode = { strict: '严格', soft: '宽松' }[row.bait_rotate_mode] || '模式未取得';
-  const stateText = !row.bait_enabled ? '规则未启用' : state?.enabled ? `读取时第 ${state.active + 1} 组 · 下次切换：${new Date(state.next_switch * 1000).toLocaleString()}` : state ? '未轮换' : '下次切换未取得';
-  return h('details', {}, h('summary', {}, `轮换 ${groups.length} 组 · ${mode} · ${stateText}`), hint(txt),
-    hint(`间隔 ${row.bait_rotate_sec} 秒`), ...groups.map((g, i) => hint(`第 ${i + 1} 组：${g.join('、')}`)));
+  const denyTxt = deny.length ? '不吃 ' + deny.slice(0, 2).join('、') : '';
+  const rule = [allowTxt, denyTxt].filter(Boolean).join(' · ');
+
+  if (!auto) return rule ? hint(rule) : null;
+
+  // 自动抽取四态，每一态都要写明「为什么现在看起来没生效」：
+  //   global_off  总开关没开 → 抽签结果游戏内不生效（逐鱼勾了也白勾）
+  //   !enabled    型号不足配额 → 本期全开
+  //   picked      正常抽中 → 列出型号 + 下次换饵时间
+  //   空          候选池为空 / 没取到名单
+  const quota = Number(pick && pick.quota) || 0;
+  const pool = Number(pick && pick.pool_size) || 0;
+  const nextAt = pick && pick.next_switch
+    ? new Date(pick.next_switch * 1000).toLocaleTimeString('zh-CN', { hour12: false })
+    : '';
+  const everyMin = pick && Number(pick.interval_sec) > 0 ? Math.round(Number(pick.interval_sec) / 60) : 0;
+
+  let body;
+  if (!pick) {
+    body = [hint('自动抽取已开，但没取到本期名单（刷新重试）')];
+  } else if (pick.global_off) {
+    body = [
+      h('div', { class: 'bait-pick off' },
+        h('span', { class: 'tag', text: '🎲 自动抽取' }),
+        h('span', { text: '总开关未开，抽签不生效' })),
+      picked.length ? hint('开关打开后本期是：' + picked.join(' / ')) : null,
+    ];
+  } else if (!pick.enabled && pool) {
+    body = [
+      h('div', { class: 'bait-pick' },
+        h('span', { class: 'tag', text: '🎲 自动抽取' }),
+        h('span', { text: `型号只有 ${pool} 种，不足配额${quota ? ` ${quota}` : ''}，本期全开` })),
+    ];
+  } else if (picked.length) {
+    body = [
+      h('div', { class: 'bait-pick' },
+        h('span', { class: 'tag on', text: `🎲 本期开口 ${quota}/${pool}` }),
+        nextAt ? h('span', { class: 'muted small', text: `${nextAt} 换饵` }) : null),
+      h('div', { class: 'bait-picked', text: picked.join(' / ') }),
+      everyMin ? hint(`每 ${everyMin} 分钟按稀有度重抽；未抽中按低系数降权（同型号各规格通用）`) : null,
+    ];
+  } else {
+    body = [
+      h('div', { class: 'bait-pick' },
+        h('span', { class: 'tag', text: '🎲 自动抽取' }),
+        h('span', { text: pool ? '未取到本期名单（刷新重试）' : '候选池为空，本期不抽签' })),
+    ];
+  }
+
+  return h('div', { class: 'bait-cell' }, ...body.filter(Boolean), rule ? hint(rule) : null);
 }
 
 function fishView(cfg, baitByKey, scope) {
@@ -184,7 +247,10 @@ function fishView(cfg, baitByKey, scope) {
           h('div', { style: { flex: '0 0 84px', height: '6px', borderRadius: '3px', background: 'var(--line-soft)', overflow: 'hidden' } }, h('div', { style: { width: Math.min(100, pct) + '%', height: '100%', background: 'var(--accent)' } })),
           h('span', { class: 'hint', style: { width: '46px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }, text: pct ? pct.toFixed(1) + '%' : '—' }))),
         h('td', {}, badge(({ official: '周档统计', manual: '人工覆盖', static: '静态' })[f.weight_source] || (original.has(f.fish_key) ? '未取得' : '新增')), changed(f) ? badge('未保存', 'warn') : null));
-    }) : [h('tr', {}, h('td', { colspan: 5 }, empty(fish.length ? '没有匹配的鱼' : '鱼种名册为空')))]));
+    }) : [h('tr', {}, h('td', { colspan: 5 }, fish.length
+      ? empty('没有匹配的鱼', '这个水域的鱼种名册里没有符合当前搜索的。把搜索词清空看全部。')
+      // 名册为空不是「筛选问题」：这个水域一条鱼都没登记，池子里就钓不到东西。
+      : empty('这个水域还没有鱼种', '它的鱼种名册是空的 —— 这个水域现在钓不到任何鱼。用上面的「添加鱼种」从鱼种库挑几个进来。')))]));
   };
   draw();
 
@@ -237,9 +303,15 @@ function dielBar(c) {
 }
 
 function addFish(fish, done) {
-  const results = h('div', { class: 'card', style: { maxHeight: '400px', overflow: 'auto' } }, empty('输入鱼名开始搜索'));
+  const results = h('div', { class: 'card', style: { maxHeight: '400px', overflow: 'auto' } },
+    empty('输入鱼名开始搜索', '搜索的是鱼种库（全站鱼种），不是只看这个水域。找到后点一下就加进当前水域。'));
   const search = debounce(async (q) => {
-    const list = await apiList('/api/fish/pool?limit=80&q=' + encodeURIComponent(q)).catch(() => []);
+    // 不要把失败吞成空数组：吞了之后「接口挂了」和「确实没这个鱼种」长得一模一样，
+    // 用户会一直在改关键词。失败就照实说。
+    let list, err = null;
+    try { list = await apiList('/api/fish/pool?limit=80&q=' + encodeURIComponent(q)); }
+    catch (e) { list = []; err = e; }
+    if (err) { results.replaceChildren(empty('鱼种库读取失败', errText(err) + '。这是接口出错，不是没有这个鱼种。')); return; }
     results.replaceChildren(list.length ? h('div', { class: 'list' }, list.map((x) => {
       const has = fish.some((f) => f.fish_key === x.fish_key);
       return h('div', { class: 'list-item' + (has ? '' : ' clickable'), style: { opacity: has ? 0.5 : 1 }, onclick: has ? null : () => {
@@ -247,7 +319,7 @@ function addFish(fish, done) {
         close(); done(); toast(`已加入「${x.name_zh}」，记得保存`);
       } }, fishIcon(x.fish_key), h('div', { class: 'grow' }, h('div', { class: 'title', text: x.name_zh }), h('div', { class: 'sub mono', text: x.fish_key })),
       has ? badge('已在名单里') : h('span', { class: 'muted small', text: `${fmt(x.min_g)}–${fmt(x.max_g)} g` }));
-    })) : empty('没有找到'));
+    })) : empty('没有这个鱼种', `鱼种库里没有匹配「${q}」的鱼。换个写法（中文全名、拉丁名或 fish_key 都认），或者确认这个鱼种有没有导入。`));
   }, 250);
   const { close } = sidePage({ title: '添加鱼种', body: h('div', { class: 'stack' }, searchBox('输入鱼名，如 狗鱼', search), results) });
 }

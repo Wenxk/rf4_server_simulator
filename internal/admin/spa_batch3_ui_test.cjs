@@ -16,7 +16,7 @@ const fs = require('node:fs'), path = require('node:path');
 const { chromium } = require('playwright');
 
 const webRoot = path.join(__dirname, 'web');
-const spaHTML = fs.readFileSync(path.join(webRoot, 'spa.html'), 'utf8');
+const spaHTML = fs.readFileSync(path.join(webRoot, 'index.html'), 'utf8');
 
 const CATEGORIES = {
   categories: [
@@ -134,7 +134,7 @@ async function openBait(browser) {
       if (u.pathname.endsWith('/api/fish/areas')) return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
     }
-    if (u.pathname === '/' || u.pathname.endsWith('/spa.html')) {
+    if (u.pathname === '/' || u.pathname.endsWith('/index.html')) {
       return r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: spaHTML });
     }
     const rel = decodeURIComponent(u.pathname.replace(/^\/+/, ''));
@@ -147,7 +147,7 @@ async function openBait(browser) {
     return r.fulfill({ status: 404, body: '' });
   });
   await page.addInitScript(() => localStorage.setItem('rf4_admin_token', 'fixture'));
-  await page.goto('http://127.0.0.1:1/spa.html#/bait', { waitUntil: 'networkidle', timeout: 30000 });
+  await page.goto('http://127.0.0.1:1/#/bait', { waitUntil: 'networkidle', timeout: 30000 });
   await page.locator('.fishcard').first().waitFor();
   return { page, errors, writes };
 }

@@ -37,7 +37,11 @@ func TestHandleAdminServesEmbeddedControlDeck(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	a.handleAdmin(rr, httptest.NewRequest(http.MethodGet, "/admin/", nil))
-	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), "RF4 服务器助手") {
+	// 批次 6 切换后 /admin/ 回的是 SPA 空壳（<title>RF4 管理后台</title> +
+	// app/main.js）。旧单文件后台的「RF4 服务器助手」标题挪到了 /admin/legacy.html。
+	// 这里要守的是「内嵌资源真的被服务出来了」，所以验 SPA 入口的两处特征。
+	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), "app/main.js") ||
+		!strings.Contains(rr.Body.String(), "RF4 管理后台") {
 		t.Fatalf("admin page: code=%d body=%q", rr.Code, rr.Body.String())
 	}
 
