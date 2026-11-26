@@ -11,10 +11,11 @@ const G = {
       ['bite_delay_scale', '咬钩速度', '整体调快或调慢。0.5 = 快一倍，2 = 慢一倍。', 1, 'float', '倍'],
       ['bite_delay_max', '最长等待', '等这么久一定会有鱼咬（路亚除外）。开启「饵效控速」后本项无效：底钓/浮钓的等待上限改由下方「好饵/差饵等待上下限」接管，海钓由进阶里的「海钓等待上下限」接管。', 20, 'float', '秒'],
       ['bite_delay_lure_max', '路亚最长等待', '路亚钓法的最长等待时间。开启「饵效控速」后只约束好档（饵与动作都对口），路亚中/差档改由下方「路亚中档/差档等待上下限」接管。', 6, 'float', '秒'],
-      ['pace_good_min', '好饵等待下限（饵效控速）', '对口饵的等待区间下限秒。需在「玩法规则」里开启「饵效控速」。', 6, 'float', '秒', 0, 600],
-      ['pace_good_max', '好饵等待上限（饵效控速）', '对口饵的等待区间上限秒；好饵在 下限~上限 秒内随机来鱼。', 60, 'float', '秒', 0, 600],
-      ['pace_bad_min', '差饵等待下限（饵效控速）', '不对口饵的等待区间下限秒。', 20, 'float', '秒', 0, 600],
-      ['pace_bad_max', '差饵等待上限（饵效控速）', '不对口饵的等待区间上限秒；差饵同时受低开口率（见进阶）压制，表现为偶发慢口。', 60, 'float', '秒', 0, 600],
+      // 本服没有上游那套「好饵/差饵等待上下限」区间（pace_good_min/max、pace_bad_min/max、
+      // pace_mid_min/max）：底层杆走的是「采样 × 档位乘数 × 打窝压缩 × 上下限夹逼」，
+      // 档位差异由进阶里的 pace_factor_mid / pace_factor_bad 表达，上限由本项统一管。
+      // 那几个键后端一个都不读，列出来等于让管理员调了个没反应的开关，故不列。
+      ['pace_bottom_max', '底层杆等待上限（饵效控速）', '底钓/浮钓在 pace 模式下的最大等待秒数；下限固定 6 秒，打窝后下限让位给「打窝地板」。', 60, 'float', '秒', 0, 600],
       ['pace_lure_min', '路亚好档等待下限（饵效控速）', '饵与动作都对口时路亚轮的等待下限秒。默认 1.5 对齐原版收线短窗，拉大可能导致鱼在收线之后才到，一般别动。', 1.5, 'float', '秒', 0, 600],
       ['pace_lure_max', '路亚好档等待上限（饵效控速）', '饵与动作都对口时路亚轮的等待上限秒；好档在此区间内必来鱼（开口率见进阶）。', 6, 'float', '秒', 0, 600],
       ['pace_lure_mid_min', '路亚中档等待下限（饵效控速）', '饵或动作一般时路亚轮的等待下限秒，默认与底钓中饵同区间；动作变好会立即重排进好档短窗。', 10, 'float', '秒', 0, 600],
@@ -28,10 +29,10 @@ const G = {
       ['bite_gate_pity_rounds', '连续空杆保底', '连续空杆这么多轮后，放宽环境条件保证有一口。0 表示关闭。', 0, 'int', '轮'],
       ['pace_score_good', '好饵线（饵效控速）', '钩上饵对本水域的「对口分」达到这个值算好饵。', 0.75, 'float', '', 0, 1],
       ['pace_score_mid', '中饵线（饵效控速）', '对口分达到这个值算中饵，低于算差饵。没有任何证据的饵按 0.30 计（差饵但不判死）。', 0.45, 'float', '', 0, 1],
-      ['pace_mid_min', '中饵等待下限（饵效控速）', '中等对口饵的等待区间下限秒。', 10, 'float', '秒', 0, 600],
-      ['pace_mid_max', '中饵等待上限（饵效控速）', '中等对口饵的等待区间上限秒。', 60, 'float', '秒', 0, 600],
-      ['pace_factor_mid', '中饵分布乘数（饵效控速）', '在区间内微调中饵等待分布的倍数，1.6 把样本整体拉慢 60%。一般不用动，直接改上面的等待区间即可。', 1.6, 'float', '倍'],
-      ['pace_factor_bad', '差饵分布乘数（饵效控速）', '在区间内微调差饵等待分布的倍数。一般不用动。', 3, 'float', '倍'],
+      // 中/差饵没有独立的等待区间（上游的 pace_mid_min/max、pace_bad_min/max 本服不读）：
+      // 它们和好饵共用同一套采样，再乘下面两个乘数拉开差距。改手感改乘数即可。
+      ['pace_factor_mid', '中饵分布乘数（饵效控速）', '中饵等待整体乘以这个倍数，1.6 表示比好饵慢 60%。一般不用动。', 1.6, 'float', '倍'],
+      ['pace_factor_bad', '差饵分布乘数（饵效控速）', '差饵等待整体乘以这个倍数，3 表示比好饵慢两倍。一般不用动。', 3, 'float', '倍'],
       ['pace_prob_good', '好饵开口率·底钓（饵效控速）', '底钓/浮钓每轮判定开口的概率，1 表示好饵每轮必有口。', 1, 'float', '', 0, 1],
       ['pace_prob_mid', '中饵开口率·底钓（饵效控速）', '', 0.5, 'float', '', 0, 1],
       ['pace_prob_bad', '差饵开口率·底钓（饵效控速）', '0.12 表示差饵大部分轮次空等，一分钟内大概率无口。', 0.12, 'float', '', 0, 1],
@@ -52,10 +53,18 @@ const G = {
       ['bait_pref_weight_shift', '好饵钓大鱼', '数值越大，好饵越容易吸引大个体。', 1, 'float', '倍'],
     ],
     adv: [
-      ['bite_gate_lure_diet_min', '拟饵门槛', '鱼的「吃拟饵」倾向低于这个值就不攻拟饵（泥鳅约 0.2、狗鱼约 2）。需开启「饵要对口」。', 0.3, 'float', '', 0, 1],
-      ['bite_gate_diet_min', '天然饵门槛', '鱼对某类天然饵的喜好达到这个值才算「爱吃」。需开启「饵要对口」。', 0.25, 'float', '', 0, 1],
-      ['bite_gate_diet_floor', '勉强吃的概率', '只有一方面证据显示鱼吃这种饵时，咬口打几折。', 0.05, 'float', '', 0, 1],
-      ['bite_gate_layer_floor', '钓层不对时的概率', '钓层偏离鱼的栖息水层时，咬口打几折。0 表示完全不咬。', 0.01, 'float', '', 0, 1],
+      // 本服「饵要对口」只剩水层这一层：[bite_gate_enabled] 打开后，钓层超出鱼的栖息
+      // 水层 ±0.15 就按下面的地板打折。上游的拟饵门槛/天然饵门槛/勉强吃的概率
+      // （bite_gate_lure_diet_min、bite_gate_diet_min、bite_gate_diet_floor）已经连同
+      // 那两层判定一起删掉了——252 种鱼都有 allow 规则后，硬门只会造成「allow 写了也不咬」
+      // 的黑箱。这三个键后端不读，列出来纯属误导，故不列。
+      ['bite_gate_layer_floor', '钓层不对时的概率', '钓层偏离鱼的栖息水层超过 0.15 时，咬口打几折。0 表示完全不咬。', 0.01, 'float', '', 0, 1],
+      // 以下三组是本服独有（上游没有），对应「自动轮换」「判鱼追踪」「昼夜权重」。
+      // 开关本身在「玩法规则」页，这里放它们各自的数值/权重。
+      ['bait_rotation_auto_sec', '自动轮换周期', '每多少秒自动换一组开口饵。默认 7200（2 小时）。开关在「玩法规则 → 鱼会挑饵」附近。', 7200, 'int', '秒', 60, 86400],
+      ['bait_evidence_low_scale', '证据不足饵的降权', '按稀有度抽饵时，没有足够咬口证据的饵权重要打几折。0.10 = 打到 10%。', 0.1, 'float', '', 0, 1],
+      // 判鱼追踪是纯诊断：只落库给后台看，不参与任何判鱼数值。
+      ['fish_roll_trace_keep', '追踪保留条数', '环形表最多存多少条判鱼记录，超出后裁掉最旧的。0~5000 的整数；填 0 等于关掉留存。', 300, 'int', '条', 0, 5000],
     ],
   },
   fish: {
@@ -69,6 +78,15 @@ const G = {
       ['fish_pull_ln_slope', '大鱼额外拉力', '体重越大拉力增加得越快。官方样本约 0.3–0.4。', 0.35, 'float'],
       ['fish_pull_fallback_k', '未测鱼种的拉力', '没有实测数据的鱼，每公斤体重的基础拉力。', 17.5, 'float', 'N/kg'],
       ['fish_initial_stamina_ratio', '未测鱼种的耐力', '越大越不容易累。只影响没有实测数据的淡水鱼。', 0.5628, 'float', '', 0, 1],
+    ],
+  },
+  // 本服独有的昼夜四段曲线权重（上游没有这个分组）。曲线本身是数据、存在生态档案里，
+  // 这里只放两个总开关：乘性压制是否生效、非活跃时段是否整段禁口。
+  diel: {
+    title: '昼夜权重', desc: '按鱼种的昼夜四段曲线 [夜, 晨, 昼, 昏] 给判鱼权重做乘性压制，峰值 ×1、最低 ×0.08。只压不抬。',
+    main: [
+      ['fish_diel_weight_enabled', '按昼夜压权重', '关闭后昼夜曲线完全不参与判鱼。独立于「鱼种习性」总开关，两者互不影响。', 1, 'bool'],
+      ['fish_diel_inactive_block', '非活跃时段禁口', '曲线低于 0.5 的时段整段不吃口。关闭后这些时段只是权重很低，仍有机会。', 1, 'bool'],
     ],
   },
   wear: {
@@ -122,32 +140,29 @@ const G = {
 };
 // 与演示页一致的三个二级页签；每个页签下面按主题拼多个 .pblock
 const CATS = [['gameplay', '玩法与钓组'], ['reward', '收益与通知'], ['event', '限时活动']];
-const TAB_GROUPS = { gameplay: ['bite', 'bait', 'fish', 'wear'], reward: ['reward', 'chat'], event: ['event'] };
+const TAB_GROUPS = { gameplay: ['bite', 'bait', 'fish', 'diel', 'wear'], reward: ['reward', 'chat'], event: ['event'] };
 const TAB_DESC = {
   gameplay: '玩法手感、钩型咬口、电轮与磨损、负载与角色状态。改完最多 30 秒生效，不用重启服务。',
   reward: '经验、熟练度与聊天提示。改完最多 30 秒生效；技能概率模式切换是独立保存的。',
   event: '新年与周年活动。玩家须重启游戏客户端并重新登录，才能看到活动变化。',
 };
 // 旧地址兼容：#tuning/bite 之类的老链接落到对应页签
-const OLD_TAB = { bite: 'gameplay', bait: 'gameplay', fish: 'gameplay', wear: 'gameplay', chat: 'reward' };
+const OLD_TAB = { bite: 'gameplay', bait: 'gameplay', fish: 'gameplay', diel: 'gameplay', wear: 'gameplay', chat: 'reward' };
 const SKILL_GAIN_KEYS = [
   ['skill_gain_pct_1', '浮子钓鱼', '手竿、博洛尼亚竿等浮钓熟练度。'],
   ['skill_gain_pct_2', '纺车钓鱼', '纺车竿与枪柄竿共用的路亚熟练度。'],
   ['skill_gain_pct_3', '底钓', '喂食器、鲤鱼竿等底钓熟练度。'],
   ['skill_gain_pct_11', '海洋钓鱼', '船钓、海钓熟练度。'],
   ['skill_gain_pct_4', '饵料制作', '挖饵和制作鱼饵共用熟练度。'],
-  ['skill_gain_pct_5', '配置诱饵', '混合诱饵/窝料制作熟练度。'],
   ['skill_gain_pct_6', '烹饪', '烹饪制作熟练度。'],
+  // 7 是「配置饵料」（craftFeedSkillID），上游清单漏了这一档，导致「一键百分百」时
+  // 混合诱饵仍走原版衰减公式，与功能承诺不符。本服已补上，必须留在表里。
+  ['skill_gain_pct_7', '配置饵料', '混合诱饵、PVA 等配方走这一大类。'],
+  // 5 是 801-815 那组尚未定名的大类，保留以对齐上游清单。
+  ['skill_gain_pct_5', '未定名大类（801-815）', '这一组大类还没有定名，保留以对齐上游清单。'],
   ['skill_gain_pct_8', '制作拟饵', '路亚手工制作熟练度。'],
 ];
 const SKILL_GAIN_MODES = [['native', '原版概率'], ['fixed100', '百分百'], ['custom', '自定义']];
-// 鱼获档位对熟练度增量的倍数。1..4 对应 grade 枚举；填 1 表示该档位不加成。
-const SKILL_GRADE_KEYS = [
-  ['skill_grade_mult_1', '未达标鱼', '协议里的 grade 1。填 1 = 不加成。'],
-  ['skill_grade_mult_2', '合格鱼', '协议里的 grade 2，绝大多数渔获是这一档。'],
-  ['skill_grade_mult_3', '奖杯鱼', '协议里的 grade 3，即「上星」的鱼。'],
-  ['skill_grade_mult_4', '蓝冠鱼', '协议里的 grade 4，超级稀有。'],
-];
 let CAT = 'gameplay';
 
 function skillGainModeOf(t) {
@@ -175,18 +190,14 @@ function skillGainSection(form, t, val, no = 90) {
   }, label)));
   const fields = mode === 'custom' ? h('div', { class: 'stack', style: { marginTop: '14px' } }, SKILL_GAIN_KEYS.map(([key, label, help]) =>
     form.row({ key, label, help, kind: 'float', min: 0, max: 100, unit: '%', def: 0 }, val(key, 0)))) : null;
-  // 鱼获档位倍数作为本区块的第二段：它同样按「涨多少」调节熟练度，
-  // 和上面的「涨不涨」是同一件事的两个维度，不另起一个区块。
-  const gradeFields = SKILL_GRADE_KEYS.map(([key, label, help]) =>
-    form.row({ key, label, help, kind: 'float', min: 0, max: 20, unit: '倍', def: 1 }, val(key, 1)));
+  // 上游这一区块还有「按鱼获档位加成」四行（skill_grade_mult_1..4，钓越稀有的鱼
+  // 单次熟练度涨越多）。本服没有这套机制：增量固定 0.1 / 0.2，由
+  // fishingProficiencyLargeGainChance 的概率决定，后端一个 skill_grade_mult_* 都不读。
+  // 四行留在界面上等于让人调了个没反应的数，故整段去掉。
   return pblock(no, '技能升级概率', '一键切换全部技能：原版概率、全部百分百，或逐项自定义。0=原版公式，100=必定增长。',
     [h('div', { class: 'span-2', style: { gridColumn: '1 / -1' } }, buttons,
       h('p', { class: 'hint', style: { margin: '8px 0 0' }, text: '百分百模式会让每次符合条件的钓获、挖饵或制作都获得熟练度；固定百分比模式不叠加欢乐时光对原版概率的修正。' })),
-    ...(fields ? [...fields.childNodes] : []),
-    h('div', { class: 'span-2', style: { gridColumn: '1 / -1', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--line)' } },
-      h('p', { style: { margin: '0 0 2px', fontWeight: '600' }, text: '按鱼获档位加成' }),
-      h('p', { class: 'hint', style: { margin: '0 0 8px' }, text: '钓到越稀有的鱼，单次熟练度涨得越多。倍数只放大增量，不改变上面「这次涨不涨」的概率，两种模式都叠加。基础增量是 0.1 或 0.2，乘以倍数后四舍五入到 0.1——建议用 1/2/4/8 这类整数倍，避免 0.15 被进位成 0.2。填 0 让该档完全不涨。制作和挖饵没有鱼档位，始终按 1 倍。' })),
-    ...gradeFields], { id: 'pg-skill' });
+    ...(fields ? [...fields.childNodes] : [])], { id: 'pg-skill' });
 }
 
 export default async function tuning(params, scope) {

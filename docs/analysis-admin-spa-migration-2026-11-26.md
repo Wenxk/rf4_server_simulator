@@ -194,16 +194,61 @@ const WILDCARD = [['各类饵','所有饵料'],['拟饵','所有拟饵'],['活�
 - [x] **验收**：`spa_batch1_ui_test.cjs` 6 个用例全绿，覆盖上述 5 个修复
 - [x] 24 个 `.cjs` UI 测试全绿（批次 0 骨架 10 + 批次 1 的 6 + 原有 8，旧后台零回归）
 
-### 批次 2 · 鱼口与参数（中风险，双向合并）
+### 批次 2 · 鱼口与参数（中风险，双向合并）— **已完成**
 
 `rules` + `waters` + `tuning`
 
-- 以 SPA 结构为骨架
-- 把我方 `view-fish` 里的活动奖励、阶段礼包逻辑并入 `event-gifts`
-- 把我方 tunables 的完整键位表灌进 `tuning.js`
-- **注意**：`bite_pace_enabled`（饵效控速开关）等上游新增键，我方已有等价物，以我方为准
+原计划只说「把 tunables 的完整键位表灌进 `tuning.js`」。真做的时候发现，问题不是
+「漏灌」而是**两侧根本不共用同一套键**——上游 SPA 抄的是上游的清单，其中一批键本服
+后端一个都不读，反之一批本服独有的键上游压根没有。这类错位在界面上完全看不出来：
+调了没反应，或者根本找不到入口。所以这一批的实际工作是一次**双向对表**。
 
-- [ ] **验收**：参数项数量两侧一致；鱼口页出鱼结果与旧后台同输入同输出
+**口径先说清**：比对基准是「参数页可见键」，不是后端全部键。后端有 146 个字面量
+tunable，其中大量是内部诊断项（`fight_*`、`handitem_throw_*`、`multi_hook_*`、
+`groundbait_*` 等），旧后台参数页同样不列——它们不该出现在界面上。
+
+**删掉的 14 个键**（本服后端不读，按源码逐个核过）：
+
+| 键 | 本服为什么没有 |
+|---|---|
+| `pace_good_min` `pace_good_max` `pace_bad_min` `pace_bad_max` `pace_mid_min` `pace_mid_max` | 本服 `bite_pace.go` 走「采样 × Factor 乘数 × clamp(6, `pace_bottom_max`)」，没有「区间内取随机」的分支 |
+| `bite_gate_diet_min` `bite_gate_diet_floor` `bite_gate_lure_diet_min` | `fish_bite_gates.go` 注释明确写了 G1 与 G-diet 已删除：252 种鱼都有 allow 规则后，硬门只会造成「allow 写了也不咬」的黑箱，只剩水层地板 |
+| `skill_grade_mult_1..4` | 本服熟练度增量固定 0.1 / 0.2，由 `fishingProficiencyLargeGainChance` 的概率决定，无档位倍数 |
+| `marine_layer_enabled` | 本服没有海钓水层状态机（上游有 `marine_layer.go`），`rigWaterLayer` 只按钓组族分三种口径 |
+
+**补上的 8 个键**（本服生效、SPA 找不到入口）：
+
+- `pace_bottom_max`（底层杆等待上限，取代上游那套区间）
+- `bait_rotation_auto_sec`（自动轮换周期，默认 7200s）、`bait_evidence_low_scale`（证据不足饵降权，默认 0.10）
+- `fish_roll_trace_keep`（追踪保留条数，默认 300）、`fish_roll_trace_enabled`（追踪开关）
+- `bait_rotation_auto_enabled`（自动轮换开关）
+- **整组昼夜权重**：`fish_diel_weight_enabled`、`fish_diel_inactive_block`——新增一个 `diel` 分组
+- `skill_gain_pct_7`（配置饵料）：上游清单漏了这一档，导致「一键百分百」时混合诱饵仍走原版衰减公式
+
+**补上的最大缺口：鱼猎四阶段 16 个键**。SPA 原来选到「鱼猎四阶段」只显示一句
+「没有要设置的比例」，实际本服 4×4 十六个权重键全部生效。现在按
+`HUNT_STAGES` 生成四张表，默认值照抄后端 `fourStageWeightKeys` 的字面量。
+
+**顺手修掉的文案错误**：`rules.js` 原来写「七项规则，预设覆盖前六项」。实际后端
+`biteModeKeys` 只统管**五个**开关（硬性门/生态/天气/吃饵/分布），鱼会挑饵与欢乐时光
+都不在其中。删掉海钓水层后变成六项，文案一并改为「六项规则，预设覆盖前五项」。
+
+**踩到的坑**：
+
+- **别拿行首正则数键**。`['key', ...` 这个形态漏掉「前缀 + 档位」拼出来的键
+  （`hunt_stage_${stage}_`），也漏掉只含一段下划线的键（`xp_gain`、`bite_probability`）。
+  第一次扫描因此得出「SPA 缺 54 个」的假结论，实际差集只有 5 个。
+- **`Form` 的数值框不是 `type="number"`**，是 `type="text"` + `inputmode="decimal"`
+  （为了统一校验与单位后缀）。测试要按 `input[id^="f_<key>_"]` 定位。
+- **技能逐项数值只在「自定义」模式渲染**。`native`/`fixed100` 两种模式没有可填的项，
+  测试要先喂 `skill_gain_mode: 'custom'` 才看得到九个输入框。
+
+- [x] **验收**：`spa_batch2_ui_test.cjs` 9 个用例全绿——双向键位对表（无死键、无漏键）、
+      每个 JS 键在 Go 源码里都有引用、四阶段默认值与后端一致、四张表在浏览器里真渲染出来
+- [x] 25 个 `.cjs` UI 测试全绿（51 个用例），`go test ./internal/admin/` 通过
+- [x] `waters` 无需改动：5 个逐水域咬钩参数（`bite_probability` / `bite_delay_scale` /
+      `bite_delay_max` / `bite_delay_lure_max` / `bite_delay_fixed`）两侧完全一致
+- [x] `event-gifts` 无需改动：SPA 版已用本服的 `event_stage_gifts` 与分支标签，预设从 JSON 读
 
 ### 批次 3 · 饵料（高风险，我方为准）
 
@@ -265,7 +310,7 @@ const WILDCARD = [['各类饵','所有饵料'],['拟饵','所有拟饵'],['活�
 |---|---|---|
 | **静默功能丢失** | `bait_consumption.go` 类问题：无冲突标记但老版本覆盖新版，编译测试都能过，功能没了 | 每批必须做「旧后台能做的操作，新平台也能做」的逐项对照，不能只看测试绿 |
 | SPA 空态渲染裸 `null` | 已实证存在 | 批次内顺手修，列入验收 |
-| 参数键位漂移 | 两侧 tunables 键不完全一致 | 批次 2 做一次全量键位对表 |
+| 参数键位漂移 | 两侧 tunables 键不完全一致 | **已做**：批次 2 全量对表，删 14 个死键、补 8 个漏键 + 四阶段 16 键，并用 `spa_batch2_ui_test.cjs` 双向守门 |
 | 迁移编号撞车 | 00070 起全部撞车但内容不同 | 依赖 `retireStaleMigrationRows` 自愈；新增从 00085 起 |
 | 浏览器内核缺失 | `.cjs` 测试默认起不来 | 统一用 `RF4_TEST_BROWSER` 指向系统 Chrome |
 

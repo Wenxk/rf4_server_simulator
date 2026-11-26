@@ -2,16 +2,18 @@
 import { h, api, post, icon, toast, errText, pageHead, pageTabs, work, ib, pblock, h2s, h3s, hint, note, kv, bullets, pill, callout, badge, Form, savebar, confirmDialog, render, replaceHash, setCrumbTail, navigate } from '../core.js';
 
 const STYLES = [
-  ['realistic', '真实鱼汛', '鱼按习性、天气、位置和饵料决定咬不咬。要研究钓点、选对饵，更接近真实钓鱼。', '下面七项规则中，除欢乐时光外全部开启'],
-  ['legacy', '全随机', '任何鱼都可能咬任何饵，出鱼完全随机。轻松，适合随便玩玩。', '下面七项规则中，除欢乐时光外全部关闭'],
+  ['realistic', '真实鱼汛', '鱼按习性、天气、位置和饵料决定咬不咬。要研究钓点、选对饵，更接近真实钓鱼。', '下面五项规则全部开启'],
+  ['legacy', '全随机', '任何鱼都可能咬任何饵，出鱼完全随机。轻松，适合随便玩玩。', '下面五项规则全部关闭'],
 ];
 export const RULE_SWITCHES = [
   ['bite_gate_enabled', '饵要对口', '拟饵不会钓到不吃拟饵的鱼（如泥鳅、鲤科鱼）；钓层不对时几乎不咬。', '0'],
   ['fish_ecology_enabled', '鱼种习性', '252 种鱼各按习性决定咬不咬：水层、昼夜、季节、天气、水底环境、拟饵动作都有影响。', '0'],
   ['fish_weather_enabled', '天气与水温', '游戏里的气温和天气会影响鱼口；底钓、浮钓时鱼会断断续续地试口。', '0'],
   ['fish_distribution_enabled', '鱼群分布', '每种鱼只在地图的特定区域出没，每 4 个游戏小时重新分布一次。', '0'],
-  ['marine_layer_enabled', '海钓水层影响', '开启后海钓钓组按海钓状态机修正水层：下沉按相对进度过渡，贴底为 0.93；关闭时回到旧的拟饵实时水层/固定贴底。', '0'],
   ['fish_bait_rules_enabled', '鱼会挑饵', '根据钩上挂的饵决定会来哪些鱼。每种鱼爱吃什么在「鱼饵偏好」里设置。', '0'],
+  // 上游这里还有「海钓水层影响」（marine_layer_enabled）：海钓钓组按 50~60 的水层
+  // 状态机修正水层。本服没有这个状态机（rigWaterLayer 只按钓组族分三种口径），
+  // 后端一个 marine_layer_enabled 都不读，写上等于给了个没反应的开关，故不列。
   ['happy_hour_enabled', '欢乐时光', '会员在线钓鱼时：经验 +50%、鱼口 +10%、熟练度提升机会 +25%，没有每日时长限制。', '1'],
 ];
 const SPAWN = [
@@ -27,11 +29,23 @@ const GRADE_SETS = {
     { prefix: 'two_stage_baited_', title: '打窝后', defs: [1, 92, 6, 1] },
   ],
 };
+// 鱼猎四阶段：四个阶段各一张「四档相对权重」表，共 16 个键。
+// 默认值就是后端 fourStageWeightKeys 里的字面量（改动前写死在 fishHuntWeights），
+// 四档全 0 时后端整行回退默认，所以「恢复出厂」填的也是这组数。
+const HUNT_STAGES = [
+  ['daily', '日常', [74.7, 24, 1, 0.3]],
+  ['gather', '聚鱼', [54.5, 43, 2, 0.5]],
+  ['active', '发窝', [30, 61.2, 6.8, 2]],
+  ['giant', '巨物发窝', [10, 64, 20, 6]],
+];
 const OTHER = [
   ['condition_health_enabled', '饥饿和寒冷会掉血', '关闭后生命值始终是满的，药品也不会消耗。', '1'],
   ['condition_fishing_pause_enabled', '钓鱼时精力不恢复', '竿在水里时精力暂停恢复，收竿后再恢复。关闭则一直正常恢复。', '1'],
   ['hook_nibble_enabled', '鱼会先嘬饵', '鱼咬钩前先轻嘬几下，抬竿太早会钓空。关闭后第一次抬竿不会判嘬饵。', '0'],
   ['bite_pace_enabled', '饵效控速', '开启后来鱼快慢由饵与动作共同决定：底钓/浮钓看饵对不对口；路亚/海钓铁板还看收线动作对不对口——饵与动作都对口时 1.5~6 秒内来鱼，动作不对口像差饵一样长时间才有鱼。只控节奏，不改出什么鱼。', '0'],
+  // 下面两个是本服独有的诊断/轮换开关（上游没有），数值在「游戏参数 › 玩法与钓组」。
+  ['bait_rotation_auto_enabled', '自动轮换开口饵', '按稀有度自动抽本期的开口饵，没抽中的鱼降权。周期与降权幅度在「游戏参数 › 玩法与钓组」。', '0'],
+  ['fish_roll_trace_enabled', '记录判鱼追踪', '把每杆的候选鱼种与各层权重落库，用来回答「为什么空军」。纯诊断，不参与任何判鱼数值；保留条数在「游戏参数 › 玩法与钓组」。', '0'],
 ];
 
 export default async function rules(params, scope) {
@@ -44,7 +58,7 @@ export default async function rules(params, scope) {
   savebar(form, {
     effect:'服务端最多 30 秒生效，无需重新登录。',
     onSave: async (values) => {
-      for (const set of GRADE_SETS[spawnMode] || []) {
+      for (const set of activeSets()) {
         const keys = GRADES.map(([g]) => set.prefix + g);
         if (form.fields.has(keys[0]) && !keys.some(k => Number(form.value(k)) > 0)) throw new Error(`${set.title}的总权重不能为 0`);
       }
@@ -100,6 +114,12 @@ export default async function rules(params, scope) {
     h('p', { class: 'hint', style: { margin: '4px 0 0' }, text: desc }));
   }));
 
+  // 当前出鱼方式下要显示/校验的那几组比例表。鱼猎四阶段是四张表（每阶段一张），
+  // 其余方式按 GRADE_SETS 给。savebar 和渲染都用这一份，避免两处判断走岔。
+  const activeSets = () => spawnMode === 'fish_hunt'
+    ? HUNT_STAGES.map(([stage, title, defs]) => ({ prefix: `hunt_stage_${stage}_`, title: `鱼猎 · ${title}`, defs }))
+    : (GRADE_SETS[spawnMode] || []);
+
   // 三个二级页签，和演示页「钓场与鱼口」的拆法一致
   const TABS = [['switches', '玩法开关'], ['grade', '出鱼与奖杯'], ['other', '其他']];
   let SUB = 'switches';
@@ -117,9 +137,9 @@ export default async function rules(params, scope) {
   setCrumbTail((TABS.find(([k]) => k === SUB) || [])[1] || '');
 
   const DESC = {
-    switches: '决定钓鱼玩起来是什么感觉。上面两种是官方预设，下面七项可以单独改。',
+    switches: '决定钓鱼玩起来是什么感觉。上面两种是官方预设，下面六项可以单独改。',
     grade: '决定钓到的鱼里，好鱼（奖杯、蓝冠）占多少。三选一，点卡片切换。',
-    other: '活着、精力和鱼钩大小这类杂项。',
+    other: '活着、精力、鱼钩大小、自动轮换与判鱼追踪这类杂项。',
   };
   let blocks = [];
   if (SUB === 'switches') {
@@ -128,20 +148,20 @@ export default async function rules(params, scope) {
       hint(DESC.switches),
       h3s('玩法风格'),
       styleCards,
-      hint((cur === 'mixed' ? '当前为自定义组合。' : STYLES.some(([k]) => k === cur) ? `当前预设：${STYLES.find(([k]) => k === cur)[1]}。` : '当前预设未取得。') + '预设覆盖前六项；欢乐时光独立。'),
-      h3s('七项规则（各自独立）'),
+      hint((cur === 'mixed' ? '当前为自定义组合。' : STYLES.some(([k]) => k === cur) ? `当前预设：${STYLES.find(([k]) => k === cur)[1]}。` : '当前预设未取得。') + '预设覆盖前五项；鱼会挑饵与欢乐时光独立。'),
+      h3s('六项规则（各自独立）'),
       ...RULE_SWITCHES.map(([k, l, d, def]) => form.row({ key: k, label: l, help: d, kind: 'bool', def }, val(k, def))),
     ];
   } else if (SUB === 'grade') {
     blocks = [
       pblock(1, '出鱼方式', '决定钓到的鱼里，好鱼占多少。三选一，点卡片切换。', spawnCards, { id: 'pg-spawn' }),
-      ...(GRADE_SETS[spawnMode] || []).map((set, i) => pblock(i + 2, set.title, '填相对数量，会自动换算成百分比。', gradeEditor(form, set, t, spawnMode === 'grade_ratio'), { id: 'pg-grade-' + i })),
-      spawnMode === 'fish_hunt' ? note('鱼猎四阶段没有要设置的比例。', '它按玩家打窝、聚鱼的进度自动推进。') : null,
+      ...activeSets().map((set, i) => pblock(i + 2, set.title, '填相对数量，会自动换算成百分比。', gradeEditor(form, set, t, spawnMode === 'grade_ratio'), { id: 'pg-grade-' + i })),
+      spawnMode === 'fish_hunt' ? note('上面四张表就是当前生效的派发比例。', '四个阶段对应玩家打窝、聚鱼的进度；四档全 0 的那一行会整行回退默认。') : null,
       !spawnMode ? note('还没有选择出鱼方式。', '目前按旧版规则出鱼。') : null,
     ].filter(Boolean);
   } else {
     blocks = [
-      pblock(1, '其他', '活得久不久、精力怎么恢复、鱼钩大小怎么影响出鱼。', [
+      pblock(1, '其他', '活着、精力、鱼钩大小、自动轮换与判鱼追踪这类杂项。', [
         ...OTHER.map(([k, l, d, def]) => form.row({ key: k, label: l, help: d, kind: 'bool', def }, val(k, def))),
         form.row({ key: 'hook_spawn_match_strength', label: '鱼钩大小影响出鱼', help: '0 表示不影响；1 表示大钩更容易钓到大鱼、小钩更容易钓到小鱼；2 更明显。选「按比例出鱼」时不起作用。', kind: 'float', min: 0, max: 2, def: '0' }, val('hook_spawn_match_strength', '0')),
       ], { id: 'pg-other' }),
@@ -157,7 +177,7 @@ export default async function rules(params, scope) {
       ['预设', cur === 'mixed' ? '自定义组合' : (STYLES.find(([m]) => m === cur) || [])[1] || '—'],
       ['开着的规则', String(RULE_SWITCHES.filter(([k, , , d]) => val(k, d) === '1').length) + ' / ' + RULE_SWITCHES.length],
       ['出鱼方式', (SPAWN.find(([m]) => m === spawnMode) || [])[1] || '旧版规则'],
-    ]), hint('预设只覆盖饵要对口、鱼种习性、天气与水温、鱼群分布、海钓水层影响、鱼会挑饵六项。欢乐时光独立。')),
+    ]), hint('预设只覆盖饵要对口、鱼种习性、天气与水温、鱼群分布、鱼会挑饵这五项（后端 biteModeKeys）。欢乐时光独立开关，不受预设影响。')),
     ib('相关页面', null, h('div', { class: 'pills' },
       h('a', { class: 'pill', href: '#bait', text: '每种鱼吃什么' }),
       h('a', { class: 'pill', href: '#tuning/gameplay', text: '咬钩快慢在游戏参数' }),
