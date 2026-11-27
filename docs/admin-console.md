@@ -67,6 +67,31 @@ node internal/admin/visual_shots.cjs
 表单行高不齐、天气页六区块永久加载、季节名兜底缺失这三个真实缺陷都是它先看出来的，
 肉眼扫一遍图比读十个用例快。
 
+### 迁移验收与功能盘点
+
+三份工具，改完一批或怀疑「某个功能是不是没迁过来」时用：
+
+```bash
+node internal/admin/acceptance_check.cjs   # 按迁移文档的口径逐条取证，20 条
+node internal/admin/inventory_check.cjs    # 导出旧后台 13 视图 / SPA 15 页的可操作件清单
+node internal/admin/inventory_tabs.cjs     # 同上，会进二级页签（生态 4 / 钓场 3 / 水域 2）
+```
+
+`acceptance_check.cjs` 里每条断言都对应迁移方案文档的一句话（钩号用 `display_size`、
+采样点数是 `days × 24` 算出来的、生态页签不改 hash…），失败时打印现场文字，便于区分
+「实现了但文案改了」和「真没实现」。`inventory_*` 只打印清单不判定，用来人工对照
+「旧后台能做的，新平台是不是也能做」。
+
+写这类工具时有几个坑会让人把工具的问题当成产品缺陷（详细清单见
+[验收核对报告](acceptance-admin-spa-2026-11-27.md) 第 6 节），最容易中招的两个：
+
+- **`page.route` 多条规则是「后注册的覆盖先注册的」**，不是反过来。要按路径给不同
+  返回值就只注册一条 `**/*`，在 handler 内部分支。另外 glob `**/api/x` 不匹配
+  `/api/x`（`**/` 要求前面至少一个路径段）。
+- **fixture 的返回结构要照着真实接口写**。`/api/tunables` 是扁平
+  `map[string]string`，写成 `{items:[...]}` 会让页面渲染出 `[object Object]`，
+  并且因为「原值 ≠ 当前值」被未保存守卫拦住导航——排查起来极像产品 bug。
+
 ## 玩家管理
 
 - 按 UID 或名称搜索玩家。

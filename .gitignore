@@ -29,9 +29,12 @@ internal/wiregen/testdata/corpus.jsonl.gz
 .DS_Store
 Thumbs.db
 
-# 视觉验收产物：_shots_visual.cjs 生成的明暗两套页面截图（29MB，仅供人工核对）。
-# 脚本本身入库，产物不入库 —— 需要时重跑 `node internal/admin/_shots_visual.cjs`。
+# 视觉验收产物：visual_shots.cjs 生成的明暗两套页面截图（29MB，仅供人工核对）。
+# 脚本本身入库，产物不入库 —— 需要时重跑 `node internal/admin/visual_shots.cjs`。
 internal/admin/_shots/
+# 功能盘点 / 验收核对的运行产物（脚本入库，结果不入库）
+internal/admin/_inventory*.json
+internal/admin/_acceptance.json
 
 # 前端依赖：后台 UI 冒烟测试用的 playwright（本机 npm i 产生，不入库）；
 # 它还会抢 NODE_PATH 的解析，跑测试时请用仓库外的依赖或临时移开

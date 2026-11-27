@@ -42,13 +42,20 @@ export default async function dashboard() {
     }));
 
   // 关键口径：只写能从接口读出来的东西，读不到就不出现。
+  //
+  // 「读不到」的判据必须是 `== null`，不能写 `!== undefined`：
+  // 数据库里这一行可能是 NULL，接口原样回 `null`，`!== undefined` 成立、
+  // 字符串模板直接把 "null" 拼进去，页面就显示「普通上限 null 秒」。
+  // `== null` 同时覆盖 null 与 undefined（批次 6 统一空态时踩过同一个坑）。
+  const num = (v) => (v == null || v === '' ? null : v);
   const canons = [];
   canons.push(['发鱼方式', mode.spawn_mode === 'tier' ? '档位比例' : (mode.spawn_mode || modeName), 'rules']);
-  if (tuns.grade_pct_qualified !== undefined) {
-    canons.push(['四档占比', `未达标 ${tuns.grade_pct_below || '0'}% · 合格 ${tuns.grade_pct_qualified}% · 奖杯 ${tuns.grade_pct_trophy || '0'}% · 蓝冠 ${tuns.grade_pct_super || '0'}%`, 'rules']);
+  if (num(tuns.grade_pct_qualified) != null) {
+    canons.push(['四档占比', `未达标 ${num(tuns.grade_pct_below) ?? '0'}% · 合格 ${num(tuns.grade_pct_qualified)}% · 奖杯 ${num(tuns.grade_pct_trophy) ?? '0'}% · 蓝冠 ${num(tuns.grade_pct_super) ?? '0'}%`, 'rules']);
   }
-  if (tuns.bite_delay_max !== undefined) {
-    canons.push(['咬钩节奏', `普通上限 ${tuns.bite_delay_max} 秒${tuns.bite_delay_lure_max ? ' / 饵上限 ' + tuns.bite_delay_lure_max + ' 秒' : ''}`, 'rules']);
+  if (num(tuns.bite_delay_max) != null) {
+    const lure = num(tuns.bite_delay_lure_max);
+    canons.push(['咬钩节奏', `普通上限 ${num(tuns.bite_delay_max)} 秒${lure != null ? ' / 饵上限 ' + lure + ' 秒' : ''}`, 'rules']);
   }
   canons.push(['玩法开关', enabled.length ? enabled.join(' · ') : '全部关闭', 'rules']);
   if (stores.length) canons.push(['商店覆盖', overrideCount ? `${overrideCount} 件商品有覆盖价` : '没有覆盖，全部走基础价', 'shop']);

@@ -124,7 +124,10 @@ const F = {
     items: [{ fish_key: 'rudd', name_zh: '拟鲤', overlaid: true, base: { temp_min_c: 8, temp_max_c: 18, temp_pref_c: 13, diel_mask: 3, enabled: 1, layer_min: 0.1, layer_pref: 0.4, layer_max: 0.7 }, override: {} }],
   },
   '/api/econ/preview': { ok: true },
-  '/api/tunables': { items: [{ key: 'bite_delay_max', value: 2.8, def: 3.5, group: 'bite' }] },
+  // 真实接口是扁平 map[string]string（store.TunableList 就是 SELECT key,value 拼的对象），
+  // 不是 {items:[{key,value,def,group}]}。写成后者会让参数页每个输入框都显示
+  // "[object Object]"，并且因为「原值 ≠ 当前值」被未保存守卫拦住导航。
+  '/api/tunables': { bite_delay_max: '2.8', bite_delay_scale: '1', bite_probability: '1' },
 };
 
 function fixture(pathname) {

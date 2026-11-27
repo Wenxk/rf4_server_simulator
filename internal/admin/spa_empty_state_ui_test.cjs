@@ -80,7 +80,13 @@ const DIRTY = {
   '/api/weather/active-fish': { active: { ...nullObj(), fish: [nullObj()], idle: [nullObj()] } },
   '/api/econ/species': { items: [nullObj()], maps: [nullObj()] },
   '/api/fish/weights/preset': { weights: [0, 0, 0], tiers: [nullObj()], active: null, rows: null },
-  '/api/tunables': { items: [nullObj()], groups: [] },
+  // /api/tunables 真实返回是扁平 map[string]string（store.TunableList 就是
+  // SELECT key,value 拼成的对象），不是 {items:[...]}。这里的脏数据也要按扁平结构喂：
+  // 键在、值全 null，才等价于数据库里一行行 NULL。
+  '/api/tunables': {
+    bite_delay_max: null, bite_delay_scale: null, bite_probability: null,
+    fish_diel_weight_enabled: null, bait_rotation_auto_sec: null, skill_gain_mode: null,
+  },
 };
 
 function dirtyFor(pathname) {
